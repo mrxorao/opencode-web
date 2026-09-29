@@ -1,7 +1,7 @@
 services:
   opencode-web:
     image: xorao/opencode-web:latest
-    build: .
+    # build: . # Opcional: descomente apenas se quiser compilar a imagem localmente a partir do Dockerfile
     container_name: opencode-web
     restart: unless-stopped
     ports:
