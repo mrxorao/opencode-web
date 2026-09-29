@@ -25,7 +25,7 @@ EOF
 
 chmod +x /start-opencode.sh
 
-TTYD_CMD=(ttyd -W -p 7681 -t fontSize=15)
+TTYD_CMD=(ttyd -W -a -I /usr/local/share/ttyd/index.html -p 7681 -t fontSize=14 -t disableLeaveAlert=true)
 
 if [ -n "$TTYD_AUTH" ]; then
     TTYD_CMD+=(-c "$TTYD_AUTH")

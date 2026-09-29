@@ -23,6 +23,9 @@ RUN npm install -g opencode-ai@latest
 # Default working directory for projects
 WORKDIR /workspace
 
+# Copy mobile-optimized web terminal template
+COPY index.html /usr/local/share/ttyd/index.html
+
 # Entrypoint startup script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

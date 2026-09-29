@@ -13,6 +13,7 @@ opencode-web/
 ├── docker-compose.yml     # Container orchestration and local volume bindings
 ├── Dockerfile             # Custom image with Node.js, ttyd, git, and OpenCode CLI
 ├── entrypoint.sh          # Terminal startup script with auto-restart loop
+├── index.html             # Mobile-optimized terminal template with responsive viewport
 ├── .env                   # Port and authentication credentials
 ├── .env.example           # Example configuration file
 ├── README.md              # Documentation and usage instructions
