@@ -9,6 +9,10 @@ cat << 'EOF' > /start-opencode.sh
 export TERM=xterm-256color
 cd /workspace
 
+# Unset Groq API key inside OpenCode session so it is only used by the voice transcription proxy
+unset GROQ_API_KEY
+unset VOICE_GROQ_API_KEY
+
 while true; do
     clear
     echo "🚀 ==============================================="

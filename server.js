@@ -3,7 +3,7 @@ const net = require('net');
 
 const TTYD_PORT = 7680;
 const PROXY_PORT = 7681;
-const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
+const GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
 
 async function handleTranscribe(req, res) {
