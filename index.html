@@ -1129,9 +1129,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
     function setupVoiceHandlers() {
         var isRecording = false;
+        var isStartingRecording = false;
         var isConversationMode = false;
         var isSpeaking = false;
         var isWaitingForAiResponse = false;
+        var voiceSessionId = 0;
         var promptSubmittedAt = 0;
         var lastKnownAiMessageId = null;
         var pollTimer = null;
@@ -1706,9 +1708,16 @@ window.sendTextToTerminal = function(text, autoEnter) {
         async function startGroqVoiceRecording() {
             // Immediately stop any active TTS reading when recording starts
             stopSpeaking();
+            var thisSession = ++voiceSessionId;
+            isStartingRecording = true;
 
             var isConfigured = await fetchServerConfig();
+            if (thisSession !== voiceSessionId) {
+                isStartingRecording = false;
+                return;
+            }
             if (!isConfigured) {
+                isStartingRecording = false;
                 showPreview('Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env', true, false);
                 hidePreview(5000);
                 if (isConversationMode) toggleConversationMode();
@@ -1716,7 +1725,18 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
 
             try {
-                mediaStream = await getAudioMediaStream();
+                var stream = await getAudioMediaStream();
+                if (thisSession !== voiceSessionId) {
+                    if (stream) {
+                        try { stream.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
+                    }
+                    if (micBtn) micBtn.classList.remove('recording');
+                    if (voiceToolbar) voiceToolbar.classList.remove('recording');
+                    isStartingRecording = false;
+                    return;
+                }
+
+                mediaStream = stream;
                 audioChunks = [];
 
                 mediaRecorder = new MediaRecorder(mediaStream);
@@ -1725,6 +1745,18 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 var liveCtx = new AudioCtx();
                 if (liveCtx.state === 'suspended') {
                     try { await liveCtx.resume(); } catch(e) {}
+                }
+
+                if (thisSession !== voiceSessionId) {
+                    try { liveCtx.close(); } catch(e) {}
+                    if (mediaStream) {
+                        try { mediaStream.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
+                        mediaStream = null;
+                    }
+                    if (micBtn) micBtn.classList.remove('recording');
+                    if (voiceToolbar) voiceToolbar.classList.remove('recording');
+                    isStartingRecording = false;
+                    return;
                 }
 
                 var source = liveCtx.createMediaStreamSource(mediaStream);
@@ -1759,7 +1791,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 }
 
                 function checkSilenceAndWave() {
-                    if (!isRecording || isStopped) return;
+                    if (!isRecording || isStopped || thisSession !== voiceSessionId) return;
                     if (liveCtx && liveCtx.state === 'suspended') {
                         try { liveCtx.resume(); } catch(e) {}
                     }
@@ -1860,7 +1892,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     if (mediaStream) {
                         mediaStream.getTracks().forEach(function(t) { t.stop(); });
                     }
-                    if (audioChunks.length === 0) return;
+                    if (audioChunks.length === 0 || thisSession !== voiceSessionId) return;
 
                     // If no voice was ever detected (timed out)
                     if (!speechDetected && (Date.now() - recordStartTime >= 9500)) {
@@ -1868,7 +1900,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         hidePreview(3000);
                         if (isConversationMode) {
                             setTimeout(function() {
-                                if (isConversationMode && !isRecording && !isSpeaking) {
+                                if (isConversationMode && !isRecording && !isSpeaking && !isStartingRecording) {
                                     startGroqVoiceRecording();
                                 }
                             }, 1000);
@@ -1892,6 +1924,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             body: audioBlob
                         });
 
+                        if (thisSession !== voiceSessionId) return;
+
                         var data = await resp.json();
                         var rawText = (data && data.text) ? String(data.text).trim() : '';
                         var text = sanitizeVoiceInput(rawText);
@@ -1907,7 +1941,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             hidePreview(3000);
                             if (isConversationMode) {
                                 setTimeout(function() {
-                                    if (isConversationMode && !isRecording && !isSpeaking) {
+                                    if (isConversationMode && !isRecording && !isSpeaking && !isStartingRecording) {
                                         startGroqVoiceRecording();
                                     }
                                 }, 1000);
@@ -1927,9 +1961,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     }
                 };
 
+                isStartingRecording = false;
                 mediaRecorder.start();
                 isRecording = true;
                 if (micBtn) micBtn.classList.add('recording');
+                if (voiceToolbar) voiceToolbar.classList.add('recording');
                 updateTalkButton();
                 showPreview(
                     isConversationMode ? 'Modo Conversa: Pode falar...' : 'A gravar áudio...',
@@ -1941,8 +1977,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
             } catch(err) {
                 console.error('Microphone access error:', err);
+                isStartingRecording = false;
                 isRecording = false;
                 if (micBtn) micBtn.classList.remove('recording');
+                if (voiceToolbar) voiceToolbar.classList.remove('recording');
                 updateTalkButton();
 
                 var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
@@ -2047,7 +2085,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
         };
 
         function cancelVoiceAndConversation(showFeedback) {
-            var wasActive = isConversationMode || isRecording || isSpeaking;
+            voiceSessionId++; // Invalidate any pending recording or transcribe operations immediately
+            var wasActive = isConversationMode || isRecording || isSpeaking || isStartingRecording || isWaitingForAiResponse;
+
+            isStartingRecording = false;
+            isWaitingForAiResponse = false;
 
             if (isConversationMode) {
                 isConversationMode = false;
@@ -2732,17 +2774,31 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         });
 
-        // Global Keyboard Shortcuts Listener (Capture phase to guarantee Escape is always caught)
-        window.addEventListener('keydown', function(e) {
-            // Escape (ESQ): Deactivate voice dictation, conversation mode, and close modals
-            if (e.key === 'Escape' || e.key === 'Esc' || e.code === 'Escape') {
-                if (isConversationMode || isRecording || isSpeaking) {
-                    if (typeof window.cancelVoiceAndConversation === 'function') {
+        function handleEscapeKey(e) {
+            var anyModalOpen = [ffModal, micModal, shortcutsModal, uploadChoiceModal, promptsModal, fontSizeModal].some(function(m) {
+                return m && m.classList.contains('active');
+            });
+            var isVoiceActive = isConversationMode || isRecording || isSpeaking || isStartingRecording || isWaitingForAiResponse;
+
+            if (isVoiceActive || anyModalOpen) {
+                if (e && typeof e.preventDefault === 'function') {
+                    try {
                         e.preventDefault();
                         e.stopPropagation();
-                        window.cancelVoiceAndConversation(true);
-                        return;
-                    }
+                    } catch(err) {}
+                }
+                cancelVoiceAndConversation(true);
+                return true;
+            }
+            return false;
+        }
+
+        // Global Keyboard Shortcuts Listener (Capture phase to guarantee Escape is always caught)
+        var globalKeydownHandler = function(e) {
+            // Escape (ESQ): Deactivate voice dictation, conversation mode, and close modals
+            if (e.key === 'Escape' || e.key === 'Esc' || e.code === 'Escape') {
+                if (handleEscapeKey(e)) {
+                    return;
                 }
             }
 
@@ -2823,7 +2879,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     return;
                 }
             }
-        }, true);
+        };
+
+        window.addEventListener('keydown', globalKeydownHandler, true);
+        document.addEventListener('keydown', globalKeydownHandler, true);
 
         // Window drag & drop file upload support with visual overlay
         var dropOverlay = document.getElementById('file-drop-overlay');
@@ -2896,11 +2955,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
             if (typeof termInstance.attachCustomKeyEventHandler === 'function') {
                 termInstance.attachCustomKeyEventHandler(function(ev) {
                     if ((ev.key === 'Escape' || ev.key === 'Esc' || ev.code === 'Escape') && ev.type === 'keydown') {
-                        if (isConversationMode || isRecording || isSpeaking) {
-                            if (typeof window.cancelVoiceAndConversation === 'function') {
-                                window.cancelVoiceAndConversation(true);
-                                return false; // Prevent sending \x1b into OpenCode TUI when cancelling voice
-                            }
+                        if (handleEscapeKey(ev)) {
+                            return false; // Prevent sending \x1b into OpenCode TUI when cancelling voice
                         }
                     }
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === '=' || ev.key === '+' || ev.code === 'Equal' || ev.code === 'NumpadAdd') && ev.type === 'keydown') {
