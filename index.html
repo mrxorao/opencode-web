@@ -248,10 +248,33 @@ window.focusTerminal = function() {
     } catch(e) {}
 };
 
+// Helper: Thoroughly sanitize voice input so it never starts with shell triggers ($ / \ !) or accidental quotes/dots
+function sanitizeVoiceInput(rawText) {
+    if (!rawText || typeof rawText !== 'string') return '';
+    var text = rawText.trim();
+
+    // 1. Remove wrapping quotes or brackets if speech returned quoted string
+    text = text.replace(/^["'`“”«»]+|["'`“”«»]+$/g, '').trim();
+
+    // 2. Loop to aggressively strip any leading command triggers ($, /, \, !), leading punctuation, markdown, dashes, dots, spaces
+    var prev = '';
+    while (text !== prev) {
+        prev = text;
+        text = text.replace(/^[\s"'`“”«»\-–—.*_~#$!\/\\:;>|]+/, '').trim();
+    }
+
+    return text;
+}
+window.sanitizeVoiceInput = sanitizeVoiceInput;
+
 // Helper: Send text directly into terminal via native ttyd instance
 window.sendTextToTerminal = function(text, autoEnter) {
     if (typeof text === 'string') {
-        text = text.replace(/^[\$\/\\\s]+/, '').trim();
+        if (!text.trim().startsWith('@')) {
+            text = sanitizeVoiceInput(text);
+        } else {
+            text = text.trim();
+        }
     }
     if (!text) return false;
     if (window.__ttyd_xterm && typeof window.__ttyd_xterm.sendData === 'function') {
@@ -1522,8 +1545,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                         var data = await resp.json();
                         var rawText = (data && data.text) ? String(data.text).trim() : '';
-                        // Remove qualquer $ ou / ou \ inicial
-                        var text = rawText.replace(/^[\$\/\\\s]+/, '').trim();
+                        var text = sanitizeVoiceInput(rawText);
 
                         if (resp.ok && text) {
                             // In conversation mode: always auto-enter and trigger AI response wait

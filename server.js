@@ -105,6 +105,23 @@ function handleLatestAiMessage(req, res) {
     }
 }
 
+function sanitizeVoiceInput(rawText) {
+    if (!rawText || typeof rawText !== 'string') return '';
+    let text = rawText.trim();
+
+    // 1. Remove wrapping quotes or brackets if speech returned quoted string
+    text = text.replace(/^["'`“”«»]+|["'`“”«»]+$/g, '').trim();
+
+    // 2. Loop to aggressively strip any leading command triggers ($, /, \, !), leading punctuation, markdown, dashes, dots, spaces
+    let prev = '';
+    while (text !== prev) {
+        prev = text;
+        text = text.replace(/^[\s"'`“”«»\-–—.*_~#$!\/\\:;>|]+/, '').trim();
+    }
+
+    return text;
+}
+
 async function handleTranscribe(req, res) {
     if (!VOICE_GROQ_API_KEY) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -148,9 +165,8 @@ async function handleTranscribe(req, res) {
                 return;
             }
 
-            let text = (data.text || '').trim();
-            // Remove prefixos como $, / ou barras invertidas no início da frase
-            text = text.replace(/^[\$\/\\\s]+/, '').trim();
+            let rawText = (data.text || '').trim();
+            let text = sanitizeVoiceInput(rawText);
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ text }));
