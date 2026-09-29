@@ -20,15 +20,21 @@
 #voice-toolbar.collapsed.active .drag-handle{color:#58a6ff;animation:talk-pulse 1.8s infinite ease-in-out}
 #voice-toolbar.collapsed.active.speaking .drag-handle{color:#d2a8ff;animation:talk-pulse 1.2s infinite ease-in-out}
 
+/* Corner Presets for Voice Toolbar */
+#voice-toolbar.corner-top-right{top:calc(env(safe-area-inset-top,12px) + 16px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;bottom:auto}
+#voice-toolbar.corner-top-left{top:calc(env(safe-area-inset-top,12px) + 16px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;bottom:auto}
+#voice-toolbar.corner-bottom-right{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;top:auto}
+#voice-toolbar.corner-bottom-left{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;top:auto}
+
 /* Corner Target Zones Hint */
 #corner-zone-container{pointer-events:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99998;display:none}
 body.toolbar-dragging #corner-zone-container{display:block}
-.corner-zone-hint{position:absolute;width:130px;height:44px;border:2px dashed rgba(88,166,255,0.35);border-radius:24px;background:rgba(22,27,34,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-sizing:border-box;transition:all .2s cubic-bezier(0.2,0.9,0.3,1.2)}
-.corner-zone-hint.active{border-color:#58a6ff;border-style:solid;background:rgba(56,139,253,0.22);box-shadow:0 0 18px rgba(56,139,253,0.5);transform:scale(1.08)}
-.corner-hint-tr{top:calc(env(safe-area-inset-top,8px) + 8px);right:calc(env(safe-area-inset-right,8px) + 12px)}
-.corner-hint-tl{top:calc(env(safe-area-inset-top,8px) + 8px);left:calc(env(safe-area-inset-left,8px) + 12px)}
-.corner-hint-br{bottom:calc(env(safe-area-inset-bottom,8px) + 12px);right:calc(env(safe-area-inset-right,8px) + 12px)}
-.corner-hint-bl{bottom:calc(env(safe-area-inset-bottom,8px) + 12px);left:calc(env(safe-area-inset-left,8px) + 12px)}
+.corner-zone-hint{position:absolute;width:140px;height:48px;border:2px dashed rgba(88,166,255,0.4);border-radius:24px;background:rgba(22,27,34,0.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-sizing:border-box;transition:all .2s cubic-bezier(0.2,0.9,0.3,1.2)}
+.corner-zone-hint.active{border-color:#58a6ff;border-style:solid;background:rgba(56,139,253,0.25);box-shadow:0 0 20px rgba(56,139,253,0.55);transform:scale(1.08)}
+.corner-hint-tr{top:calc(env(safe-area-inset-top,12px) + 16px);right:calc(env(safe-area-inset-right,12px) + 24px)}
+.corner-hint-tl{top:calc(env(safe-area-inset-top,12px) + 16px);left:calc(env(safe-area-inset-left,12px) + 24px)}
+.corner-hint-br{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);right:calc(env(safe-area-inset-right,12px) + 24px)}
+.corner-hint-bl{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);left:calc(env(safe-area-inset-left,12px) + 24px)}
 
 .voice-btn{background:#30363d;border:1px solid rgba(255,255,255,0.14);color:#c9d1d9;cursor:pointer;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;outline:none;transition:all .2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;z-index:2;touch-action:manipulation;pointer-events:auto}
 .voice-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
@@ -43,11 +49,11 @@ body.toolbar-dragging #corner-zone-container{display:block}
 #talk-btn.active.speaking{background:#8957e5!important;border-color:#a371f7!important;box-shadow:0 0 16px rgba(137,87,229,0.9);animation:talk-pulse 1.2s infinite ease-in-out}
 @keyframes talk-pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.85}100%{transform:scale(1);opacity:1}}
 
-#transcript-preview{position:fixed;max-width:min(360px,calc(100vw - 32px));background:rgba(13,17,23,0.96);border:1px solid #30363d;border-radius:10px;padding:8px 12px;color:#f0f6fc;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,0.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease}
-#transcript-preview.preview-top-right{top:calc(env(safe-area-inset-top,8px) + 54px);right:calc(env(safe-area-inset-right,8px) + 12px);left:auto;bottom:auto}
-#transcript-preview.preview-top-left{top:calc(env(safe-area-inset-top,8px) + 54px);left:calc(env(safe-area-inset-left,8px) + 12px);right:auto;bottom:auto}
-#transcript-preview.preview-bottom-right{bottom:calc(env(safe-area-inset-bottom,8px) + 54px);right:calc(env(safe-area-inset-right,8px) + 12px);left:auto;top:auto}
-#transcript-preview.preview-bottom-left{bottom:calc(env(safe-area-inset-bottom,8px) + 54px);left:calc(env(safe-area-inset-left,8px) + 12px);right:auto;top:auto}
+#transcript-preview{position:fixed;max-width:min(360px,calc(100vw - 48px));background:rgba(13,17,23,0.96);border:1px solid #30363d;border-radius:10px;padding:8px 12px;color:#f0f6fc;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,0.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease}
+#transcript-preview.preview-top-right{top:calc(env(safe-area-inset-top,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;bottom:auto}
+#transcript-preview.preview-top-left{top:calc(env(safe-area-inset-top,12px) + 68px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;bottom:auto}
+#transcript-preview.preview-bottom-right{bottom:calc(env(safe-area-inset-bottom,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;top:auto}
+#transcript-preview.preview-bottom-left{bottom:calc(env(safe-area-inset-bottom,12px) + 68px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;top:auto}
 #transcript-preview .transcript-status{font-size:11px;font-weight:600;color:#7ee787;margin-bottom:4px}
 #transcript-preview.error .transcript-status{color:#f85149}
 #transcript-preview .audio-wave{color:#58a6ff;font-family:monospace;font-size:14px;letter-spacing:2px;margin:4px 0}
@@ -246,6 +252,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
+        var lastDropX = window.innerWidth - 60;
+        var lastDropY = 40;
+
         function onPointerStart(e) {
             if (e.button !== undefined && e.button !== 0) return;
             isPointerDown = true;
@@ -257,6 +266,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
             var rect = toolbar.getBoundingClientRect();
             initialLeft = rect.left;
             initialTop = rect.top;
+            lastDropX = rect.left + rect.width / 2;
+            lastDropY = rect.top + rect.height / 2;
         }
 
         function onPointerMove(e) {
@@ -291,9 +302,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 toolbar.style.right = 'auto';
                 toolbar.style.bottom = 'auto';
 
-                var centerX = newLeft + rect.width / 2;
-                var centerY = newTop + rect.height / 2;
-                var closest = getClosestCorner(centerX, centerY);
+                lastDropX = (e.clientX !== undefined && e.clientX > 0) ? e.clientX : (newLeft + rect.width / 2);
+                lastDropY = (e.clientY !== undefined && e.clientY > 0) ? e.clientY : (newTop + rect.height / 2);
+                var closest = getClosestCorner(lastDropX, lastDropY);
                 updateHints(closest);
             }
         }
@@ -308,10 +319,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 toolbar.classList.remove('dragging');
                 document.body.classList.remove('toolbar-dragging');
 
-                var rect = toolbar.getBoundingClientRect();
-                var centerX = rect.left + rect.width / 2;
-                var centerY = rect.top + rect.height / 2;
-                var targetCorner = getClosestCorner(centerX, centerY);
+                if (e && e.clientX !== undefined && e.clientX > 0) {
+                    lastDropX = e.clientX;
+                    lastDropY = e.clientY;
+                }
+                var targetCorner = getClosestCorner(lastDropX, lastDropY);
 
                 toolbar.style.left = '';
                 toolbar.style.top = '';
