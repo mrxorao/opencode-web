@@ -723,6 +723,48 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
+        function playConversationStartSound() {
+            try {
+                var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                var ctx = new AudioCtx();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                var now = ctx.currentTime;
+
+                // Ascending melodic arpeggio for conversation start: C5 (523.25 Hz) -> E5 (659.25 Hz) -> G5 (783.99 Hz) -> C6 (1046.50 Hz)
+                var notes = [523.25, 659.25, 783.99, 1046.50];
+                var durations = [0.08, 0.08, 0.08, 0.25];
+                var noteOffset = 0;
+
+                notes.forEach(function(freq, i) {
+                    var osc = ctx.createOscillator();
+                    var gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + noteOffset);
+
+                    gain.gain.setValueAtTime(0, now + noteOffset);
+                    gain.gain.linearRampToValueAtTime(0.22, now + noteOffset + 0.015);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + noteOffset + durations[i]);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(now + noteOffset);
+                    osc.stop(now + noteOffset + durations[i]);
+
+                    noteOffset += 0.065;
+                });
+
+                setTimeout(function() {
+                    try { ctx.close(); } catch(e) {}
+                }, 600);
+            } catch(e) {
+                console.warn('Error playing conversation start sound:', e);
+            }
+        }
+
         function speakAiMessage(rawText) {
             if (!isConversationMode) return;
             if (!window.speechSynthesis) return;
@@ -1000,6 +1042,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 isConversationMode = true;
                 stopSpeaking();
                 updateTalkButton();
+                playConversationStartSound();
                 showPreview('💬 Conversation Mode On', 'Speak into the microphone. AI will reply and resume listening automatically.', false, false);
                 
                 if (conversationPollTimer) clearInterval(conversationPollTimer);
