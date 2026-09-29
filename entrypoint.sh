@@ -25,7 +25,7 @@ EOF
 
 chmod +x /start-opencode.sh
 
-TTYD_CMD=(ttyd -W -a -I /usr/local/share/ttyd/index.html -p 7681 -t fontSize=14 -t disableLeaveAlert=true)
+TTYD_CMD=(ttyd -W -a -I /usr/local/share/ttyd/index.html -i 127.0.0.1 -p 7680 -t fontSize=14 -t disableLeaveAlert=true)
 
 if [ -n "$TTYD_AUTH" ]; then
     TTYD_CMD+=(-c "$TTYD_AUTH")
@@ -33,5 +33,15 @@ fi
 
 TTYD_CMD+=(/start-opencode.sh)
 
-echo "Starting ttyd on port 7681 with OpenCode auto-restart..."
-exec "${TTYD_CMD[@]}"
+echo "Starting internal ttyd on 127.0.0.1:7680 with OpenCode auto-restart..."
+"${TTYD_CMD[@]}" &
+TTYD_PID=$!
+
+echo "Starting Web Terminal & Voice Server on port 7681..."
+node /server.js &
+SERVER_PID=$!
+
+# Trap termination signals
+trap 'kill -TERM $TTYD_PID $SERVER_PID 2>/dev/null' SIGTERM SIGINT
+
+wait -n $TTYD_PID $SERVER_PID

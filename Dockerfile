@@ -26,6 +26,9 @@ WORKDIR /workspace
 # Copy mobile-optimized web terminal template
 COPY index.html /usr/local/share/ttyd/index.html
 
+# Copy voice transcription proxy server
+COPY server.js /server.js
+
 # Entrypoint startup script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

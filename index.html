@@ -83,7 +83,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
     function setupVoiceHandlers() {
         var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        var forceLocalEngine = (/Firefox/i.test(navigator.userAgent)); // Firefox defaults to local Whisper engine (avoids network error on abandoned Mozilla speech servers)
+        var forceLocalEngine = (/Firefox/i.test(navigator.userAgent));
         var rec = null;
         var isRecording = false;
         var langIdx = 0;
@@ -131,7 +131,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        // Resample audio to 16kHz for Whisper
         function resampleTo16k(audioData, origSampleRate) {
             if (!origSampleRate || origSampleRate === 16000) return audioData;
             var ratio = origSampleRate / 16000;
@@ -147,19 +146,82 @@ window.sendTextToTerminal = function(text, autoEnter) {
             return result;
         }
 
-        // Preload Whisper AI in background
-        setTimeout(async function() {
-            try {
-                var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-                transformers.env.allowLocalModels = false;
-                whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
-                console.log('Whisper AI preloaded in background.');
-            } catch(e) {
-                console.log('Whisper will load on demand:', e);
-            }
-        }, 800);
+        // Helper: Transcribe via Groq Cloud or fallback to local WASM Whisper
+        async function processAudioTranscription(chunks) {
+            var audioBlob = new Blob(chunks, { type: chunks[0].type || 'audio/webm' });
+            var groqLang = (langIdx === 2 ? 'en' : 'pt');
 
-        // Smart Hands-Free Local Audio Engine with Auto-Silence Detection (VAD)
+            // 1. Try Groq Cloud Whisper API (whisper-large-v3-turbo in ~200ms)
+            try {
+                showPreview('⚡ A transcrever com Groq Whisper...', 'A processar...', false, false);
+                var resp = await fetch('/api/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': audioBlob.type,
+                        'X-Audio-Language': groqLang
+                    },
+                    body: audioBlob
+                });
+
+                if (resp.ok) {
+                    var result = await resp.json();
+                    if (result.text && result.text.trim()) {
+                        var text = result.text.trim();
+                        window.sendTextToTerminal(text, autoEnter);
+                        showPreview('✓ Inserido (Groq Whisper):', text, false, false);
+                        hidePreview(2500);
+                        return true;
+                    }
+                }
+            } catch(e) {
+                console.log('Groq cloud proxy not responding, falling back to local model:', e);
+            }
+
+            // 2. Fallback to Local WASM Whisper AI
+            showPreview('⏳ A transcrever com Whisper local...', 'A decodificar áudio...', false, false);
+            try {
+                var arrayBuffer = await audioBlob.arrayBuffer();
+                var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                var decodeCtx = new AudioCtx();
+                var audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+                var rawData = audioBuffer.getChannelData(0);
+                var origRate = audioBuffer.sampleRate;
+                try { decodeCtx.close(); } catch(e) {}
+
+                var audio16k = resampleTo16k(rawData, origRate);
+
+                if (!whisperPipeline) {
+                    showPreview('⏳ A carregar IA de voz...', 'A descarregar modelo leve...', false, false);
+                    var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+                    transformers.env.allowLocalModels = false;
+                    whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
+                }
+
+                showPreview('⏳ A transcrever...', 'Quase pronto...', false, false);
+                var out = await whisperPipeline(audio16k, {
+                    language: whisperLangs[langIdx],
+                    task: 'transcribe'
+                });
+
+                var text = (out && out.text ? out.text.trim() : '');
+                if (text) {
+                    window.sendTextToTerminal(text, autoEnter);
+                    showPreview('✓ Inserido no prompt:', text, false, false);
+                    hidePreview(2500);
+                    return true;
+                } else {
+                    showPreview('⚠️ Nenhum som detetado', 'Fale mais perto do microfone.', true, false);
+                    hidePreview(2000);
+                }
+            } catch(err) {
+                console.error('Local Whisper error:', err);
+                showPreview('⚠️ Erro de Transcrição', (err.message || 'Falha ao processar áudio.'), true, false);
+                hidePreview(3500);
+            }
+            return false;
+        }
+
+        // Smart Hands-Free Audio Engine with VAD
         async function startLocalRecording() {
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -200,14 +262,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         }
                         if (previewStatus) previewStatus.textContent = '🎙️ A escutar voz (' + labels[langIdx] + ')...';
                     } else if (speechDetected) {
-                        // Silence started after speech
                         if (!silenceTimer) {
                             if (previewStatus) previewStatus.textContent = '⏳ Silêncio... A finalizar...';
                             silenceTimer = setTimeout(function() {
                                 if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
                                     mediaRecorder.stop();
                                 }
-                            }, 1300); // 1.3 seconds silence threshold
+                            }, 1300);
                         }
                     }
 
@@ -232,50 +293,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     }
                     if (audioChunks.length === 0) return;
 
-                    showPreview('⏳ A transcrever com Whisper AI...', 'A converter a sua fala em texto...', false, false);
-
-                    try {
-                        var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
-                        var arrayBuffer = await audioBlob.arrayBuffer();
-                        var decodeCtx = new AudioCtx();
-                        var audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
-                        var rawData = audioBuffer.getChannelData(0);
-                        var origRate = audioBuffer.sampleRate;
-                        try { decodeCtx.close(); } catch(e) {}
-
-                        var audio16k = resampleTo16k(rawData, origRate);
-
-                        if (!whisperPipeline) {
-                            showPreview('⏳ A carregar IA de voz...', 'A descarregar modelo leve...', false, false);
-                            var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-                            transformers.env.allowLocalModels = false;
-                            whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
-                        }
-
-                        showPreview('⏳ A transcrever...', 'Quase pronto...', false, false);
-                        var out = await whisperPipeline(audio16k, {
-                            language: whisperLangs[langIdx],
-                            task: 'transcribe'
-                        });
-
-                        var text = (out && out.text ? out.text.trim() : '');
-                        if (text) {
-                            var sent = window.sendTextToTerminal(text, autoEnter);
-                            if (sent) {
-                                showPreview('✓ Inserido no prompt:', text, false, false);
-                            } else {
-                                showPreview('⚠️ Terminal desconectado', 'Aguarde a conexão.', true, false);
-                            }
-                            hidePreview(2500);
-                        } else {
-                            showPreview('⚠️ Nenhum som detetado', 'Fale mais perto do microfone.', true, false);
-                            hidePreview(2000);
-                        }
-                    } catch(err) {
-                        console.error('Whisper processing error:', err);
-                        showPreview('⚠️ Erro de Transcrição', (err.message || 'Falha ao processar áudio.'), true, false);
-                        hidePreview(3500);
-                    }
+                    await processAudioTranscription(audioChunks);
                 };
 
                 mediaRecorder.start();
@@ -340,7 +358,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
             rec.onerror = function(event) {
                 console.warn('SpeechRecognition error:', event.error);
-                // If browser cloud speech fails with network error (e.g. Firefox about:config or disconnected cloud), automatically switch to local engine
                 if (event.error === 'network' || event.error === 'service-not-allowed') {
                     console.log('Switching to smart local audio engine...');
                     forceLocalEngine = true;

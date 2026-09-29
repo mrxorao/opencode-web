@@ -8,6 +8,7 @@ services:
       - "${OPENCODE_PORT:-7681}:7681"
     environment:
       - TTYD_AUTH=${TTYD_AUTH:-admin:admin123}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
       - AUTO_START_OPENCODE=true
       - NODE_OPTIONS=--max-old-space-size=256
     volumes:

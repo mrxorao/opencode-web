@@ -13,8 +13,9 @@ opencode-web/
 ├── docker-compose.yml     # Container orchestration and local volume bindings
 ├── Dockerfile             # Custom image with Node.js, ttyd, git, and OpenCode CLI
 ├── entrypoint.sh          # Terminal startup script with auto-restart loop
+├── server.js              # Reverse proxy & Groq Whisper cloud audio transcription server
 ├── index.html             # Mobile-optimized terminal template with responsive viewport
-├── .env                   # Port and authentication credentials
+├── .env                   # Port, authentication credentials, and optional GROQ_API_KEY
 ├── .env.example           # Example configuration file
 ├── README.md              # Documentation and usage instructions
 ├── workspace/             # Directory where OpenCode works (projects saved here)
