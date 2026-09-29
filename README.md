@@ -64,12 +64,13 @@ docker run -d \
 
 ---
 
-## 🎙️ Cloud Voice Recognition (Groq Whisper)
+## 🎙️ Cloud Voice Recognition & Speech Synthesis (STT / TTS)
 
 A built-in floating voice toolbar is available directly on the web interface (desktop and mobile/smartphone):
 - **⚡ Ultra-Fast Cloud STT:** Powered by Groq's `whisper-large-v3-turbo` via `VOICE_GROQ_API_KEY` for near-instant speech transcription (~200ms).
+- **🔊 Automatic Text-to-Speech (TTS):** Toggle `🔊 TTS On` to have OpenCode AI responses automatically read aloud in the selected language.
 - **🔒 Dedicated Voice Key:** `VOICE_GROQ_API_KEY` is used exclusively for speech-to-text without cluttering OpenCode AI models.
-- **🌐 Multilingual Support:** Easily dictate in Portuguese (`PT`), Brazilian Portuguese (`BR`), or English (`EN`).
+- **🌐 Multilingual Support:** Easily dictate and listen in Portuguese (`PT`), Brazilian Portuguese (`BR`), or English (`EN`).
 - **⚙️ Configurable Default Language:** Set `VOICE_LANGUAGE=EN` (default), `PT`, or `BR` in your `.env` file.
 - **↵ Auto-Enter Toggle:** Automatically sends the transcribed prompt to OpenCode or keeps it in the input line for review.
 - **📱 Mobile Responsive:** Floating toolbar designed specifically for touchscreen devices and mobile browsers (Chrome, Safari, Firefox, Edge).
