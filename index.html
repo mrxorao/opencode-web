@@ -252,11 +252,11 @@ window.focusTerminal = function() {
 // Global variable to hold explicitly requested copy payload during synthetic copy commands
 var _currentPendingCopyText = '';
 
-// Global native copy event handler: guarantees that standard Copy / Ctrl+C / execCommand('copy')
-// always embeds the exact terminal selection or pending text into clipboardData
+// Global native copy event handler: ONLY intercepts trusted user keyboard/menu events (Ctrl+C / Cmd+C)
+// so synthetic execCommand('copy') on textareas is NEVER cancelled by preventDefault!
 document.addEventListener('copy', function(e) {
-    var text = _currentPendingCopyText;
-    if (!text) {
+    if (e.isTrusted) {
+        var text = '';
         if (window.term && typeof window.term.getSelection === 'function' && window.term.hasSelection()) {
             text = window.term.getSelection();
         } else if (window.__ttyd_xterm && window.__ttyd_xterm.terminal && window.__ttyd_xterm.terminal.hasSelection()) {
@@ -264,43 +264,39 @@ document.addEventListener('copy', function(e) {
         } else if (window.getSelection && window.getSelection().toString()) {
             text = window.getSelection().toString();
         }
-    }
 
-    if (text && text.length > 0) {
-        if (e.clipboardData) {
-            e.clipboardData.setData('text/plain', text);
-            e.preventDefault();
-            if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+        if (text && text.length > 0) {
+            if (e.clipboardData) {
+                e.clipboardData.setData('text/plain', text);
+                e.preventDefault();
+                if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                    window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+                }
             }
         }
     }
 }, true);
 
-// Helper: Synchronous fallback copy using temporary textarea
+// Helper: Synchronous fallback copy using standard temporary textarea (Rock-solid clipboard.js pattern)
 function execCommandDirect(str) {
     if (!str) return false;
-    _currentPendingCopyText = str;
     var success = false;
     try {
         var textArea = document.createElement('textarea');
-        textArea.value = str;
-        textArea.setAttribute('readonly', '');
-        textArea.style.position = 'fixed';
-        textArea.style.top = '0';
-        textArea.style.left = '0';
-        textArea.style.width = '2em';
-        textArea.style.height = '2em';
+        // Prevent zoom on mobile & avoid scroll jumps
+        textArea.style.fontSize = '12pt';
+        textArea.style.border = '0';
         textArea.style.padding = '0';
-        textArea.style.border = 'none';
-        textArea.style.outline = 'none';
-        textArea.style.boxShadow = 'none';
-        textArea.style.background = 'transparent';
-        textArea.style.opacity = '0.01';
-        textArea.style.zIndex = '999999';
-        
+        textArea.style.margin = '0';
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = (window.pageYOffset || document.documentElement.scrollTop || 0) + 'px';
+        textArea.setAttribute('readonly', '');
+        textArea.value = str;
+
         var prevActive = document.activeElement;
         document.body.appendChild(textArea);
+
         textArea.focus({ preventScroll: true });
         textArea.select();
         textArea.setSelectionRange(0, str.length);
@@ -314,7 +310,6 @@ function execCommandDirect(str) {
     } catch(err) {
         console.warn('[copy] execCommandDirect error:', err);
     }
-    setTimeout(function() { _currentPendingCopyText = ''; }, 100);
     return success;
 }
 window.execCommandDirect = execCommandDirect;
@@ -325,19 +320,21 @@ function copyToClipboard(text) {
         return Promise.resolve(false);
     }
     var str = String(text);
-    _currentPendingCopyText = str;
 
-    // 1. Synchronously execute execCommandDirect while user activation is 100% active
-    var execOk = execCommandDirect(str);
-
-    // 2. In parallel, also invoke modern navigator.clipboard API
+    // 1. Primary: Modern Async Clipboard API (Directly writes to Windows OS Clipboard)
     if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         navigator.clipboard.writeText(str).then(function() {
-            _currentPendingCopyText = '';
+            console.log('[copy] navigator.clipboard writeText successful');
         }).catch(function(err) {
-            console.warn('[copy] navigator.clipboard.writeText rejected:', err);
+            console.warn('[copy] navigator.clipboard.writeText error, fallback to execCommand:', err);
+            execCommandDirect(str);
         });
+    } else {
+        execCommandDirect(str);
     }
+
+    // 2. Also run execCommandDirect synchronously to ensure synchronous user gestures succeed immediately
+    execCommandDirect(str);
 
     if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
         window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
