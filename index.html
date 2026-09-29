@@ -19,9 +19,9 @@
 #transcript-preview.error .transcript-status{color:#f85149}
 #transcript-preview .audio-wave{color:#58a6ff;font-family:monospace;font-size:14px;letter-spacing:2px;margin:4px 0}
 
-/* Modals (Firefox, Mic & PWA Install) */
-#firefox-modal, #mic-modal, #pwa-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
-#firefox-modal.active, #mic-modal.active, #pwa-modal.active{display:flex}
+/* Modals (Firefox & Mic Permissions) */
+#firefox-modal, #mic-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+#firefox-modal.active, #mic-modal.active{display:flex}
 .modal-card{background:#161b22;border:1px solid #30363d;border-radius:12px;max-width:460px;width:100%;padding:20px;color:#c9d1d9;box-shadow:0 12px 32px rgba(0,0,0,0.85);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #30363d}
 .modal-title{font-size:15px;font-weight:700;color:#58a6ff;display:flex;align-items:center;gap:8px}
@@ -179,7 +179,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 </svg>
             </button>
             ${isFirefox ? '<button id="ff-help-btn" class="voice-btn ff-btn-icon" title="Firefox Voice Setup Guide" aria-label="Firefox Guide">🦊</button>' : ''}
-            <button id="install-pwa-btn" class="voice-btn" style="display:flex" title="Instalar Aplicação (PWA)" aria-label="Instalar App">
+            <button id="install-pwa-btn" class="voice-btn" style="display:none" title="Instalar Aplicação (PWA)" aria-label="Instalar App">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -254,47 +254,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
             </div>
         `;
 
-        var pwaModal = document.createElement('div');
-        pwaModal.id = 'pwa-modal';
-        pwaModal.innerHTML = `
-            <div class="modal-card">
-                <div class="modal-header">
-                    <div class="modal-title">📱 Instalar OpenCode AI (PWA)</div>
-                    <button id="pwa-close-btn" class="modal-close" title="Fechar">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p>Podes instalar o <b>OpenCode AI</b> como uma aplicação nativa no teu telemóvel ou computador.</p>
-
-                    <div class="modal-note" style="border-left-color:#58a6ff;background:rgba(56,139,253,0.1)">
-                        🤖 <b>Android (Chrome / Samsung Internet):</b>
-                        <p style="margin:4px 0">Se ao tentar instalar aparecer <i>"A instalação não está disponível"</i>, deve-se ao facto do certificado SSL em IP local ser auto-assinado. Para permitir instalação direta:</p>
-                        <ol class="modal-steps" style="margin:6px 0 0 16px">
-                            <li>Abre uma nova aba com: <br><span class="modal-code">chrome://flags/#unsafely-treat-insecure-origin-as-secure</span></li>
-                            <li>Muda para <b>Enabled</b> e adiciona o URL: <br><span class="modal-code">${location.origin}</span></li>
-                            <li>Clica em <b>Relaunch</b> e volta aqui para instalar.</li>
-                        </ol>
-                        <p style="margin:6px 0 0 0;font-size:12px;color:#8b949e"><i>Em alternativa, o atalho criado no ecrã inicial funciona como app ecrã total.</i></p>
-                    </div>
-
-                    <div class="modal-note" style="border-left-color:#a371f7;background:rgba(163,113,247,0.1)">
-                        🍎 <b>iOS (iPhone / iPad - Safari):</b>
-                        <ol class="modal-steps" style="margin:6px 0 0 16px">
-                            <li>Toca no botão de <b>Partilhar</b> (ícone do quadrado com a seta para cima).</li>
-                            <li>Desce e seleciona <b>"Adicionar ao Ecrã Principal"</b> (Add to Home Screen).</li>
-                        </ol>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button id="pwa-ok-btn" class="modal-btn">Entendido</button>
-                </div>
-            </div>
-        `;
-
         document.body.appendChild(toolbar);
         document.body.appendChild(preview);
         document.body.appendChild(ffModal);
         document.body.appendChild(micModal);
-        document.body.appendChild(pwaModal);
 
         setupVoiceHandlers();
     }
@@ -398,40 +361,22 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
-        var pwaModal = document.getElementById('pwa-modal');
-        var pwaCloseBtn = document.getElementById('pwa-close-btn');
-        var pwaOkBtn = document.getElementById('pwa-ok-btn');
-
-        function showPwaModal() {
-            if (pwaModal) pwaModal.classList.add('active');
-        }
-
-        function closePwaModal() {
-            if (pwaModal) pwaModal.classList.remove('active');
-        }
-
-        if (pwaCloseBtn) pwaCloseBtn.addEventListener('click', closePwaModal);
-        if (pwaOkBtn) pwaOkBtn.addEventListener('click', closePwaModal);
-
         var installBtn = document.getElementById('install-pwa-btn');
         if (installBtn) {
+            if (deferredInstallPrompt) {
+                installBtn.style.display = 'flex';
+            }
             installBtn.addEventListener('click', async function() {
-                if (deferredInstallPrompt) {
-                    try {
-                        deferredInstallPrompt.prompt();
-                        var choice = await deferredInstallPrompt.userChoice;
-                        if (choice && choice.outcome === 'accepted') {
-                            console.log('[PWA] Utilizador aceitou instalar a aplicação');
-                            deferredInstallPrompt = null;
-                            installBtn.style.display = 'none';
-                            return;
-                        }
-                    } catch(e) {
-                        console.warn('[PWA] Erro no prompt de instalação:', e);
+                if (!deferredInstallPrompt) return;
+                deferredInstallPrompt.prompt();
+                try {
+                    var choice = await deferredInstallPrompt.userChoice;
+                    if (choice && choice.outcome === 'accepted') {
+                        console.log('[PWA] Utilizador aceitou instalar a aplicação');
                     }
-                }
-                // If browser does not support direct prompt or blocked it (e.g. self-signed SSL/iOS), show guided modal
-                showPwaModal();
+                } catch(e) {}
+                deferredInstallPrompt = null;
+                installBtn.style.display = 'none';
             });
         }
 
