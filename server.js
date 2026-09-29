@@ -118,7 +118,70 @@ async function handleTranscribe(req, res) {
     });
 }
 
+const PUBLIC_DIR = path.join(__dirname, 'public');
+
+const PWA_MIME_TYPES = {
+    '.json': 'application/manifest+json; charset=utf-8',
+    '.webmanifest': 'application/manifest+json; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.png': 'image/png',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon'
+};
+
+function handleStaticPwa(req, res) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return false;
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const pathname = parsedUrl.pathname;
+    
+    let fileName = null;
+    if (pathname === '/manifest.json' || pathname === '/manifest.webmanifest') fileName = 'manifest.json';
+    else if (pathname === '/sw.js' || pathname === '/service-worker.js') fileName = 'sw.js';
+    else if (pathname === '/icon-192.png' || pathname === '/apple-touch-icon.png' || pathname === '/apple-touch-icon-precomposed.png') fileName = 'icon-192.png';
+    else if (pathname === '/icon-512.png') fileName = 'icon-512.png';
+    else if (pathname === '/icon-maskable.png') fileName = 'icon-maskable.png';
+    else if (pathname === '/icon.svg') fileName = 'icon.svg';
+    else if (pathname === '/favicon.ico') fileName = 'icon-192.png';
+
+    if (!fileName) return false;
+
+    const filePath = path.join(PUBLIC_DIR, fileName);
+    if (!fs.existsSync(filePath)) return false;
+
+    try {
+        const ext = path.extname(fileName);
+        const contentType = PWA_MIME_TYPES[ext] || 'application/octet-stream';
+        const stat = fs.statSync(filePath);
+        
+        const headers = {
+            'Content-Type': contentType,
+            'Content-Length': stat.size,
+            'Cache-Control': fileName === 'sw.js' ? 'no-cache, no-store, must-revalidate' : 'public, max-age=86400'
+        };
+
+        if (fileName === 'sw.js') {
+            headers['Service-Worker-Allowed'] = '/';
+        }
+
+        res.writeHead(200, headers);
+        if (req.method === 'HEAD') {
+            res.end();
+            return true;
+        }
+        fs.createReadStream(filePath).pipe(res);
+        return true;
+    } catch (err) {
+        console.error('Error serving static PWA file:', err);
+        return false;
+    }
+}
+
 const server = http.createServer((req, res) => {
+    // Serve PWA assets (manifest, Service Worker, icons)
+    if (handleStaticPwa(req, res)) {
+        return;
+    }
+
     // Return server configuration (Groq status & default language)
     if (req.url === '/api/config' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json' });

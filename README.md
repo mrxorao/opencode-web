@@ -13,8 +13,9 @@ opencode-web/
 ├── docker-compose.yml     # Container orchestration and local volume bindings
 ├── Dockerfile             # Custom image with Node.js, ttyd, git, and OpenCode CLI
 ├── entrypoint.sh          # Terminal startup script with auto-restart loop
-├── server.js              # Reverse proxy & Groq Whisper cloud audio transcription server
+├── server.js              # Reverse proxy, PWA static server & Groq transcription
 ├── index.html             # Mobile-optimized terminal template with responsive viewport
+├── public/                # PWA static assets (manifest.json, sw.js, app icons)
 ├── .env                   # Port, credentials, VOICE_GROQ_API_KEY, and VOICE_LANGUAGE
 ├── .env.example           # Example configuration file
 ├── README.md              # Documentation and usage instructions
@@ -73,6 +74,20 @@ A built-in floating voice toolbar is available directly on the web interface (de
 - **🔒 Dedicated Voice Key:** `VOICE_GROQ_API_KEY` is used exclusively for speech-to-text without cluttering OpenCode AI models.
 - **⚙️ Configurable Language:** Set `VOICE_LANGUAGE=EN` (default), `PT`, or `BR` in your `.env` file.
 - **📱 Mobile Responsive:** Floating toolbar designed specifically for touchscreen devices and mobile browsers (Chrome, Safari, Firefox, Edge).
+
+---
+
+## 📲 Progressive Web App (PWA) - Install as Native App
+
+OpenCode Web can be installed directly as a standalone application on any device:
+
+- **Desktop (Chrome / Edge / Brave):** Click the **Install App** button on the address bar or the toolbar download icon to install OpenCode as a dedicated desktop window without browser borders.
+- **Android (Chrome / Samsung Internet / Firefox):** Tap the install prompt or select **"Install app"** / **"Add to Home screen"** from the browser menu.
+- **iOS / iPadOS (Safari):** Tap the **Share** button (📤) and select **"Add to Home Screen"** (`Adicionar ao ecrã principal`).
+- **Features:**
+  - Standalone fullscreen UI optimized for touch and keyboard.
+  - Dedicated modern app icon and splash screen.
+  - Background Service Worker with instant loading cache.
 
 ---
 

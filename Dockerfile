@@ -26,6 +26,9 @@ WORKDIR /workspace
 # Copy mobile-optimized web terminal template
 COPY index.html /usr/local/share/ttyd/index.html
 
+# Copy PWA assets
+COPY public /public
+
 # Copy voice transcription proxy server
 COPY server.js /server.js
 
