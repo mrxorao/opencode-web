@@ -1211,13 +1211,18 @@ window.sendTextToTerminal = function(text, autoEnter) {
         }
 
         async function getAudioMediaStream() {
+            var audioConstraints = {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            };
             if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
-                return await navigator.mediaDevices.getUserMedia({ audio: true });
+                return await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
             }
             var legacyGetUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
             if (legacyGetUserMedia) {
                 return new Promise(function(resolve, reject) {
-                    legacyGetUserMedia.call(navigator, { audio: true }, resolve, reject);
+                    legacyGetUserMedia.call(navigator, { audio: audioConstraints }, resolve, reject);
                 });
             }
             var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
@@ -1254,43 +1259,64 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                 var AudioCtx = window.AudioContext || window.webkitAudioContext;
                 var liveCtx = new AudioCtx();
+                if (liveCtx.state === 'suspended') {
+                    try { await liveCtx.resume(); } catch(e) {}
+                }
+
                 var source = liveCtx.createMediaStreamSource(mediaStream);
                 var analyser = liveCtx.createAnalyser();
-                analyser.fftSize = 64;
+                analyser.fftSize = 128;
+                analyser.smoothingTimeConstant = 0.25;
                 source.connect(analyser);
                 var dataArray = new Uint8Array(analyser.frequencyBinCount);
+                var recordStartTime = Date.now();
 
                 function checkSilenceAndWave() {
                     if (!isRecording) return;
+                    if (liveCtx && liveCtx.state === 'suspended') {
+                        try { liveCtx.resume(); } catch(e) {}
+                    }
                     analyser.getByteFrequencyData(dataArray);
                     var sum = 0;
-                    for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                    var max = 0;
+                    for (var i = 0; i < dataArray.length; i++) {
+                        sum += dataArray[i];
+                        if (dataArray[i] > max) max = dataArray[i];
+                    }
                     var avg = sum / dataArray.length;
 
                     // Wave animation
-                    var count = Math.min(8, Math.max(1, Math.round(avg / 10)));
+                    var count = Math.min(8, Math.max(1, Math.round(avg / 6)));
                     var bars = '';
                     for (var b = 0; b < count; b++) bars += '█';
                     for (var s = count; s < 8; s++) bars += '░';
                     if (previewWave) previewWave.textContent = '🔊 ' + bars;
 
-                    // VAD (Silence detection)
-                    if (avg > 7) {
+                    // Voice Activity Detection (VAD) - sensitive across Chrome, Edge & Firefox
+                    if (avg >= 4 || max >= 20) {
                         speechDetected = true;
                         if (silenceTimer) {
                             clearTimeout(silenceTimer);
                             silenceTimer = null;
                         }
-                        if (previewStatus) previewStatus.textContent = isConversationMode ? '🎙️ Conversation: Listening...' : '🎙️ Recording...';
+                        if (previewStatus) previewStatus.textContent = isConversationMode ? '🎙️ Conversa: A ouvir...' : '🎙️ A gravar...';
                     } else if (speechDetected) {
                         if (!silenceTimer) {
-                            if (previewStatus) previewStatus.textContent = '⏳ Silence detected... Transcribing...';
+                            if (previewStatus) previewStatus.textContent = '⏳ Silêncio detetado... A transcrever...';
                             silenceTimer = setTimeout(function() {
                                 if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
                                     mediaRecorder.stop();
                                 }
-                            }, 1200);
+                            }, 1000);
                         }
+                    }
+
+                    // Auto-stop after 30 seconds max
+                    if (Date.now() - recordStartTime > 30000 && isRecording) {
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                        return;
                     }
 
                     animFrameId = requestAnimationFrame(checkSilenceAndWave);
