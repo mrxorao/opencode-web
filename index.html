@@ -39,6 +39,17 @@
 #voice-toolbar.corner-bottom-right{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;top:auto}
 #voice-toolbar.corner-bottom-left{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;top:auto}
 
+/* Transcript Preview Popup & Audio Monitor */
+#transcript-preview{position:fixed;max-width:min(360px,calc(100vw - 48px));background:rgba(13,17,23,0.96);border:1px solid #30363d;border-radius:10px;padding:8px 12px;color:#f0f6fc;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,0.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+#transcript-preview.preview-top-right{top:calc(env(safe-area-inset-top,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;bottom:auto}
+#transcript-preview.preview-top-left{top:calc(env(safe-area-inset-top,12px) + 68px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;bottom:auto}
+#transcript-preview.preview-bottom-right{bottom:calc(env(safe-area-inset-bottom,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;top:auto}
+#transcript-preview.preview-bottom-left{bottom:calc(env(safe-area-inset-bottom,12px) + 68px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;top:auto}
+#transcript-preview .transcript-status{font-size:11px;font-weight:600;color:#7ee787;margin-bottom:4px}
+#transcript-preview.error .transcript-status{color:#f85149}
+#transcript-preview .audio-wave{color:#58a6ff;font-family:monospace;font-size:14px;letter-spacing:2px;margin:4px 0}
+#transcript-preview #transcript-text{font-size:12px;color:#c9d1d9}
+
 /* Corner Target Zones Hint */
 #corner-zone-container{pointer-events:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99998;display:none}
 body.toolbar-dragging #corner-zone-container{display:block}
