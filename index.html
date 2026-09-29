@@ -13,6 +13,26 @@
 #transcript-preview .transcript-status{font-size:11px;font-weight:600;color:#7ee787;margin-bottom:4px}
 #transcript-preview.error .transcript-status{color:#f85149}
 #transcript-preview .audio-wave{color:#58a6ff;font-family:monospace;font-size:14px;letter-spacing:2px;margin:4px 0}
+
+/* Firefox Help Modal */
+#firefox-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+#firefox-modal.active{display:flex}
+.ff-card{background:#161b22;border:1px solid #30363d;border-radius:12px;max-width:440px;width:100%;padding:20px;color:#c9d1d9;box-shadow:0 12px 32px rgba(0,0,0,0.85);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.ff-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #30363d}
+.ff-title{font-size:15px;font-weight:700;color:#58a6ff;display:flex;align-items:center;gap:8px}
+.ff-close{background:none;border:none;color:#8b949e;font-size:22px;cursor:pointer;line-height:1;padding:0}
+.ff-close:hover{color:#f0f6fc}
+.ff-body{font-size:13px;line-height:1.6}
+.ff-body p{margin:0 0 10px 0}
+.ff-steps{margin:8px 0 14px 18px;padding:0}
+.ff-steps li{margin-bottom:8px}
+.ff-code{background:rgba(110,118,129,0.25);color:#ff7b72;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;font-weight:600}
+.ff-note{font-size:12px;color:#8b949e;background:rgba(56,139,253,0.1);border-left:3px solid #58a6ff;padding:8px 10px;border-radius:4px;margin-bottom:16px}
+.ff-footer{display:flex;justify-content:flex-end;gap:10px}
+.ff-btn{background:#238636;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease}
+.ff-btn:hover{background:#2ea043}
+.ff-pill{color:#f0883e!important;border-color:rgba(240,136,62,0.4)!important}
+
 </style>
 <script type="text/javascript">
 // 1. Viewport & responsive font size
@@ -52,6 +72,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
     function mountVoiceUI() {
         if (document.getElementById('voice-toolbar')) return;
 
+        var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
         var toolbar = document.createElement('div');
         toolbar.id = 'voice-toolbar';
         toolbar.innerHTML = `
@@ -65,6 +87,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             </button>
             <button id="lang-btn" class="toolbar-pill active" title="Switch language">EN</button>
             <button id="auto-enter-btn" class="toolbar-pill" title="Toggle Auto-Send / Manual mode">↵ Manual</button>
+            ${isFirefox ? '<button id="ff-help-btn" class="toolbar-pill ff-pill" title="Firefox Voice Setup Guide">🦊 Help</button>' : ''}
         `;
 
         var preview = document.createElement('div');
@@ -75,8 +98,32 @@ window.sendTextToTerminal = function(text, autoEnter) {
             <div id="transcript-text"></div>
         `;
 
+        var ffModal = document.createElement('div');
+        ffModal.id = 'firefox-modal';
+        ffModal.innerHTML = `
+            <div class="ff-card">
+                <div class="ff-header">
+                    <div class="ff-title">🦊 Firefox Voice Setup</div>
+                    <button id="ff-close-btn" class="ff-close" title="Close">&times;</button>
+                </div>
+                <div class="ff-body">
+                    <p>If microphone access or voice recognition is not working in Firefox, enable these quick settings:</p>
+                    <ol class="ff-steps">
+                        <li>Type <span class="ff-code">about:config</span> in the address bar and press <b>Enter</b>.</li>
+                        <li>Search for <span class="ff-code">media.webspeech.recognition.enable</span> and toggle to <b>true</b>.</li>
+                        <li>Search for <span class="ff-code">media.webspeech.recognition.force_enable</span> and toggle to <b>true</b>.</li>
+                    </ol>
+                    <div class="ff-note">💡 <b>Tip:</b> Make sure to click <b>Allow</b> when Firefox prompts for microphone access.</div>
+                </div>
+                <div class="ff-footer">
+                    <button id="ff-ok-btn" class="ff-btn">Got it</button>
+                </div>
+            </div>
+        `;
+
         document.body.appendChild(toolbar);
         document.body.appendChild(preview);
+        document.body.appendChild(ffModal);
 
         setupVoiceHandlers();
     }
@@ -281,8 +328,35 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     showPreview('⚠️ Microphone Error', err.message || 'Could not access microphone.', true, false);
                 }
                 hidePreview(3500);
+                if (isFirefox) {
+                    showFirefoxModal();
+                }
             }
         }
+
+        var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        var ffModal = document.getElementById('firefox-modal');
+        var ffCloseBtn = document.getElementById('ff-close-btn');
+        var ffOkBtn = document.getElementById('ff-ok-btn');
+        var ffHelpBtn = document.getElementById('ff-help-btn');
+
+        function showFirefoxModal() {
+            if (ffModal) ffModal.classList.add('active');
+        }
+
+        function closeFirefoxModal(markAsSeen) {
+            if (ffModal) ffModal.classList.remove('active');
+            if (markAsSeen) {
+                try { localStorage.setItem('firefox_voice_tip_shown', 'true'); } catch(e) {}
+            }
+        }
+
+        if (ffCloseBtn) ffCloseBtn.addEventListener('click', function() { closeFirefoxModal(true); });
+        if (ffOkBtn) ffOkBtn.addEventListener('click', function() { 
+            closeFirefoxModal(true);
+            startGroqVoiceRecording();
+        });
+        if (ffHelpBtn) ffHelpBtn.addEventListener('click', function() { showFirefoxModal(); });
 
         window.triggerVoiceRecognition = function() {
             if (isRecording) {
@@ -290,6 +364,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     mediaRecorder.stop();
                 }
             } else {
+                // If first time on Firefox, show the setup guide once
+                if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
+                    showFirefoxModal();
+                    return;
+                }
                 startGroqVoiceRecording();
             }
         };
