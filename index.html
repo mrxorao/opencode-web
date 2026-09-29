@@ -223,6 +223,27 @@ body.toolbar-dragging #corner-zone-container{display:block}
     });
 })();
 
+// Helper: Ensure terminal has keyboard focus
+window.focusTerminal = function() {
+    try {
+        if (window.__ttyd_xterm && typeof window.__ttyd_xterm.focus === 'function') {
+            window.__ttyd_xterm.focus();
+        }
+    } catch(e) {}
+    try {
+        var helper = document.querySelector('.xterm-helper-textarea, .xterm textarea, #terminal textarea, .terminal textarea');
+        if (helper && typeof helper.focus === 'function') {
+            helper.focus({ preventScroll: true });
+        }
+    } catch(e) {}
+    try {
+        var screen = document.querySelector('.xterm-screen, .xterm, #terminal');
+        if (screen && typeof screen.focus === 'function') {
+            screen.focus({ preventScroll: true });
+        }
+    } catch(e) {}
+};
+
 // Helper: Send text directly into terminal via native ttyd instance
 window.sendTextToTerminal = function(text, autoEnter) {
     if (typeof text === 'string') {
@@ -235,6 +256,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
             window.__onPromptSubmitted(text);
         }
         window.__ttyd_xterm.sendData(payload);
+        setTimeout(window.focusTerminal, 30);
+        setTimeout(window.focusTerminal, 150);
+        setTimeout(window.focusTerminal, 350);
         return true;
     }
     console.warn('__ttyd_xterm not ready yet');
@@ -744,9 +768,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
         function hidePreview(delay) {
             clearTimeout(previewTimer);
             if (delay) {
-                previewTimer = setTimeout(function() { if (previewBox) previewBox.style.display = 'none'; }, delay);
+                previewTimer = setTimeout(function() {
+                    if (previewBox) previewBox.style.display = 'none';
+                    window.focusTerminal();
+                }, delay);
             } else {
                 if (previewBox) previewBox.style.display = 'none';
+                window.focusTerminal();
             }
         }
 
@@ -1613,6 +1641,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         if (uploadChoiceCloseBtn) {
             uploadChoiceCloseBtn.addEventListener('click', function() {
                 if (uploadChoiceModal) uploadChoiceModal.classList.remove('active');
+                window.focusTerminal();
             });
         }
 
@@ -1644,11 +1673,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
         if (shortcutsCloseBtn) {
             shortcutsCloseBtn.addEventListener('click', function() {
                 if (shortcutsModal) shortcutsModal.classList.remove('active');
+                window.focusTerminal();
             });
         }
         if (shortcutsOkBtn) {
             shortcutsOkBtn.addEventListener('click', function() {
                 if (shortcutsModal) shortcutsModal.classList.remove('active');
+                window.focusTerminal();
             });
         }
 
@@ -1903,6 +1934,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         if (promptsCloseBtn) {
             promptsCloseBtn.addEventListener('click', function() {
                 if (promptsModal) promptsModal.classList.remove('active');
+                window.focusTerminal();
             });
         }
         if (newPromptBtn) newPromptBtn.addEventListener('click', openNewPrompt);
@@ -1938,6 +1970,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 m.addEventListener('click', function(e) {
                     if (e.target === m) {
                         m.classList.remove('active');
+                        window.focusTerminal();
                     }
                 });
             }
