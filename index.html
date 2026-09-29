@@ -55,7 +55,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var toolbar = document.createElement('div');
         toolbar.id = 'voice-toolbar';
         toolbar.innerHTML = `
-            <button id="mic-btn" class="voice-btn" title="Reconhecimento de Voz (Microfone) ou digite /voice" aria-label="Microphone">
+            <button id="mic-btn" class="voice-btn" title="Reconhecimento de Voz (Groq Whisper) ou digite /voice" aria-label="Microphone">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -82,22 +82,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
     }
 
     function setupVoiceHandlers() {
-        var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        var forceLocalEngine = (/Firefox/i.test(navigator.userAgent));
-        var rec = null;
         var isRecording = false;
         var langIdx = 0;
-        var langs = ['pt-PT', 'pt-BR', 'en-US'];
+        var langs = ['pt', 'pt', 'en'];
         var labels = ['PT', 'BR', 'EN'];
-        var whisperLangs = ['portuguese', 'portuguese', 'english'];
         var autoEnter = false;
         var previewTimer = null;
+        var hasGroqKeyCached = null;
 
-        // VAD & MediaRecorder variables
         var mediaStream = null;
         var mediaRecorder = null;
         var audioChunks = [];
-        var whisperPipeline = null;
         var animFrameId = null;
         var speechDetected = false;
         var silenceTimer = null;
@@ -131,98 +126,30 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        function resampleTo16k(audioData, origSampleRate) {
-            if (!origSampleRate || origSampleRate === 16000) return audioData;
-            var ratio = origSampleRate / 16000;
-            var newLength = Math.round(audioData.length / ratio);
-            var result = new Float32Array(newLength);
-            for (var i = 0; i < newLength; i++) {
-                var origIdx = i * ratio;
-                var indexFloor = Math.floor(origIdx);
-                var indexCeil = Math.min(audioData.length - 1, Math.ceil(origIdx));
-                var weight = origIdx - indexFloor;
-                result[i] = audioData[indexFloor] * (1 - weight) + audioData[indexCeil] * weight;
-            }
-            return result;
-        }
-
-        // Helper: Transcribe via Groq Cloud or fallback to local WASM Whisper
-        async function processAudioTranscription(chunks) {
-            var audioBlob = new Blob(chunks, { type: chunks[0].type || 'audio/webm' });
-            var groqLang = (langIdx === 2 ? 'en' : 'pt');
-
-            // 1. Try Groq Cloud Whisper API (whisper-large-v3-turbo in ~200ms)
+        // Check if Groq API Key is configured on server
+        async function checkGroqConfig() {
             try {
-                showPreview('⚡ A transcrever com Groq Whisper...', 'A processar...', false, false);
-                var resp = await fetch('/api/transcribe', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': audioBlob.type,
-                        'X-Audio-Language': groqLang
-                    },
-                    body: audioBlob
-                });
-
+                var resp = await fetch('/api/config');
                 if (resp.ok) {
-                    var result = await resp.json();
-                    if (result.text && result.text.trim()) {
-                        var text = result.text.trim();
-                        window.sendTextToTerminal(text, autoEnter);
-                        showPreview('✓ Inserido (Groq Whisper):', text, false, false);
-                        hidePreview(2500);
-                        return true;
-                    }
+                    var data = await resp.json();
+                    hasGroqKeyCached = Boolean(data.hasGroqKey);
+                    return hasGroqKeyCached;
                 }
-            } catch(e) {
-                console.log('Groq cloud proxy not responding, falling back to local model:', e);
-            }
-
-            // 2. Fallback to Local WASM Whisper AI
-            showPreview('⏳ A transcrever com Whisper local...', 'A decodificar áudio...', false, false);
-            try {
-                var arrayBuffer = await audioBlob.arrayBuffer();
-                var AudioCtx = window.AudioContext || window.webkitAudioContext;
-                var decodeCtx = new AudioCtx();
-                var audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
-                var rawData = audioBuffer.getChannelData(0);
-                var origRate = audioBuffer.sampleRate;
-                try { decodeCtx.close(); } catch(e) {}
-
-                var audio16k = resampleTo16k(rawData, origRate);
-
-                if (!whisperPipeline) {
-                    showPreview('⏳ A carregar IA de voz...', 'A descarregar modelo leve...', false, false);
-                    var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-                    transformers.env.allowLocalModels = false;
-                    whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
-                }
-
-                showPreview('⏳ A transcrever...', 'Quase pronto...', false, false);
-                var out = await whisperPipeline(audio16k, {
-                    language: whisperLangs[langIdx],
-                    task: 'transcribe'
-                });
-
-                var text = (out && out.text ? out.text.trim() : '');
-                if (text) {
-                    window.sendTextToTerminal(text, autoEnter);
-                    showPreview('✓ Inserido no prompt:', text, false, false);
-                    hidePreview(2500);
-                    return true;
-                } else {
-                    showPreview('⚠️ Nenhum som detetado', 'Fale mais perto do microfone.', true, false);
-                    hidePreview(2000);
-                }
-            } catch(err) {
-                console.error('Local Whisper error:', err);
-                showPreview('⚠️ Erro de Transcrição', (err.message || 'Falha ao processar áudio.'), true, false);
-                hidePreview(3500);
-            }
+            } catch(e) {}
             return false;
         }
 
-        // Smart Hands-Free Audio Engine with VAD
-        async function startLocalRecording() {
+        // Check on startup
+        checkGroqConfig();
+
+        async function startGroqVoiceRecording() {
+            var isConfigured = await checkGroqConfig();
+            if (!isConfigured) {
+                showPreview('⚠️ Chave da API em falta', 'Primeiro configure a GROQ_API_KEY no ficheiro .env para usar o microfone.', true, false);
+                hidePreview(5000);
+                return;
+            }
+
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioChunks = [];
@@ -246,7 +173,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
                     var avg = sum / dataArray.length;
 
-                    // Wave visualizer
+                    // Live volume visualizer
                     var count = Math.min(8, Math.max(1, Math.round(avg / 10)));
                     var bars = '';
                     for (var b = 0; b < count; b++) bars += '█';
@@ -263,12 +190,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         if (previewStatus) previewStatus.textContent = '🎙️ A escutar voz (' + labels[langIdx] + ')...';
                     } else if (speechDetected) {
                         if (!silenceTimer) {
-                            if (previewStatus) previewStatus.textContent = '⏳ Silêncio... A finalizar...';
+                            if (previewStatus) previewStatus.textContent = '⏳ Silêncio... A enviar para o Groq...';
                             silenceTimer = setTimeout(function() {
                                 if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
                                     mediaRecorder.stop();
                                 }
-                            }, 1300);
+                            }, 1200);
                         }
                     }
 
@@ -285,7 +212,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     cancelAnimationFrame(animFrameId);
                     if (micBtn) {
                         micBtn.classList.remove('recording');
-                        micBtn.title = 'Reconhecimento de Voz (Microfone) ou digite /voice';
+                        micBtn.title = 'Reconhecimento de Voz (Groq Whisper) ou digite /voice';
                     }
                     try { liveCtx.close(); } catch(e) {}
                     if (mediaStream) {
@@ -293,7 +220,37 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     }
                     if (audioChunks.length === 0) return;
 
-                    await processAudioTranscription(audioChunks);
+                    showPreview('⚡ A transcrever com Groq Whisper...', 'A enviar áudio para o modelo Whisper Large V3 Turbo...', false, false);
+
+                    try {
+                        var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
+                        var resp = await fetch('/api/transcribe', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': audioBlob.type,
+                                'X-Audio-Language': langs[langIdx]
+                            },
+                            body: audioBlob
+                        });
+
+                        var data = await resp.json();
+                        if (resp.ok && data.text && data.text.trim()) {
+                            var text = data.text.trim();
+                            window.sendTextToTerminal(text, autoEnter);
+                            showPreview('✓ Inserido no prompt:', text, false, false);
+                            hidePreview(2500);
+                        } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
+                            showPreview('⚠️ Chave da API em falta', 'Primeiro configure a GROQ_API_KEY no ficheiro .env!', true, false);
+                            hidePreview(4500);
+                        } else {
+                            showPreview('⚠️ Erro de Transcrição', (data.error || 'Nenhum texto reconhecido.'), true, false);
+                            hidePreview(3500);
+                        }
+                    } catch(err) {
+                        console.error('Groq transcription fetch error:', err);
+                        showPreview('⚠️ Erro de Ligação', 'Não foi possível contactar o servidor.', true, false);
+                        hidePreview(3500);
+                    }
                 };
 
                 mediaRecorder.start();
@@ -302,11 +259,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     micBtn.classList.add('recording');
                     micBtn.title = 'A escutar... Fale normalmente (para sozinho ao terminar)';
                 }
-                showPreview('🎙️ A escutar (' + labels[langIdx] + ')...', 'Fale normalmente. Para automaticamente após silêncio.', false, true);
+                showPreview('🎙️ A escutar (' + labels[langIdx] + ')...', 'Fale normalmente. Para sozinho após terminar.', false, true);
                 checkSilenceAndWave();
 
             } catch(err) {
-                console.error('Local recorder error:', err);
+                console.error('Microphone access error:', err);
                 isRecording = false;
                 if (micBtn) micBtn.classList.remove('recording');
                 if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -318,109 +275,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        // Setup Engine Dispatcher
-        if (SpeechRec && !forceLocalEngine) {
-            rec = new SpeechRec();
-            rec.continuous = false;
-            rec.interimResults = true;
-            rec.maxAlternatives = 1;
-            rec.lang = langs[langIdx];
-
-            rec.onstart = function() {
-                isRecording = true;
-                if (micBtn) {
-                    micBtn.classList.add('recording');
-                    micBtn.title = 'A escutar... Clique para parar';
+        window.triggerVoiceRecognition = function() {
+            if (isRecording) {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
                 }
-                showPreview('🎙️ A escutar em tempo real (' + labels[langIdx] + ')...', 'Fale agora...', false, false);
-            };
-
-            rec.onresult = function(event) {
-                var interim = '';
-                var final = '';
-                for (var i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) { final += event.results[i][0].transcript; }
-                    else { interim += event.results[i][0].transcript; }
-                }
-                var text = final || interim;
-                if (text) { showPreview('🎙️ Transcrição:', text, false, false); }
-                if (final && final.trim()) {
-                    var recognized = final.trim();
-                    var sent = window.sendTextToTerminal(recognized, autoEnter);
-                    if (sent) {
-                        showPreview('✓ Inserido no prompt:', recognized, false, false);
-                    } else {
-                        showPreview('⚠️ Terminal não conectado', 'Aguarde conexão com terminal.', true, false);
-                    }
-                    hidePreview(2500);
-                }
-            };
-
-            rec.onerror = function(event) {
-                console.warn('SpeechRecognition error:', event.error);
-                if (event.error === 'network' || event.error === 'service-not-allowed') {
-                    console.log('Switching to smart local audio engine...');
-                    forceLocalEngine = true;
-                    isRecording = false;
-                    if (micBtn) micBtn.classList.remove('recording');
-                    startLocalRecording();
-                    return;
-                }
-                isRecording = false;
-                if (micBtn) micBtn.classList.remove('recording');
-                if (event.error === 'not-allowed') {
-                    showPreview('⚠️ Permissão Negada', 'Autorize o microfone no navegador.', true, false);
-                } else if (event.error !== 'no-speech') {
-                    showPreview('⚠️ Erro de Áudio', event.error, true, false);
-                } else {
-                    hidePreview(500);
-                }
-                hidePreview(3500);
-            };
-
-            rec.onend = function() {
-                isRecording = false;
-                if (micBtn) {
-                    micBtn.classList.remove('recording');
-                    micBtn.title = 'Reconhecimento de Voz (Microfone) ou digite /voice';
-                }
-            };
-
-            window.triggerVoiceRecognition = function() {
-                if (forceLocalEngine) {
-                    if (isRecording) {
-                        if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
-                    } else {
-                        startLocalRecording();
-                    }
-                    return;
-                }
-                if (isRecording) {
-                    rec.stop();
-                } else {
-                    try {
-                        rec.lang = langs[langIdx];
-                        rec.start();
-                    } catch(err) {
-                        console.error('Voice start error:', err);
-                        forceLocalEngine = true;
-                        startLocalRecording();
-                    }
-                }
-            };
-        } else {
-            window.triggerVoiceRecognition = function() {
-                if (isRecording) {
-                    if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
-                } else {
-                    startLocalRecording();
-                }
-            };
-        }
+            } else {
+                startGroqVoiceRecording();
+            }
+        };
 
         if (micBtn) {
-            micBtn.style.opacity = '1.0';
-            micBtn.title = 'Reconhecimento de Voz (Microfone) ou digite /voice';
             micBtn.addEventListener('click', window.triggerVoiceRecognition);
         }
 
@@ -428,8 +293,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             langBtn.addEventListener('click', function() {
                 langIdx = (langIdx + 1) % langs.length;
                 langBtn.textContent = labels[langIdx];
-                if (rec) rec.lang = langs[langIdx];
-                showPreview('🌐 Idioma', 'Reconhecimento configurado para: ' + langs[langIdx], false, false);
+                showPreview('🌐 Idioma', 'Reconhecimento Groq em: ' + labels[langIdx], false, false);
                 hidePreview(1500);
             });
         }

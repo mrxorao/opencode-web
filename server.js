@@ -3,12 +3,15 @@ const net = require('net');
 
 const TTYD_PORT = 7680;
 const PROXY_PORT = 7681;
-const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
 
 async function handleTranscribe(req, res) {
     if (!GROQ_API_KEY) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'GROQ_API_KEY_NOT_SET' }));
+        res.end(JSON.stringify({ 
+            error: 'GROQ_API_KEY_NOT_CONFIGURED',
+            message: 'Primeiro configure a GROQ_API_KEY no ficheiro .env!' 
+        }));
         return;
     }
 
@@ -39,7 +42,7 @@ async function handleTranscribe(req, res) {
             if (!groqResp.ok) {
                 console.error('Groq transcription error response:', data);
                 res.writeHead(groqResp.status, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: data.error?.message || 'Groq transcription error' }));
+                res.end(JSON.stringify({ error: data.error?.message || 'Erro na transcrição do Groq' }));
                 return;
             }
 
@@ -54,12 +57,23 @@ async function handleTranscribe(req, res) {
 }
 
 const server = http.createServer((req, res) => {
+    // Check Groq configuration status
+    if (req.url === '/api/config' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+            hasGroqKey: Boolean(GROQ_API_KEY),
+            status: Boolean(GROQ_API_KEY) ? 'ready' : 'missing_groq_key'
+        }));
+        return;
+    }
+
+    // Handle audio transcription
     if (req.url === '/api/transcribe' && req.method === 'POST') {
         handleTranscribe(req, res);
         return;
     }
 
-    // Proxy HTTP requests to internal ttyd server
+    // Proxy standard HTTP requests to internal ttyd
     const options = {
         hostname: '127.0.0.1',
         port: TTYD_PORT,
@@ -109,6 +123,6 @@ server.listen(PROXY_PORT, '0.0.0.0', () => {
     if (GROQ_API_KEY) {
         console.log(`[proxy] Groq Whisper Cloud API enabled (whisper-large-v3-turbo)`);
     } else {
-        console.log(`[proxy] GROQ_API_KEY not configured. Falling back to client-side STT.`);
+        console.log(`[proxy] GROQ_API_KEY not configured. Microhpone will request user to set GROQ_API_KEY.`);
     }
 });
