@@ -225,6 +225,10 @@ body.toolbar-dragging #corner-zone-container{display:block}
 
 // Helper: Send text directly into terminal via native ttyd instance
 window.sendTextToTerminal = function(text, autoEnter) {
+    if (typeof text === 'string') {
+        text = text.replace(/^[\$\/\\\s]+/, '').trim();
+    }
+    if (!text) return false;
     if (window.__ttyd_xterm && typeof window.__ttyd_xterm.sendData === 'function') {
         var payload = (autoEnter ? (text + '\r') : text);
         if (autoEnter && window.__onPromptSubmitted) {
@@ -1307,30 +1311,30 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                     if (speechDetected) {
                         var silenceDuration = now - lastVoiceTime;
-                        if (silenceDuration >= 350) {
+                        if (silenceDuration >= 600) {
                             if (previewStatus) {
                                 previewStatus.textContent = '⏳ Silêncio detetado...';
                             }
                             if (previewText) {
-                                var remaining = Math.max(0, ((900 - silenceDuration) / 1000)).toFixed(1);
+                                var remaining = Math.max(0, ((1800 - silenceDuration) / 1000)).toFixed(1);
                                 previewText.textContent = 'A finalizar em ' + remaining + 's...';
                             }
                         }
-                        // Stop automatically after ~900ms of silence after speaking
-                        if (silenceDuration >= 900) {
+                        // Stop automatically after ~1800ms (1.8s) of silence after speaking
+                        if (silenceDuration >= 1800) {
                             stopRecordingNow();
                             return;
                         }
                     } else {
-                        // If no speech detected at all after 8 seconds, auto-stop
-                        if (now - recordStartTime > 8000) {
+                        // If no speech detected at all after 10 seconds, auto-stop
+                        if (now - recordStartTime > 10000) {
                             stopRecordingNow();
                             return;
                         }
                     }
 
-                    // Safety hard limit: 45 seconds max recording
-                    if (now - recordStartTime > 45000) {
+                    // Safety hard limit: 60 seconds max recording
+                    if (now - recordStartTime > 60000) {
                         stopRecordingNow();
                         return;
                     }
@@ -1356,7 +1360,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     if (audioChunks.length === 0) return;
 
                     // If no voice was ever detected (timed out)
-                    if (!speechDetected && (Date.now() - recordStartTime >= 7500)) {
+                    if (!speechDetected && (Date.now() - recordStartTime >= 9500)) {
                         showPreview('⚠️ Nenhuma voz detetada', 'Fale mais perto do microfone.', true, false);
                         hidePreview(3000);
                         if (isConversationMode) {
@@ -1386,13 +1390,26 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         });
 
                         var data = await resp.json();
-                        if (resp.ok && data.text && data.text.trim()) {
-                            var text = data.text.trim();
+                        var rawText = (data && data.text) ? String(data.text).trim() : '';
+                        // Remove qualquer $ ou / ou \ inicial
+                        var text = rawText.replace(/^[\$\/\\\s]+/, '').trim();
+
+                        if (resp.ok && text) {
                             // In conversation mode: always auto-enter and trigger AI response wait
                             var autoSend = isConversationMode;
                             window.sendTextToTerminal(text, autoSend);
                             showPreview('✓ ' + text, isConversationMode ? 'Enviado para a IA...' : 'Inserido no terminal.', false, false);
                             if (!isConversationMode) hidePreview(2500);
+                        } else if (resp.ok && !text) {
+                            showPreview('⚠️ Nenhuma fala reconhecida', 'Fale mais perto do microfone.', true, false);
+                            hidePreview(3000);
+                            if (isConversationMode) {
+                                setTimeout(function() {
+                                    if (isConversationMode && !isRecording && !isSpeaking) {
+                                        startGroqVoiceRecording();
+                                    }
+                                }, 1000);
+                            }
                         } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
                             showPreview('⚠️ Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env!', true, false);
                             hidePreview(4500);

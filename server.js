@@ -148,8 +148,12 @@ async function handleTranscribe(req, res) {
                 return;
             }
 
+            let text = (data.text || '').trim();
+            // Remove prefixos como $, / ou barras invertidas no início da frase
+            text = text.replace(/^[\$\/\\\s]+/, '').trim();
+
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ text: data.text }));
+            res.end(JSON.stringify({ text }));
         } catch (err) {
             console.error('Server transcription error:', err);
             res.writeHead(500, { 'Content-Type': 'application/json' });
