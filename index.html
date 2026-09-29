@@ -19,23 +19,25 @@
 #transcript-preview.error .transcript-status{color:#f85149}
 #transcript-preview .audio-wave{color:#58a6ff;font-family:monospace;font-size:14px;letter-spacing:2px;margin:4px 0}
 
-/* Firefox Help Modal */
-#firefox-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
-#firefox-modal.active{display:flex}
-.ff-card{background:#161b22;border:1px solid #30363d;border-radius:12px;max-width:440px;width:100%;padding:20px;color:#c9d1d9;box-shadow:0 12px 32px rgba(0,0,0,0.85);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-.ff-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #30363d}
-.ff-title{font-size:15px;font-weight:700;color:#58a6ff;display:flex;align-items:center;gap:8px}
-.ff-close{background:none;border:none;color:#8b949e;font-size:22px;cursor:pointer;line-height:1;padding:0}
-.ff-close:hover{color:#f0f6fc}
-.ff-body{font-size:13px;line-height:1.6}
-.ff-body p{margin:0 0 10px 0}
-.ff-steps{margin:8px 0 14px 18px;padding:0}
-.ff-steps li{margin-bottom:8px}
-.ff-code{background:rgba(110,118,129,0.25);color:#ff7b72;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;font-weight:600}
-.ff-note{font-size:12px;color:#8b949e;background:rgba(56,139,253,0.1);border-left:3px solid #58a6ff;padding:8px 10px;border-radius:4px;margin-bottom:16px}
-.ff-footer{display:flex;justify-content:flex-end;gap:10px}
-.ff-btn{background:#238636;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease}
-.ff-btn:hover{background:#2ea043}
+/* Modals (Firefox & Mic Permissions) */
+#firefox-modal, #mic-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+#firefox-modal.active, #mic-modal.active{display:flex}
+.modal-card{background:#161b22;border:1px solid #30363d;border-radius:12px;max-width:460px;width:100%;padding:20px;color:#c9d1d9;box-shadow:0 12px 32px rgba(0,0,0,0.85);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #30363d}
+.modal-title{font-size:15px;font-weight:700;color:#58a6ff;display:flex;align-items:center;gap:8px}
+.modal-close{background:none;border:none;color:#8b949e;font-size:22px;cursor:pointer;line-height:1;padding:0}
+.modal-close:hover{color:#f0f6fc}
+.modal-body{font-size:13px;line-height:1.6;max-height:calc(85vh - 120px);overflow-y:auto}
+.modal-body p{margin:0 0 10px 0}
+.modal-steps{margin:8px 0 14px 18px;padding:0}
+.modal-steps li{margin-bottom:8px}
+.modal-code{background:rgba(110,118,129,0.25);color:#ff7b72;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;font-weight:600;word-break:break-all}
+.modal-note{font-size:12px;color:#8b949e;background:rgba(56,139,253,0.1);border-left:3px solid #58a6ff;padding:8px 10px;border-radius:4px;margin-bottom:14px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+.modal-btn{background:#238636;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease}
+.modal-btn:hover{background:#2ea043}
+.modal-btn-sec{background:#30363d;color:#c9d1d9;border:1px solid rgba(255,255,255,0.15)}
+.modal-btn-sec:hover{background:#388bfd;color:#fff}
 #ff-help-btn.ff-btn-icon{background:#30363d;border-color:rgba(240,136,62,0.4);font-size:16px}
 #ff-help-btn.ff-btn-icon:hover{background:#d06014;border-color:#f0883e;color:#fff}
 #install-pwa-btn{background:#1f6feb;color:#fff;border-color:rgba(88,166,255,0.4)}
@@ -148,22 +150,57 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var ffModal = document.createElement('div');
         ffModal.id = 'firefox-modal';
         ffModal.innerHTML = `
-            <div class="ff-card">
-                <div class="ff-header">
-                    <div class="ff-title">🦊 Firefox Voice Setup</div>
-                    <button id="ff-close-btn" class="ff-close" title="Close">&times;</button>
+            <div class="modal-card">
+                <div class="modal-header">
+                    <div class="modal-title">🦊 Configuração de Voz no Firefox</div>
+                    <button id="ff-close-btn" class="modal-close" title="Fechar">&times;</button>
                 </div>
-                <div class="ff-body">
-                    <p>If microphone access or voice recognition is not working in Firefox, enable these quick settings:</p>
-                    <ol class="ff-steps">
-                        <li>Type <span class="ff-code">about:config</span> in the address bar and press <b>Enter</b>.</li>
-                        <li>Search for <span class="ff-code">media.webspeech.recognition.enable</span> and toggle to <b>true</b>.</li>
-                        <li>Search for <span class="ff-code">media.webspeech.recognition.force_enable</span> and toggle to <b>true</b>.</li>
+                <div class="modal-body">
+                    <p>Se o reconhecimento de voz não funcionar no Firefox, ativa estas opções em <span class="modal-code">about:config</span>:</p>
+                    <ol class="modal-steps">
+                        <li>Escreve <span class="modal-code">about:config</span> na barra de endereço e prime <b>Enter</b>.</li>
+                        <li>Procura por <span class="modal-code">media.webspeech.recognition.enable</span> e muda para <b>true</b>.</li>
+                        <li>Procura por <span class="modal-code">media.webspeech.recognition.force_enable</span> e muda para <b>true</b>.</li>
                     </ol>
-                    <div class="ff-note">💡 <b>Tip:</b> Make sure to click <b>Allow</b> when Firefox prompts for microphone access.</div>
+                    <div class="modal-note">💡 <b>Dica:</b> Lembra-te de clicar em <b>Permitir</b> quando o Firefox solicitar acesso ao microfone.</div>
                 </div>
-                <div class="ff-footer">
-                    <button id="ff-ok-btn" class="ff-btn">Got it</button>
+                <div class="modal-footer">
+                    <button id="ff-ok-btn" class="modal-btn">Entendido</button>
+                </div>
+            </div>
+        `;
+
+        var micModal = document.createElement('div');
+        micModal.id = 'mic-modal';
+        micModal.innerHTML = `
+            <div class="modal-card">
+                <div class="modal-header">
+                    <div class="modal-title">🎙️ Ativar Microfone no Telemóvel</div>
+                    <button id="mic-close-btn" class="modal-close" title="Fechar">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Por razões de segurança da Web, os navegadores móveis (Chrome, Safari, Edge) <b>bloqueiam o microfone em ligações HTTP normais</b> através do IP da rede local.</p>
+                    
+                    <div class="modal-note">
+                        🔒 <b>Opção 1: Ativar HTTPS (Recomendado para iOS e Android)</b>
+                        <p style="margin:6px 0 0 0">
+                            1. Define <span class="modal-code">ENABLE_HTTPS=true</span> no teu <span class="modal-code">.env</span> e reinicia o contentor.<br>
+                            2. Acede através de: <b style="color:#7ee787;display:inline-block;margin-top:4px">https://${location.hostname}:7681</b>
+                        </p>
+                    </div>
+
+                    <div class="modal-note" style="border-left-color:#f0883e;background:rgba(240,136,62,0.1)">
+                        🤖 <b>Opção 2: Chrome no Android (Sem HTTPS)</b>
+                        <ol class="modal-steps" style="margin-top:6px">
+                            <li>Numa nova aba abre: <br><span class="modal-code">chrome://flags/#unsafely-treat-insecure-origin-as-secure</span></li>
+                            <li>Ativa (<b>Enabled</b>) e adiciona o URL: <br><span class="modal-code">${location.origin}</span></li>
+                            <li>Toca em <b>Relaunch</b> para reiniciar o Chrome.</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="mic-copy-url-btn" class="modal-btn modal-btn-sec">Copiar URL HTTPS</button>
+                    <button id="mic-ok-btn" class="modal-btn">Entendido</button>
                 </div>
             </div>
         `;
@@ -171,6 +208,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         document.body.appendChild(toolbar);
         document.body.appendChild(preview);
         document.body.appendChild(ffModal);
+        document.body.appendChild(micModal);
 
         setupVoiceHandlers();
     }
@@ -244,6 +282,35 @@ window.sendTextToTerminal = function(text, autoEnter) {
             startGroqVoiceRecording();
         });
         if (ffHelpBtn) ffHelpBtn.addEventListener('click', function() { showFirefoxModal(); });
+
+        var micModal = document.getElementById('mic-modal');
+        var micCloseBtn = document.getElementById('mic-close-btn');
+        var micOkBtn = document.getElementById('mic-ok-btn');
+        var micCopyUrlBtn = document.getElementById('mic-copy-url-btn');
+
+        function showMicPermissionModal() {
+            if (micModal) micModal.classList.add('active');
+        }
+
+        function closeMicPermissionModal() {
+            if (micModal) micModal.classList.remove('active');
+        }
+
+        if (micCloseBtn) micCloseBtn.addEventListener('click', closeMicPermissionModal);
+        if (micOkBtn) micOkBtn.addEventListener('click', closeMicPermissionModal);
+        if (micCopyUrlBtn) {
+            micCopyUrlBtn.addEventListener('click', function() {
+                var targetHttpsUrl = 'https://' + location.hostname + ':7681';
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(targetHttpsUrl).then(function() {
+                        micCopyUrlBtn.textContent = '✓ Copiado!';
+                        setTimeout(function() { micCopyUrlBtn.textContent = 'Copiar URL HTTPS'; }, 2000);
+                    });
+                } else {
+                    prompt('Copia o URL HTTPS:', targetHttpsUrl);
+                }
+            });
+        }
 
         var installBtn = document.getElementById('install-pwa-btn');
         if (installBtn) {
@@ -443,20 +510,42 @@ window.sendTextToTerminal = function(text, autoEnter) {
             } catch(e) {}
         }
 
+        async function getAudioMediaStream() {
+            if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+                return await navigator.mediaDevices.getUserMedia({ audio: true });
+            }
+            var legacyGetUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+            if (legacyGetUserMedia) {
+                return new Promise(function(resolve, reject) {
+                    legacyGetUserMedia.call(navigator, { audio: true }, resolve, reject);
+                });
+            }
+            var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            var isHttps = location.protocol === 'https:';
+            if (!isHttps && !isLocal) {
+                var err = new Error('INSECURE_ORIGIN_MIC_BLOCKED');
+                err.name = 'InsecureOriginError';
+                throw err;
+            }
+            var notSupported = new Error('MEDIA_DEVICES_NOT_SUPPORTED');
+            notSupported.name = 'NotSupportedError';
+            throw notSupported;
+        }
+
         async function startGroqVoiceRecording() {
             // Immediately stop any active TTS reading when recording starts
             stopSpeaking();
 
             var isConfigured = await fetchServerConfig();
             if (!isConfigured) {
-                showPreview('⚠️ API Key Required', 'Please configure VOICE_GROQ_API_KEY in your .env file first!', true, false);
+                showPreview('⚠️ Chave API Necessária', 'Configura VOICE_GROQ_API_KEY no teu ficheiro .env primeiro!', true, false);
                 hidePreview(5000);
                 if (isConversationMode) toggleConversationMode();
                 return;
             }
 
             try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaStream = await getAudioMediaStream();
                 audioChunks = [];
                 speechDetected = false;
                 if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
@@ -550,16 +639,16 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             showPreview('✓ Prompt: ' + text, isConversationMode ? 'Enviado para a IA...' : 'Inserido no terminal.', false, false);
                             if (!isConversationMode) hidePreview(2500);
                         } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
-                            showPreview('⚠️ API Key Required', 'Please configure VOICE_GROQ_API_KEY in your .env file!', true, false);
+                            showPreview('⚠️ Chave API Necessária', 'Configura VOICE_GROQ_API_KEY no teu ficheiro .env!', true, false);
                             hidePreview(4500);
                             if (isConversationMode) toggleConversationMode();
                         } else {
-                            showPreview('⚠️ Transcription Error', (data.error || 'No speech recognized.'), true, false);
+                            showPreview('⚠️ Erro de Transcrição', (data.error || 'Nenhuma fala reconhecida.'), true, false);
                             hidePreview(3500);
                         }
                     } catch(err) {
                         console.error('Groq transcription fetch error:', err);
-                        showPreview('⚠️ Connection Error', 'Could not reach transcription server.', true, false);
+                        showPreview('⚠️ Erro de Conexão', 'Não foi possível contactar o servidor de transcrição.', true, false);
                         hidePreview(3500);
                     }
                 };
@@ -576,15 +665,21 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 isRecording = false;
                 if (micBtn) micBtn.classList.remove('recording');
                 updateTalkButton();
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    showPreview('⚠️ Permission Denied', 'Please allow microphone access in your browser.', true, false);
+
+                var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+                var isHttps = location.protocol === 'https:';
+                var isInsecure = !isHttps && !isLocal && (err.name === 'InsecureOriginError' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia);
+
+                if (isInsecure) {
+                    showPreview('⚠️ Microfone Bloqueado (HTTP)', 'O telemóvel requer HTTPS ou configuração no navegador.', true, false);
+                    showMicPermissionModal();
+                } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    showPreview('⚠️ Permissão Negada', 'Permite o acesso ao microfone nas definições do navegador.', true, false);
+                    if (isFirefox) showFirefoxModal();
                 } else {
-                    showPreview('⚠️ Microphone Error', err.message || 'Could not access microphone.', true, false);
+                    showPreview('⚠️ Erro de Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
                 }
-                hidePreview(3500);
-                if (isFirefox) {
-                    showFirefoxModal();
-                }
+                hidePreview(4500);
                 if (isConversationMode) toggleConversationMode();
             }
         }

@@ -10,6 +10,7 @@ services:
       - TTYD_AUTH=${TTYD_AUTH:-admin:admin123}
       - VOICE_GROQ_API_KEY=${VOICE_GROQ_API_KEY:-${GROQ_API_KEY:-}}
       - VOICE_LANGUAGE=${VOICE_LANGUAGE:-EN}
+      - ENABLE_HTTPS=${ENABLE_HTTPS:-false}
       - AUTO_START_OPENCODE=true
       - NODE_OPTIONS=--max-old-space-size=256
     volumes:

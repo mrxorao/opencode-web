@@ -41,6 +41,19 @@ echo "Starting internal ttyd on 127.0.0.1:7680 with OpenCode auto-restart..."
 "${TTYD_CMD[@]}" &
 TTYD_PID=$!
 
+# Prepare SSL certificates if HTTPS is enabled
+SSL_DIR="/root/.config/opencode/ssl"
+if [ "$ENABLE_HTTPS" = "true" ] || [ "$ENABLE_SSL" = "true" ]; then
+    if [ ! -f "$SSL_DIR/server.key" ] || [ ! -f "$SSL_DIR/server.crt" ]; then
+        echo "Generating self-signed SSL certificate in $SSL_DIR..."
+        mkdir -p "$SSL_DIR"
+        openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+            -keyout "$SSL_DIR/server.key" \
+            -out "$SSL_DIR/server.crt" \
+            -subj "/CN=opencode-web/O=OpenCode AI/C=PT" 2>/dev/null || true
+    fi
+fi
+
 echo "Starting Web Terminal & Voice Server on port 7681..."
 node /server.js &
 SERVER_PID=$!

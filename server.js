@@ -176,18 +176,23 @@ function handleStaticPwa(req, res) {
     }
 }
 
-const server = http.createServer((req, res) => {
+const ENABLE_HTTPS = (process.env.ENABLE_HTTPS === 'true' || process.env.ENABLE_SSL === 'true');
+const SSL_KEY_PATH = process.env.SSL_KEY || '/root/.config/opencode/ssl/server.key';
+const SSL_CERT_PATH = process.env.SSL_CERT || '/root/.config/opencode/ssl/server.crt';
+
+function requestListener(req, res) {
     // Serve PWA assets (manifest, Service Worker, icons)
     if (handleStaticPwa(req, res)) {
         return;
     }
 
-    // Return server configuration (Groq status & default language)
+    // Return server configuration (Groq status, default language & HTTPS status)
     if (req.url === '/api/config' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             hasGroqKey: Boolean(VOICE_GROQ_API_KEY),
             defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
+            isHttps: isHttps,
             status: Boolean(VOICE_GROQ_API_KEY) ? 'ready' : 'missing_groq_key'
         }));
         return;
@@ -225,7 +230,26 @@ const server = http.createServer((req, res) => {
     });
 
     req.pipe(proxyReq, { end: true });
-});
+}
+
+let isHttps = false;
+let server;
+
+if (ENABLE_HTTPS && fs.existsSync(SSL_KEY_PATH) && fs.existsSync(SSL_CERT_PATH)) {
+    try {
+        const https = require('https');
+        server = https.createServer({
+            key: fs.readFileSync(SSL_KEY_PATH),
+            cert: fs.readFileSync(SSL_CERT_PATH)
+        }, requestListener);
+        isHttps = true;
+    } catch (e) {
+        console.error('[proxy] SSL initialization failed, falling back to HTTP:', e.message);
+        server = http.createServer(requestListener);
+    }
+} else {
+    server = http.createServer(requestListener);
+}
 
 // Proxy WebSocket upgrades to internal ttyd
 server.on('upgrade', (req, socket, head) => {
@@ -251,7 +275,8 @@ server.on('upgrade', (req, socket, head) => {
 });
 
 server.listen(PROXY_PORT, '0.0.0.0', () => {
-    console.log(`[proxy] Web Terminal & Voice Server listening on port ${PROXY_PORT} -> ttyd :${TTYD_PORT}`);
+    const proto = isHttps ? 'https' : 'http';
+    console.log(`[proxy] Web Terminal & Voice Server listening on ${proto}://0.0.0.0:${PROXY_PORT} -> ttyd :${TTYD_PORT}`);
     console.log(`[proxy] Default Voice Language: ${DEFAULT_VOICE_LANGUAGE}`);
     if (VOICE_GROQ_API_KEY) {
         console.log(`[proxy] Groq Whisper Cloud API enabled (whisper-large-v3-turbo)`);
