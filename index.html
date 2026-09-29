@@ -55,7 +55,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var toolbar = document.createElement('div');
         toolbar.id = 'voice-toolbar';
         toolbar.innerHTML = `
-            <button id="mic-btn" class="voice-btn" title="Reconhecimento de Voz (Groq Whisper) ou digite /voice" aria-label="Microphone">
+            <button id="mic-btn" class="voice-btn" title="Voice Recognition (Groq Whisper) or type /voice" aria-label="Microphone">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -63,14 +63,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     <line x1="8" y1="23" x2="16" y2="23"></line>
                 </svg>
             </button>
-            <button id="lang-btn" class="toolbar-pill active" title="Alternar idioma">PT</button>
-            <button id="auto-enter-btn" class="toolbar-pill" title="Alternar Envio Automático / Manual">↵ Manual</button>
+            <button id="lang-btn" class="toolbar-pill active" title="Switch language">EN</button>
+            <button id="auto-enter-btn" class="toolbar-pill" title="Toggle Auto-Send / Manual mode">↵ Manual</button>
         `;
 
         var preview = document.createElement('div');
         preview.id = 'transcript-preview';
         preview.innerHTML = `
-            <div class="transcript-status" id="transcript-status">🎙️ A escutar...</div>
+            <div class="transcript-status" id="transcript-status">🎙️ Listening...</div>
             <div id="transcript-wave" class="audio-wave" style="display:none"></div>
             <div id="transcript-text"></div>
         `;
@@ -83,9 +83,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
     function setupVoiceHandlers() {
         var isRecording = false;
-        var langIdx = 0;
-        var langs = ['pt', 'pt', 'en'];
-        var labels = ['PT', 'BR', 'EN'];
+        var langs = ['en', 'pt', 'pt'];
+        var labels = ['EN', 'PT', 'BR'];
+        var langIdx = 0; // Will be initialized by server config
         var autoEnter = false;
         var previewTimer = null;
         var hasGroqKeyCached = null;
@@ -126,26 +126,35 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        // Check if Groq API Key is configured on server
-        async function checkGroqConfig() {
+        // Fetch server configuration on load to set default language & API key status
+        async function fetchServerConfig() {
             try {
                 var resp = await fetch('/api/config');
                 if (resp.ok) {
                     var data = await resp.json();
                     hasGroqKeyCached = Boolean(data.hasGroqKey);
+                    
+                    // Set default language from server environment variable (VOICE_LANGUAGE)
+                    if (data.defaultLanguage) {
+                        var def = String(data.defaultLanguage).toUpperCase();
+                        var foundIdx = labels.indexOf(def);
+                        if (foundIdx !== -1) {
+                            langIdx = foundIdx;
+                            if (langBtn) langBtn.textContent = labels[langIdx];
+                        }
+                    }
                     return hasGroqKeyCached;
                 }
             } catch(e) {}
             return false;
         }
 
-        // Check on startup
-        checkGroqConfig();
+        fetchServerConfig();
 
         async function startGroqVoiceRecording() {
-            var isConfigured = await checkGroqConfig();
+            var isConfigured = await fetchServerConfig();
             if (!isConfigured) {
-                showPreview('⚠️ Chave da API em falta', 'Primeiro configure a GROQ_API_KEY no ficheiro .env para usar o microfone.', true, false);
+                showPreview('⚠️ API Key Required', 'Please configure GROQ_API_KEY in your .env file first!', true, false);
                 hidePreview(5000);
                 return;
             }
@@ -173,7 +182,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
                     var avg = sum / dataArray.length;
 
-                    // Live volume visualizer
+                    // Live sound wave animation
                     var count = Math.min(8, Math.max(1, Math.round(avg / 10)));
                     var bars = '';
                     for (var b = 0; b < count; b++) bars += '█';
@@ -187,10 +196,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             clearTimeout(silenceTimer);
                             silenceTimer = null;
                         }
-                        if (previewStatus) previewStatus.textContent = '🎙️ A escutar voz (' + labels[langIdx] + ')...';
+                        if (previewStatus) previewStatus.textContent = '🎙️ Listening (' + labels[langIdx] + ')...';
                     } else if (speechDetected) {
                         if (!silenceTimer) {
-                            if (previewStatus) previewStatus.textContent = '⏳ Silêncio... A enviar para o Groq...';
+                            if (previewStatus) previewStatus.textContent = '⏳ Silence detected... Transcribing...';
                             silenceTimer = setTimeout(function() {
                                 if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
                                     mediaRecorder.stop();
@@ -212,7 +221,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     cancelAnimationFrame(animFrameId);
                     if (micBtn) {
                         micBtn.classList.remove('recording');
-                        micBtn.title = 'Reconhecimento de Voz (Groq Whisper) ou digite /voice';
+                        micBtn.title = 'Voice Recognition (Groq Whisper) or type /voice';
                     }
                     try { liveCtx.close(); } catch(e) {}
                     if (mediaStream) {
@@ -220,7 +229,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     }
                     if (audioChunks.length === 0) return;
 
-                    showPreview('⚡ A transcrever com Groq Whisper...', 'A enviar áudio para o modelo Whisper Large V3 Turbo...', false, false);
+                    showPreview('⚡ Transcribing with Groq Whisper...', 'Processing audio with Whisper Large V3 Turbo...', false, false);
 
                     try {
                         var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
@@ -237,18 +246,18 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         if (resp.ok && data.text && data.text.trim()) {
                             var text = data.text.trim();
                             window.sendTextToTerminal(text, autoEnter);
-                            showPreview('✓ Inserido no prompt:', text, false, false);
+                            showPreview('✓ Inserted into prompt:', text, false, false);
                             hidePreview(2500);
                         } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
-                            showPreview('⚠️ Chave da API em falta', 'Primeiro configure a GROQ_API_KEY no ficheiro .env!', true, false);
+                            showPreview('⚠️ API Key Required', 'Please configure GROQ_API_KEY in your .env file!', true, false);
                             hidePreview(4500);
                         } else {
-                            showPreview('⚠️ Erro de Transcrição', (data.error || 'Nenhum texto reconhecido.'), true, false);
+                            showPreview('⚠️ Transcription Error', (data.error || 'No speech recognized.'), true, false);
                             hidePreview(3500);
                         }
                     } catch(err) {
                         console.error('Groq transcription fetch error:', err);
-                        showPreview('⚠️ Erro de Ligação', 'Não foi possível contactar o servidor.', true, false);
+                        showPreview('⚠️ Connection Error', 'Could not reach transcription server.', true, false);
                         hidePreview(3500);
                     }
                 };
@@ -257,9 +266,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 isRecording = true;
                 if (micBtn) {
                     micBtn.classList.add('recording');
-                    micBtn.title = 'A escutar... Fale normalmente (para sozinho ao terminar)';
+                    micBtn.title = 'Listening... Speak now (auto-stops on silence)';
                 }
-                showPreview('🎙️ A escutar (' + labels[langIdx] + ')...', 'Fale normalmente. Para sozinho após terminar.', false, true);
+                showPreview('🎙️ Listening (' + labels[langIdx] + ')...', 'Speak your prompt. Stops automatically after speaking.', false, true);
                 checkSilenceAndWave();
 
             } catch(err) {
@@ -267,9 +276,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 isRecording = false;
                 if (micBtn) micBtn.classList.remove('recording');
                 if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    showPreview('⚠️ Permissão Negada', 'Autorize o acesso ao microfone no navegador.', true, false);
+                    showPreview('⚠️ Permission Denied', 'Please allow microphone access in your browser.', true, false);
                 } else {
-                    showPreview('⚠️ Erro de Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
+                    showPreview('⚠️ Microphone Error', err.message || 'Could not access microphone.', true, false);
                 }
                 hidePreview(3500);
             }
@@ -293,7 +302,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             langBtn.addEventListener('click', function() {
                 langIdx = (langIdx + 1) % langs.length;
                 langBtn.textContent = labels[langIdx];
-                showPreview('🌐 Idioma', 'Reconhecimento Groq em: ' + labels[langIdx], false, false);
+                showPreview('🌐 Language', 'Voice recognition set to: ' + labels[langIdx], false, false);
                 hidePreview(1500);
             });
         }
@@ -304,11 +313,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 if (autoEnter) {
                     autoEnterBtn.classList.add('active');
                     autoEnterBtn.textContent = '↵ Auto';
-                    showPreview('↵ Envio Automático', 'Ativado (envia Enter após falar)', false, false);
+                    showPreview('↵ Auto-Send', 'Enabled (sends Enter automatically)', false, false);
                 } else {
                     autoEnterBtn.classList.remove('active');
                     autoEnterBtn.textContent = '↵ Manual';
-                    showPreview('↵ Envio Manual', 'Ativado (insere o texto no prompt sem enviar)', false, false);
+                    showPreview('↵ Manual Mode', 'Enabled (inserts text into prompt without sending)', false, false);
                 }
                 hidePreview(1500);
             });

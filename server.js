@@ -4,13 +4,14 @@ const net = require('net');
 const TTYD_PORT = 7680;
 const PROXY_PORT = 7681;
 const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
+const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
 
 async function handleTranscribe(req, res) {
     if (!GROQ_API_KEY) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             error: 'GROQ_API_KEY_NOT_CONFIGURED',
-            message: 'Primeiro configure a GROQ_API_KEY no ficheiro .env!' 
+            message: 'Please configure GROQ_API_KEY in your .env file first!' 
         }));
         return;
     }
@@ -20,7 +21,9 @@ async function handleTranscribe(req, res) {
     req.on('end', async () => {
         try {
             const buffer = Buffer.concat(chunks);
-            const language = req.headers['x-audio-language'] || 'pt';
+            let language = (req.headers['x-audio-language'] || 'en').toLowerCase();
+            if (language === 'br' || language === 'pt') language = 'pt';
+            
             const contentType = req.headers['content-type'] || 'audio/webm';
 
             const formData = new FormData();
@@ -42,7 +45,7 @@ async function handleTranscribe(req, res) {
             if (!groqResp.ok) {
                 console.error('Groq transcription error response:', data);
                 res.writeHead(groqResp.status, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: data.error?.message || 'Erro na transcrição do Groq' }));
+                res.end(JSON.stringify({ error: data.error?.message || 'Groq transcription error' }));
                 return;
             }
 
@@ -57,11 +60,12 @@ async function handleTranscribe(req, res) {
 }
 
 const server = http.createServer((req, res) => {
-    // Check Groq configuration status
+    // Return server configuration (Groq status & default language)
     if (req.url === '/api/config' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             hasGroqKey: Boolean(GROQ_API_KEY),
+            defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
             status: Boolean(GROQ_API_KEY) ? 'ready' : 'missing_groq_key'
         }));
         return;
@@ -120,9 +124,10 @@ server.on('upgrade', (req, socket, head) => {
 
 server.listen(PROXY_PORT, '0.0.0.0', () => {
     console.log(`[proxy] Web Terminal & Voice Server listening on port ${PROXY_PORT} -> ttyd :${TTYD_PORT}`);
+    console.log(`[proxy] Default Voice Language: ${DEFAULT_VOICE_LANGUAGE}`);
     if (GROQ_API_KEY) {
         console.log(`[proxy] Groq Whisper Cloud API enabled (whisper-large-v3-turbo)`);
     } else {
-        console.log(`[proxy] GROQ_API_KEY not configured. Microhpone will request user to set GROQ_API_KEY.`);
+        console.log(`[proxy] GROQ_API_KEY not configured in .env`);
     }
 });

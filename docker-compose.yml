@@ -9,6 +9,7 @@ services:
     environment:
       - TTYD_AUTH=${TTYD_AUTH:-admin:admin123}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - VOICE_LANGUAGE=${VOICE_LANGUAGE:-EN}
       - AUTO_START_OPENCODE=true
       - NODE_OPTIONS=--max-old-space-size=256
     volumes:

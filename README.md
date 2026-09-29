@@ -64,13 +64,14 @@ docker run -d \
 
 ---
 
-## 🎙️ Browser Voice Recognition (Microphone)
+## 🎙️ Cloud Voice Recognition (Groq Whisper)
 
-A built-in floating voice toolbar is available directly on the web interface (desktop and smartphone):
-- **🎙️ Speech-to-Text:** Tap the microphone icon to dictate your prompts in real-time.
-- **🌐 Multilingual Support:** Quickly toggle between Portuguese (`PT`/`BR`) and English (`EN`).
-- **↵ Auto-Enter Toggle:** Automatically sends the transcribed text to OpenCode or allows reviewing before submission.
-- **Mobile Responsive:** Fits seamlessly above virtual keyboards and safe-area insets.
+A built-in floating voice toolbar is available directly on the web interface (desktop and mobile/smartphone):
+- **⚡ Ultra-Fast Cloud STT:** Powered by Groq's `whisper-large-v3-turbo` for near-instant speech transcription (~200ms).
+- **🌐 Multilingual Support:** Easily dictate in Portuguese (`PT`), Brazilian Portuguese (`BR`), or English (`EN`).
+- **⚙️ Configurable Default Language:** Set `VOICE_LANGUAGE=EN` (default), `PT`, or `BR` in your `.env` file.
+- **↵ Auto-Enter Toggle:** Automatically sends the transcribed prompt to OpenCode or keeps it in the input line for review.
+- **📱 Mobile Responsive:** Floating toolbar designed specifically for touchscreen devices and mobile browsers (Chrome, Safari, Firefox, Edge).
 
 ---
 
