@@ -396,16 +396,29 @@ window.sendTextToTerminal = function(text, autoEnter) {
         }
 
         
-        // === Text-to-Speech (TTS) Engine (AI Responses Only) ===
+        // === Text-to-Speech (TTS) Engine via SQLite Database Sync ===
         var ttsBtn = document.getElementById('tts-btn');
         var ttsEnabled = false;
         try { ttsEnabled = (localStorage.getItem('opencode_tts_enabled') === 'true'); } catch(e) {}
         var isSpeaking = false;
         var isWaitingForAiResponse = false;
-        var lastSubmittedPrompt = '';
-        var aiResponseBuffer = '';
-        var ttsDebounceTimer = null;
-        var lastSpokenText = '';
+        var promptSubmittedAt = 0;
+        var lastKnownAiMessageId = null;
+        var pollTimer = null;
+
+        // Preload latest message ID so we don't speak past chat history on load
+        async function syncInitialMessageId() {
+            try {
+                var resp = await fetch('/api/latest-ai-message');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    if (data && data.id) {
+                        lastKnownAiMessageId = data.id;
+                    }
+                }
+            } catch(e) {}
+        }
+        syncInitialMessageId();
 
         function updateTtsButton() {
             if (!ttsBtn) return;
@@ -434,79 +447,24 @@ window.sendTextToTerminal = function(text, autoEnter) {
             updateTtsButton();
         }
 
-        function cleanAiResponseForSpeech(raw, userPrompt) {
+        function cleanMarkdownForSpeech(raw) {
             if (!raw) return '';
-            
-            // 1. Remove ANSI escape codes
-            var clean = raw
-                .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
-                .replace(/\x1b\([a-zA-Z0-9]/g, '')
-                .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '')
-                .replace(/\x1b[=>]/g, '')
-                .replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, '');
-
-            // 2. Remove box drawing characters, spinners, banners
-            clean = clean
-                .replace(/[─│┌┐└┘├┤┬┴┼═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬▀ ▂▃▄▅▆▇█▉▊▋▌▍▎▏░▒▓■□▪▫▲△▶▷▼▽◀◁◆◇○●⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/g, ' ')
-                .replace(/OpenCode AI Web Terminal/gi, '')
-                .replace(/Working Directory:[^\n]+/gi, '')
-                .replace(/OpenCode session ended[^\n]+/gi, '');
-
-            // 3. Remove code blocks
-            clean = clean.replace(/```[\s\S]*?```/g, ' [Code block omitted] ');
-
-            // 4. Split lines and filter out menus, prompts, model lists, and user echo
-            var lines = clean.split('\n');
-            var filteredLines = [];
-            var normPrompt = (userPrompt || '').toLowerCase().trim();
-
-            for (var i = 0; i < lines.length; i++) {
-                var line = lines[i].trim();
-                if (!line || line.length < 2) continue;
-
-                var lower = line.toLowerCase();
-
-                // Ignore exact or prefix echo of what the user just asked
-                if (normPrompt && (lower === normPrompt || lower === '> ' + normPrompt || lower.startsWith('user: ' + normPrompt) || lower.startsWith('> '))) {
-                    if (lower.length <= normPrompt.length + 5) continue;
-                }
-
-                // Ignore model lists and interactive CLI menus
-                if (lower.includes('select a model') || 
-                    lower.includes('anthropic/') || 
-                    lower.includes('openai/') || 
-                    lower.includes('gemini/') || 
-                    lower.includes('groq/') || 
-                    lower.includes('meta-llama') || 
-                    lower.includes('claude-3') || 
-                    lower.includes('gpt-4') || 
-                    lower.includes('use arrow keys') || 
-                    lower.includes('press enter') ||
-                    lower.startsWith('?') ||
-                    lower.startsWith('>') ||
-                    lower.startsWith('›')) {
-                    if (lower.length < 70 && (lower.includes('/') || lower.includes('select') || lower.includes('model') || lower.startsWith('?'))) {
-                        continue;
-                    }
-                }
-
-                // Ignore tool actions / file system messages
-                if (lower.startsWith('running ') || lower.startsWith('reading file') || lower.startsWith('writing file') || lower.startsWith('executing ')) {
-                    continue;
-                }
-
-                filteredLines.push(line);
-            }
-
-            var result = filteredLines.join('. ')
+            return raw
+                // Replace long code blocks with a brief audio cue
+                .replace(/```[a-zA-Z0-9_-]*\n([\s\S]*?)```/g, ' [Bloco de código] ')
+                .replace(/```[\s\S]*?```/g, ' [Bloco de código] ')
                 .replace(/`([^`]+)`/g, '$1')
-                .replace(/[*#_~]/g, '')
+                // Remove Markdown headers, bold, italics, links
+                .replace(/#{1,6}\s+/g, '')
+                .replace(/\*\*([^\*]+)\*\*/g, '$1')
+                .replace(/\*([^\*]+)\*/g, '$1')
+                .replace(/__([^_]+)__/g, '$1')
+                .replace(/_([^_]+)_/g, '$1')
+                .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
                 .replace(/https?:\/\/[^\s]+/g, 'link')
-                .replace(/\.{2,}/g, '.')
+                .replace(/^[\s*>-]+/gm, '')
                 .replace(/\s+/g, ' ')
                 .trim();
-
-            return result;
         }
 
         function getBestVoiceForLang(langCode) {
@@ -535,19 +493,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
             };
         }
 
-        function speakAiResponse(rawText, userPrompt) {
+        function speakAiMessage(rawText) {
             if (!ttsEnabled || !window.speechSynthesis) return;
-            var text = cleanAiResponseForSpeech(rawText, userPrompt);
-            if (!text || text.length < 4) return;
-
-            if (text === lastSpokenText) return;
-            lastSpokenText = text;
+            var text = cleanMarkdownForSpeech(rawText);
+            if (!text || text.length < 2) return;
 
             stopSpeaking();
 
             var currentLang = labels[langIdx] || 'EN';
             var voice = getBestVoiceForLang(currentLang);
 
+            // Split into sentences for smooth streaming synthesis
             var sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
             var validSentences = [];
             for (var i = 0; i < sentences.length; i++) {
@@ -582,6 +538,25 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
+        async function checkForNewAiResponse() {
+            if (!ttsEnabled || !isWaitingForAiResponse) return;
+            try {
+                var resp = await fetch('/api/latest-ai-message');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    if (data && data.id && data.id !== lastKnownAiMessageId && data.text) {
+                        // Check that this message was created around or after our prompt
+                        if (!data.time || data.time >= (promptSubmittedAt - 3000)) {
+                            lastKnownAiMessageId = data.id;
+                            isWaitingForAiResponse = false;
+                            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                            speakAiMessage(data.text);
+                        }
+                    }
+                }
+            } catch(e) {}
+        }
+
         window.toggleTTS = function() {
             if (isSpeaking) {
                 stopSpeaking();
@@ -594,6 +569,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 showPreview('🔊 Text-to-Speech Enabled', 'Will read AI responses aloud (' + labels[langIdx] + ').', false, false);
             } else {
                 stopSpeaking();
+                if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                isWaitingForAiResponse = false;
                 showPreview('🔇 Text-to-Speech Disabled', 'Voice output muted.', false, false);
             }
             hidePreview(2500);
@@ -603,31 +580,31 @@ window.sendTextToTerminal = function(text, autoEnter) {
             ttsBtn.addEventListener('click', window.toggleTTS);
         }
 
-        // Called only when user submits a prompt (Enter / voice auto-send)
+        // Triggered exclusively when user submits a prompt (Enter key or voice auto-send)
         window.__onPromptSubmitted = function(promptText) {
             if (!ttsEnabled) return;
-            lastSubmittedPrompt = (promptText || '').trim();
             isWaitingForAiResponse = true;
-            aiResponseBuffer = '';
-            if (ttsDebounceTimer) clearTimeout(ttsDebounceTimer);
+            promptSubmittedAt = Date.now();
+            
+            if (pollTimer) clearInterval(pollTimer);
+            var pollCount = 0;
+            // Poll for response up to 60 seconds
+            pollTimer = setInterval(function() {
+                pollCount++;
+                if (pollCount > 60 || !isWaitingForAiResponse || !ttsEnabled) {
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+                    isWaitingForAiResponse = false;
+                    return;
+                }
+                checkForNewAiResponse();
+            }, 1000);
         };
 
-        // Hook terminal output: ONLY process when waiting for an AI response!
+        // When terminal output arrives, also do a quick check
         window.__onTerminalOutput = function(chunk) {
-            if (!ttsEnabled || !isWaitingForAiResponse || !chunk) return;
-            aiResponseBuffer += chunk;
-
-            if (ttsDebounceTimer) clearTimeout(ttsDebounceTimer);
-            ttsDebounceTimer = setTimeout(function() {
-                var content = aiResponseBuffer;
-                var promptUsed = lastSubmittedPrompt;
-                aiResponseBuffer = '';
-                isWaitingForAiResponse = false; // Reset after capture
-                
-                if (content && content.length > 5) {
-                    speakAiResponse(content, promptUsed);
-                }
-            }, 1500);
+            if (!ttsEnabled || !isWaitingForAiResponse) return;
+            checkForNewAiResponse();
         };
         
         if (autoEnterBtn) {

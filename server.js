@@ -1,10 +1,69 @@
 const http = require('http');
 const net = require('net');
+const fs = require('fs');
+const path = require('path');
 
 const TTYD_PORT = 7680;
 const PROXY_PORT = 7681;
 const VOICE_GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
+
+const DB_PATHS = [
+    '/root/.local/share/opencode/opencode.db',
+    path.join(__dirname, 'data', 'share', 'opencode.db')
+];
+
+function getOpenCodeDb() {
+    for (const p of DB_PATHS) {
+        if (fs.existsSync(p)) {
+            try {
+                const { DatabaseSync } = require('node:sqlite');
+                return new DatabaseSync(p, { readOnly: true });
+            } catch (e) {
+                console.error('Failed to open SQLite DB at', p, e.message);
+            }
+        }
+    }
+    return null;
+}
+
+function handleLatestAiMessage(req, res) {
+    try {
+        const db = getOpenCodeDb();
+        if (!db) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ text: null, id: null }));
+            return;
+        }
+
+        const row = db.prepare(`
+            SELECT p.id, p.data, p.time_created
+            FROM part p
+            JOIN message m ON p.message_id = m.id
+            WHERE json_extract(m.data, '$.role') = 'assistant'
+              AND json_extract(p.data, '$.type') = 'text'
+            ORDER BY p.time_created DESC
+            LIMIT 1
+        `).get();
+
+        if (row) {
+            const data = JSON.parse(row.data);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                id: row.id,
+                text: data.text,
+                time: row.time_created
+            }));
+        } else {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ text: null, id: null }));
+        }
+    } catch (err) {
+        console.error('Error in handleLatestAiMessage:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+    }
+}
 
 async function handleTranscribe(req, res) {
     if (!VOICE_GROQ_API_KEY) {
@@ -68,6 +127,12 @@ const server = http.createServer((req, res) => {
             defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
             status: Boolean(VOICE_GROQ_API_KEY) ? 'ready' : 'missing_groq_key'
         }));
+        return;
+    }
+
+    // Return latest clean assistant message for Text-to-Speech
+    if (req.url === '/api/latest-ai-message' && req.method === 'GET') {
+        handleLatestAiMessage(req, res);
         return;
     }
 
