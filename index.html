@@ -89,8 +89,6 @@ body.toolbar-dragging #corner-zone-container{display:block}
 .modal-btn:hover{background:#2ea043}
 .modal-btn-sec{background:#30363d;color:#c9d1d9;border:1px solid rgba(255,255,255,0.15)}
 .modal-btn-sec:hover{background:#388bfd;color:#fff}
-#ff-help-btn.ff-btn-icon{background:#30363d;border-color:rgba(240,136,62,0.4);font-size:16px}
-#ff-help-btn.ff-btn-icon:hover{background:#d06014;border-color:#f0883e;color:#fff}
 #install-pwa-btn{background:#1f6feb;color:#fff;border-color:rgba(88,166,255,0.4)}
 #install-pwa-btn:hover{background:#388bfd;box-shadow:0 0 12px rgba(56,139,253,0.7)}
 
@@ -419,7 +417,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     </svg>
                 </button>
                 <input type="file" id="file-upload-input" multiple style="display:none">
-                ${isFirefox ? '<button id="ff-help-btn" class="voice-btn ff-btn-icon" title="Firefox Voice Setup Guide" aria-label="Firefox Guide">🦊</button>' : ''}
                 <button id="install-pwa-btn" class="voice-btn" style="display:none" title="Install App (PWA)" aria-label="Install App">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -448,20 +445,24 @@ window.sendTextToTerminal = function(text, autoEnter) {
         ffModal.innerHTML = `
             <div class="modal-card">
                 <div class="modal-header">
-                    <div class="modal-title">🦊 Firefox Voice Setup Guide</div>
-                    <button id="ff-close-btn" class="modal-close" title="Close">&times;</button>
+                    <div class="modal-title">🦊 Configuração de Voz no Firefox</div>
+                    <button id="ff-close-btn" class="modal-close" title="Fechar">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p>If voice recognition does not work in Firefox, enable these settings in <span class="modal-code">about:config</span>:</p>
+                    <p>Se o reconhecimento de voz ou microfone não funcionar no Firefox, certifica-te de ativar estas opções em <span class="modal-code">about:config</span>:</p>
                     <ol class="modal-steps">
-                        <li>Type <span class="modal-code">about:config</span> in the address bar and press <b>Enter</b>.</li>
-                        <li>Search for <span class="modal-code">media.webspeech.recognition.enable</span> and set to <b>true</b>.</li>
-                        <li>Search for <span class="modal-code">media.webspeech.recognition.force_enable</span> and set to <b>true</b>.</li>
+                        <li>Escreve <span class="modal-code">about:config</span> na barra de endereço e prime <b>Enter</b>.</li>
+                        <li>Pesquisa por <span class="modal-code">media.webspeech.recognition.enable</span> e define como <b>true</b>.</li>
+                        <li>Pesquisa por <span class="modal-code">media.webspeech.recognition.force_enable</span> e define como <b>true</b>.</li>
                     </ol>
-                    <div class="modal-note">💡 <b>Tip:</b> Remember to click <b>Allow</b> when Firefox prompts for microphone access.</div>
+                    <div class="modal-note">💡 <b>Dica:</b> Clica em <b>Permitir</b> quando o Firefox solicitar acesso ao microfone.</div>
                 </div>
-                <div class="modal-footer">
-                    <button id="ff-ok-btn" class="modal-btn">Got it</button>
+                <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center">
+                    <label style="font-size:12px;color:#8b949e;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
+                        <input type="checkbox" id="ff-dont-show-checkbox" checked style="cursor:pointer;accent-color:#58a6ff">
+                        Não voltar a mostrar
+                    </label>
+                    <button id="ff-ok-btn" class="modal-btn">Continuar</button>
                 </div>
             </div>
         `;
@@ -560,7 +561,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var ffModal = document.getElementById('firefox-modal');
         var ffCloseBtn = document.getElementById('ff-close-btn');
         var ffOkBtn = document.getElementById('ff-ok-btn');
-        var ffHelpBtn = document.getElementById('ff-help-btn');
+        var ffDontShowCheckbox = document.getElementById('ff-dont-show-checkbox');
+        var pendingVoiceAction = null;
 
         function showPreview(status, text, isError, showWave) {
             if (!previewBox) return;
@@ -583,23 +585,30 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        function showFirefoxModal() {
+        function showFirefoxModal(action) {
+            pendingVoiceAction = action || 'mic';
             if (ffModal) ffModal.classList.add('active');
         }
 
-        function closeFirefoxModal(markAsSeen) {
+        function closeFirefoxModal(andProceed) {
             if (ffModal) ffModal.classList.remove('active');
-            if (markAsSeen) {
+            if (ffDontShowCheckbox && ffDontShowCheckbox.checked) {
                 try { localStorage.setItem('firefox_voice_tip_shown', 'true'); } catch(e) {}
+            }
+            if (andProceed) {
+                var act = pendingVoiceAction;
+                pendingVoiceAction = null;
+                startGroqVoiceRecording();
+            } else {
+                pendingVoiceAction = null;
+                if (isConversationMode) {
+                    toggleConversationMode();
+                }
             }
         }
 
-        if (ffCloseBtn) ffCloseBtn.addEventListener('click', function() { closeFirefoxModal(true); });
-        if (ffOkBtn) ffOkBtn.addEventListener('click', function() { 
-            closeFirefoxModal(true);
-            startGroqVoiceRecording();
-        });
-        if (ffHelpBtn) ffHelpBtn.addEventListener('click', function() { showFirefoxModal(); });
+        if (ffCloseBtn) ffCloseBtn.addEventListener('click', function() { closeFirefoxModal(false); });
+        if (ffOkBtn) ffOkBtn.addEventListener('click', function() { closeFirefoxModal(true); });
 
         var micModal = document.getElementById('mic-modal');
         var micCloseBtn = document.getElementById('mic-close-btn');
@@ -1220,7 +1229,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                 // If on Firefox and first time, show modal
                 if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
-                    showFirefoxModal();
+                    showFirefoxModal('talk');
                     return;
                 }
                 startGroqVoiceRecording();
@@ -1240,7 +1249,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 }
             } else {
                 if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
-                    showFirefoxModal();
+                    showFirefoxModal('mic');
                     return;
                 }
                 startGroqVoiceRecording();
