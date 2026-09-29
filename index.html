@@ -587,16 +587,16 @@ window.sendTextToTerminal = function(text, autoEnter) {
         }
 
         async function checkForNewAiResponse() {
-            if (!isWaitingForAiResponse) return;
+            if (!isWaitingForAiResponse && !isConversationMode) return;
             try {
                 var resp = await fetch('/api/latest-ai-message');
                 if (resp.ok) {
                     var data = await resp.json();
                     if (data && data.id && data.id !== lastKnownAiMessageId && data.text) {
-                        if (!data.time || data.time >= (promptSubmittedAt - 3000)) {
+                        if (!data.time || data.time >= (promptSubmittedAt - 3000) || isConversationMode) {
                             lastKnownAiMessageId = data.id;
                             isWaitingForAiResponse = false;
-                            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                            if (pollTimer && !isConversationMode) { clearInterval(pollTimer); pollTimer = null; }
                             
                             if (isConversationMode) {
                                 speakAiMessage(data.text);
@@ -783,9 +783,15 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
+        var conversationPollTimer = null;
+
         function toggleConversationMode() {
             if (isConversationMode) {
                 isConversationMode = false;
+                if (conversationPollTimer) {
+                    clearInterval(conversationPollTimer);
+                    conversationPollTimer = null;
+                }
                 stopSpeaking();
                 if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
                     mediaRecorder.stop();
@@ -799,6 +805,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 updateTalkButton();
                 showPreview('💬 Modo Conversa Ativado', 'Fala para o microfone. A IA responderá e reativará a escuta automaticamente.', false, false);
                 
+                if (conversationPollTimer) clearInterval(conversationPollTimer);
+                conversationPollTimer = setInterval(checkForNewAiResponse, 1000);
+
                 // If on Firefox and first time, show modal
                 if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
                     showFirefoxModal();
@@ -845,7 +854,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             var pollCount = 0;
             pollTimer = setInterval(function() {
                 pollCount++;
-                if (pollCount > 60 || !isWaitingForAiResponse) {
+                if (pollCount > 90 || (!isWaitingForAiResponse && !isConversationMode)) {
                     clearInterval(pollTimer);
                     pollTimer = null;
                     isWaitingForAiResponse = false;
@@ -856,7 +865,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
         };
 
         window.__onTerminalOutput = function(chunk) {
-            if (!isWaitingForAiResponse) return;
             checkForNewAiResponse();
         };
     }

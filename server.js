@@ -36,28 +36,66 @@ function handleLatestAiMessage(req, res) {
             return;
         }
 
-        const row = db.prepare(`
+        const rows = db.prepare(`
             SELECT p.id, p.data, p.time_created
             FROM part p
             JOIN message m ON p.message_id = m.id
             WHERE json_extract(m.data, '$.role') = 'assistant'
-              AND json_extract(p.data, '$.type') = 'text'
+              AND (
+                json_extract(p.data, '$.type') = 'text'
+                OR json_extract(p.data, '$.tool') = 'question'
+                OR json_extract(p.data, '$.type') = 'tool'
+              )
             ORDER BY p.time_created DESC
-            LIMIT 1
-        `).get();
+            LIMIT 15
+        `).all();
 
-        if (row) {
+        for (const row of rows) {
             const data = JSON.parse(row.data);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-                id: row.id,
-                text: data.text,
-                time: row.time_created
-            }));
-        } else {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ text: null, id: null }));
+            
+            // 1. Question Tool (Multiple choice / selection options)
+            if (data.type === 'tool' && data.tool === 'question') {
+                const questions = data.state?.input?.questions || [];
+                let questionText = '';
+                questions.forEach((q) => {
+                    if (q.question) {
+                        questionText += (q.header ? `${q.header}: ` : '') + `${q.question}\n`;
+                    }
+                    if (Array.isArray(q.options) && q.options.length > 0) {
+                        q.options.forEach((opt, optIdx) => {
+                            const label = typeof opt === 'string' ? opt : (opt.label || opt.title || '');
+                            const desc = (typeof opt === 'object' && opt.description) ? ` - ${opt.description}` : '';
+                            questionText += `Opção ${optIdx + 1}: ${label}${desc}\n`;
+                        });
+                    }
+                });
+                if (questionText.trim()) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        id: row.id + (data.state?.status || ''),
+                        text: questionText.trim(),
+                        time: row.time_created,
+                        isQuestion: true
+                    }));
+                    return;
+                }
+            }
+
+            // 2. Standard Text Part
+            if (data.type === 'text' && data.text && data.text.trim()) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    id: row.id,
+                    text: data.text,
+                    time: row.time_created,
+                    isQuestion: false
+                }));
+                return;
+            }
         }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ text: null, id: null }));
     } catch (err) {
         console.error('Error in handleLatestAiMessage:', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
