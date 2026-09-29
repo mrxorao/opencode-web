@@ -86,8 +86,15 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var langIdx = 0;
         var langs = ['pt-PT', 'pt-BR', 'en-US'];
         var labels = ['PT', 'BR', 'EN'];
-        var autoEnter = false; // Manual mode by default: user always presses Enter!
+        var whisperLangs = ['portuguese', 'portuguese', 'english'];
+        var autoEnter = false;
         var previewTimer = null;
+
+        // Firefox & Non-WebSpeech MediaRecorder fallback variables
+        var mediaStream = null;
+        var mediaRecorder = null;
+        var audioChunks = [];
+        var whisperPipeline = null;
 
         var micBtn = document.getElementById('mic-btn');
         var langBtn = document.getElementById('lang-btn');
@@ -114,6 +121,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
+        // Engine 1: Native Web Speech API (Chrome, Safari, iOS, Edge)
         if (SpeechRec) {
             rec = new SpeechRec();
             rec.continuous = false;
@@ -191,14 +199,108 @@ window.sendTextToTerminal = function(text, autoEnter) {
             if (micBtn) {
                 micBtn.addEventListener('click', window.triggerVoiceRecognition);
             }
-        } else {
+        } 
+        // Engine 2: Universal Fallback via MediaRecorder + Transformers.js Whisper (Firefox, etc.)
+        else {
+            async function startMediaRecord() {
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioChunks = [];
+                    mediaRecorder = new MediaRecorder(mediaStream);
+
+                    mediaRecorder.ondataavailable = function(e) {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = async function() {
+                        if (mediaStream) {
+                            mediaStream.getTracks().forEach(function(t) { t.stop(); });
+                        }
+                        if (audioChunks.length === 0) return;
+
+                        showPreview('⏳ A processar áudio...', 'A decodificar voz...', false);
+
+                        try {
+                            var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
+                            var arrayBuffer = await audioBlob.arrayBuffer();
+                            var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                            var audioCtx = new AudioCtx({ sampleRate: 16000 });
+                            var audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                            var audioData = audioBuffer.getChannelData(0);
+
+                            if (!whisperPipeline) {
+                                showPreview('⏳ A carregar IA de voz...', 'A descarregar Whisper leve (apenas na 1ª vez)...', false);
+                                var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+                                transformers.env.allowLocalModels = false;
+                                whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
+                            }
+
+                            showPreview('⏳ A transcrever...', 'A converter fala em texto...', false);
+                            var out = await whisperPipeline(audioData, {
+                                language: whisperLangs[langIdx],
+                                task: 'transcribe'
+                            });
+
+                            var text = (out && out.text ? out.text.trim() : '');
+                            if (text) {
+                                var sent = window.sendTextToTerminal(text, autoEnter);
+                                if (sent) {
+                                    showPreview('✓ Inserido no prompt:', text, false);
+                                } else {
+                                    showPreview('⚠️ Terminal desconectado', 'Aguarde a conexão com o terminal.', true);
+                                }
+                                hidePreview(2500);
+                            } else {
+                                showPreview('⚠️ Nenhum som detetado', 'Fale mais perto do microfone.', true);
+                                hidePreview(2000);
+                            }
+                        } catch(err) {
+                            console.error('Whisper processing error:', err);
+                            showPreview('⚠️ Erro de Transcrição', (err.message || 'Falha ao processar áudio.'), true);
+                            hidePreview(3500);
+                        }
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    if (micBtn) {
+                        micBtn.classList.add('recording');
+                        micBtn.title = 'A gravar... Clique novamente para parar e transcrever';
+                    }
+                    showPreview('🎙️ A gravar voz (Firefox)...', 'Fale e clique no microfone para parar e transcrever.', false);
+
+                } catch(err) {
+                    console.error('MediaRecorder start error:', err);
+                    isRecording = false;
+                    if (micBtn) micBtn.classList.remove('recording');
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                        showPreview('⚠️ Permissão Negada', 'Autorize o acesso ao microfone no Firefox.', true);
+                    } else {
+                        showPreview('⚠️ Erro de Microfone', err.message || 'Não foi possível aceder ao microfone.', true);
+                    }
+                    hidePreview(3500);
+                }
+            }
+
+            window.triggerVoiceRecognition = function() {
+                if (isRecording) {
+                    isRecording = false;
+                    if (micBtn) {
+                        micBtn.classList.remove('recording');
+                        micBtn.title = 'Reconhecimento de Voz (Microfone) ou digite /voice';
+                    }
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                    }
+                } else {
+                    startMediaRecord();
+                }
+            };
+
             if (micBtn) {
-                micBtn.style.opacity = '0.5';
-                micBtn.title = 'Web Speech API não suportada neste browser (Use Chrome, Edge ou Safari)';
-                micBtn.addEventListener('click', function() {
-                    showPreview('⚠️ Navegador incompatível', 'O seu navegador não suporta Web Speech API. Use Chrome, Safari ou Edge.', true);
-                    hidePreview(4000);
-                });
+                micBtn.style.opacity = '1.0';
+                micBtn.title = 'Reconhecimento de Voz (Microfone) ou digite /voice';
+                micBtn.addEventListener('click', window.triggerVoiceRecognition);
             }
         }
 
