@@ -18,28 +18,31 @@ mkdir -p /workspace/uploads
 rm -rf /workspace/uploads/* 2>/dev/null || true
 echo "🧹 Cleaned uploads folder on startup"
 
-# Create infinite loop script for OpenCode auto-restart
+# Setup tmux configuration for persistent session management
+tmux kill-server 2>/dev/null || true
+cat << 'EOF' > /root/.tmux.conf
+set -g default-terminal "xterm-256color"
+set -g mouse on
+set -g status off
+set -s escape-time 0
+set -g history-limit 50000
+set -g aggressive-resize on
+EOF
+
+# Create persistent tmux session wrapper for OpenCode
 cat << 'EOF' > /start-opencode.sh
 #!/bin/bash
 export TERM=xterm-256color
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
 cd /workspace
 
 # Unset Groq API key inside OpenCode session so it is only used by the voice transcription proxy
 unset GROQ_API_KEY
 unset VOICE_GROQ_API_KEY
 
-while true; do
-    clear
-    echo "🚀 ==============================================="
-    echo "   OpenCode AI Web Terminal"
-    echo "   Working Directory: /workspace"
-    echo "==============================================="
-    echo ""
-    opencode || true
-    echo ""
-    echo "🔄 OpenCode session ended. Restarting automatically in 2 seconds..."
-    sleep 2
-done
+# Attach to existing opencode tmux session, or create it if not running
+exec tmux -u new-session -A -s opencode "/bin/bash -c 'while true; do clear; echo \"🚀 ===============================================\"; echo \"   OpenCode AI Web Terminal\"; echo \"   Working Directory: /workspace\"; echo \"===============================================\"; echo \"\"; opencode || true; echo \"\"; echo \"🔄 OpenCode session ended. Restarting in 2 seconds...\"; sleep 2; done'"
 EOF
 
 chmod +x /start-opencode.sh
