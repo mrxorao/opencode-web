@@ -63,6 +63,16 @@ docker run -d \
 
 ---
 
+## 🎙️ Browser Voice Recognition (Microphone)
+
+A built-in floating voice toolbar is available directly on the web interface (desktop and smartphone):
+- **🎙️ Speech-to-Text:** Tap the microphone icon to dictate your prompts in real-time.
+- **🌐 Multilingual Support:** Quickly toggle between Portuguese (`PT`/`BR`) and English (`EN`).
+- **↵ Auto-Enter Toggle:** Automatically sends the transcribed text to OpenCode or allows reviewing before submission.
+- **Mobile Responsive:** Fits seamlessly above virtual keyboards and safe-area insets.
+
+---
+
 ## 🤖 Configuring AI Models
 
 API keys and custom providers (OpenAI, Anthropic Claude, Google Gemini, OpenRouter, LiteLLM, Ollama) are configured **directly inside the OpenCode terminal interface**:
