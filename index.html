@@ -323,19 +323,9 @@ function execCommandDirect(str) {
 }
 window.execCommandDirect = execCommandDirect;
 
-// Primary universal copy to clipboard function with auto-refresh
+// Primary universal copy to clipboard function
 var _lastCopiedText = '';
 var _lastCopiedTime = 0;
-var _reloadAfterCopyTimer = null;
-
-function triggerAutoRefreshAfterCopy() {
-    if (_reloadAfterCopyTimer) clearTimeout(_reloadAfterCopyTimer);
-    _reloadAfterCopyTimer = setTimeout(function() {
-        try {
-            window.location.reload();
-        } catch(e) {}
-    }, 350);
-}
 
 function copyToClipboard(text) {
     if (text === undefined || text === null || text === '') {
@@ -344,8 +334,8 @@ function copyToClipboard(text) {
     var str = String(text);
     var now = Date.now();
 
-    // Deduplicate identical copies within 400ms
-    if (str === _lastCopiedText && (now - _lastCopiedTime) < 400) {
+    // Deduplicate identical copies within 500ms
+    if (str === _lastCopiedText && (now - _lastCopiedTime) < 500) {
         return Promise.resolve(true);
     }
     _lastCopiedText = str;
@@ -355,18 +345,16 @@ function copyToClipboard(text) {
     if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         return navigator.clipboard.writeText(str).then(function() {
             if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 300);
+                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
             }
             restoreTerminalFocus();
-            triggerAutoRefreshAfterCopy();
             return true;
         }).catch(function(err) {
             console.warn('[copy] navigator.clipboard.writeText error, fallback:', err);
             var ok = execCommandDirect(str);
             if (ok && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 300);
+                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
             }
-            if (ok) triggerAutoRefreshAfterCopy();
             return ok;
         });
     }
@@ -374,9 +362,8 @@ function copyToClipboard(text) {
     // 2. Fallback only if navigator.clipboard is unavailable
     var ok = execCommandDirect(str);
     if (ok && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-        window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 300);
+        window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
     }
-    if (ok) triggerAutoRefreshAfterCopy();
     return Promise.resolve(ok);
 }
 window.copyToClipboard = copyToClipboard;
@@ -445,6 +432,8 @@ window.registerOsc52OnTerminal = registerOsc52OnTerminal;
 
 // Server-Sent Events / Polling clipboard synchronization with backend server
 var _lastSyncedClipId = null;
+var _initialClipSyncDone = false;
+
 function initClipboardSync() {
     if (window.__clipboardSyncInitialized) return;
     window.__clipboardSyncInitialized = true;
@@ -457,27 +446,21 @@ function initClipboardSync() {
                 var data = JSON.parse(e.data);
                 if (data && data.text && data.id && data.id !== _lastSyncedClipId && data.id !== '0') {
                     _lastSyncedClipId = data.id;
-                    console.log('[clipboard-sync] Received update from server (' + data.text.length + ' chars)');
-                    copyToClipboard(data.text);
+                    if (_initialClipSyncDone) {
+                        console.log('[clipboard-sync] Received update from server (' + data.text.length + ' chars)');
+                        copyToClipboard(data.text);
+                    }
                 }
             } catch(err) {}
         };
     } catch(err) {
-        console.warn('[clipboard-sync] SSE unavailable, using polling fallback');
+        console.warn('[clipboard-sync] SSE unavailable');
     }
 
-    // Polling backup
-    setInterval(function() {
-        fetch('/api/clipboard')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data && data.text && data.id && data.id !== _lastSyncedClipId && data.id !== '0') {
-                    _lastSyncedClipId = data.id;
-                    copyToClipboard(data.text);
-                }
-            })
-            .catch(function() {});
-    }, 1500);
+    // Mark initial sync done after 1 second
+    setTimeout(function() {
+        _initialClipSyncDone = true;
+    }, 1000);
 }
 window.initClipboardSync = initClipboardSync;
 

@@ -522,10 +522,6 @@ function handleClipboardEvents(req, res) {
         'Access-Control-Allow-Origin': '*'
     });
 
-    if (currentClipboard.text) {
-        res.write(`data: ${JSON.stringify(currentClipboard)}\n\n`);
-    }
-
     clipboardClients.push(res);
 
     const keepAliveTimer = setInterval(() => {
