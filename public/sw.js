@@ -1,6 +1,5 @@
-const CACHE_NAME = 'opencode-pwa-v1';
+const CACHE_NAME = 'opencode-pwa-v2';
 const STATIC_ASSETS = [
-    '/',
     '/manifest.json',
     '/icon-192.png',
     '/icon-512.png',
@@ -12,9 +11,9 @@ self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(STATIC_ASSETS).catch((err) => {
-                console.warn('[SW] Cache prefetch warning:', err);
-            });
+            return Promise.allSettled(
+                STATIC_ASSETS.map((asset) => cache.add(asset).catch(() => {}))
+            );
         })
     );
 });

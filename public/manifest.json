@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "OpenCode AI - Web Terminal",
   "short_name": "OpenCode AI",
   "description": "Terminal Web e Assistente de Código com Modo Conversa e Controlo por Voz",
@@ -8,6 +9,7 @@
   "orientation": "any",
   "background_color": "#0d1117",
   "theme_color": "#0d1117",
+  "prefer_related_applications": false,
   "categories": ["developer", "productivity", "utilities"],
   "icons": [
     {
