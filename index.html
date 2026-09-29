@@ -1122,7 +1122,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                         // In Conversation Mode: automatically re-activate microphone for user's turn!
                         if (isConversationMode) {
-                            showPreview('🎙️ Your turn...', 'Speak now to respond...', false, true);
+                            showPreview('🎙️ A sua vez...', 'Pode falar para responder...', false, true);
                             setTimeout(function() {
                                 if (isConversationMode && !isRecording && !isSpeaking) {
                                     startGroqVoiceRecording();
@@ -1202,7 +1202,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
             var isConfigured = await fetchServerConfig();
             if (!isConfigured) {
-                showPreview('⚠️ API Key Required', 'Set VOICE_GROQ_API_KEY in your .env file first!', true, false);
+                showPreview('⚠️ Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env!', true, false);
                 hidePreview(5000);
                 if (isConversationMode) toggleConversationMode();
                 return;
@@ -1211,8 +1211,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
             try {
                 mediaStream = await getAudioMediaStream();
                 audioChunks = [];
-                speechDetected = false;
-                if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
 
                 mediaRecorder = new MediaRecorder(mediaStream);
 
@@ -1224,57 +1222,109 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                 var source = liveCtx.createMediaStreamSource(mediaStream);
                 var analyser = liveCtx.createAnalyser();
-                analyser.fftSize = 128;
-                analyser.smoothingTimeConstant = 0.25;
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.2;
                 source.connect(analyser);
                 var dataArray = new Uint8Array(analyser.frequencyBinCount);
                 var recordStartTime = Date.now();
+                var lastVoiceTime = 0;
+                var speechDetected = false;
+                var consecutiveVoiceFrames = 0;
+                var noiseFloor = 8;
+                var isStopped = false;
+
+                function stopRecordingNow() {
+                    if (isStopped) return;
+                    isStopped = true;
+                    if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                    }
+                }
 
                 function checkSilenceAndWave() {
-                    if (!isRecording) return;
+                    if (!isRecording || isStopped) return;
                     if (liveCtx && liveCtx.state === 'suspended') {
                         try { liveCtx.resume(); } catch(e) {}
                     }
                     analyser.getByteFrequencyData(dataArray);
-                    var sum = 0;
-                    var max = 0;
-                    for (var i = 0; i < dataArray.length; i++) {
-                        sum += dataArray[i];
-                        if (dataArray[i] > max) max = dataArray[i];
-                    }
-                    var avg = sum / dataArray.length;
 
-                    // Wave animation
-                    var count = Math.min(8, Math.max(1, Math.round(avg / 6)));
+                    // Focus on human vocal spectrum: bins 1 to 22 (~150Hz to 3800Hz)
+                    var voiceSum = 0;
+                    var voiceMax = 0;
+                    var voiceBins = 0;
+                    for (var i = 1; i <= Math.min(22, dataArray.length - 1); i++) {
+                        voiceSum += dataArray[i];
+                        if (dataArray[i] > voiceMax) voiceMax = dataArray[i];
+                        voiceBins++;
+                    }
+                    var avg = voiceBins > 0 ? (voiceSum / voiceBins) : 0;
+
+                    // Adaptive noise floor tracking
+                    if (!speechDetected) {
+                        noiseFloor = (noiseFloor * 0.92) + (avg * 0.08);
+                    } else if (avg < noiseFloor) {
+                        noiseFloor = (noiseFloor * 0.85) + (avg * 0.15);
+                    }
+
+                    // Voice activity thresholds
+                    var voiceThreshold = Math.max(12, (noiseFloor * 1.35) + 5);
+                    var peakThreshold = Math.max(26, (noiseFloor * 1.8) + 10);
+                    var isVoicePresent = (avg >= voiceThreshold) || (voiceMax >= peakThreshold);
+
+                    // Visual wave feedback
+                    var visualLevel = Math.max(0, avg - (noiseFloor * 0.7));
+                    var count = Math.min(8, Math.max(1, Math.round(visualLevel / 5)));
                     var bars = '';
                     for (var b = 0; b < count; b++) bars += '█';
                     for (var s = count; s < 8; s++) bars += '░';
                     if (previewWave) previewWave.textContent = '🔊 ' + bars;
 
-                    // Voice Activity Detection (VAD) - sensitive across Chrome, Edge & Firefox
-                    if (avg >= 4 || max >= 20) {
-                        speechDetected = true;
-                        if (silenceTimer) {
-                            clearTimeout(silenceTimer);
-                            silenceTimer = null;
+                    var now = Date.now();
+
+                    if (isVoicePresent) {
+                        consecutiveVoiceFrames++;
+                        // At least ~50ms of consistent voice frames
+                        if (consecutiveVoiceFrames >= 3) {
+                            speechDetected = true;
+                            lastVoiceTime = now;
+                            if (previewStatus) {
+                                previewStatus.textContent = isConversationMode ? '🎙️ Conversa: A ouvir...' : '🎙️ A ouvir...';
+                            }
+                            if (previewText) {
+                                previewText.textContent = 'Voz detetada...';
+                            }
                         }
-                        if (previewStatus) previewStatus.textContent = isConversationMode ? '🎙️ Conversa: A ouvir...' : '🎙️ A gravar...';
-                    } else if (speechDetected) {
-                        if (!silenceTimer) {
-                            if (previewStatus) previewStatus.textContent = '⏳ Silêncio detetado... A transcrever...';
-                            silenceTimer = setTimeout(function() {
-                                if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
-                                    mediaRecorder.stop();
-                                }
-                            }, 1000);
+                    } else {
+                        consecutiveVoiceFrames = 0;
+                    }
+
+                    if (speechDetected) {
+                        var silenceDuration = now - lastVoiceTime;
+                        if (silenceDuration >= 350) {
+                            if (previewStatus) {
+                                previewStatus.textContent = '⏳ Silêncio detetado...';
+                            }
+                            if (previewText) {
+                                var remaining = Math.max(0, ((900 - silenceDuration) / 1000)).toFixed(1);
+                                previewText.textContent = 'A finalizar em ' + remaining + 's...';
+                            }
+                        }
+                        // Stop automatically after ~900ms of silence after speaking
+                        if (silenceDuration >= 900) {
+                            stopRecordingNow();
+                            return;
+                        }
+                    } else {
+                        // If no speech detected at all after 8 seconds, auto-stop
+                        if (now - recordStartTime > 8000) {
+                            stopRecordingNow();
+                            return;
                         }
                     }
 
-                    // Auto-stop after 30 seconds max
-                    if (Date.now() - recordStartTime > 30000 && isRecording) {
-                        if (mediaRecorder && mediaRecorder.state === 'recording') {
-                            mediaRecorder.stop();
-                        }
+                    // Safety hard limit: 45 seconds max recording
+                    if (now - recordStartTime > 45000) {
+                        stopRecordingNow();
                         return;
                     }
 
@@ -1287,7 +1337,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                 mediaRecorder.onstop = async function() {
                     isRecording = false;
-                    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
                     cancelAnimationFrame(animFrameId);
                     if (micBtn) {
                         micBtn.classList.remove('recording');
@@ -1299,7 +1348,21 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     }
                     if (audioChunks.length === 0) return;
 
-                    showPreview('⚡ Transcribing with Groq Whisper...', 'Processing audio...', false, false);
+                    // If no voice was ever detected (timed out)
+                    if (!speechDetected && (Date.now() - recordStartTime >= 7500)) {
+                        showPreview('⚠️ Nenhuma voz detetada', 'Fale mais perto do microfone.', true, false);
+                        hidePreview(3000);
+                        if (isConversationMode) {
+                            setTimeout(function() {
+                                if (isConversationMode && !isRecording && !isSpeaking) {
+                                    startGroqVoiceRecording();
+                                }
+                            }, 1000);
+                        }
+                        return;
+                    }
+
+                    showPreview('⚡ A transcrever...', 'A processar com IA...', false, false);
 
                     try {
                         var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
@@ -1321,19 +1384,19 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             // In conversation mode: always auto-enter and trigger AI response wait
                             var autoSend = isConversationMode;
                             window.sendTextToTerminal(text, autoSend);
-                            showPreview('✓ Prompt: ' + text, isConversationMode ? 'Sent to AI...' : 'Inserted into terminal.', false, false);
+                            showPreview('✓ ' + text, isConversationMode ? 'Enviado para a IA...' : 'Inserido no terminal.', false, false);
                             if (!isConversationMode) hidePreview(2500);
                         } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
-                            showPreview('⚠️ API Key Required', 'Configure VOICE_GROQ_API_KEY in your .env file!', true, false);
+                            showPreview('⚠️ Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env!', true, false);
                             hidePreview(4500);
                             if (isConversationMode) toggleConversationMode();
                         } else {
-                            showPreview('⚠️ Transcription Error', (data.error || 'No speech recognized.'), true, false);
+                            showPreview('⚠️ Erro na Transcrição', (data.error || 'Nenhuma fala reconhecida.'), true, false);
                             hidePreview(3500);
                         }
                     } catch(err) {
                         console.error('Groq transcription fetch error:', err);
-                        showPreview('⚠️ Connection Error', 'Could not reach the transcription server.', true, false);
+                        showPreview('⚠️ Erro de Conexão', 'Não foi possível ligar ao servidor de transcrição.', true, false);
                         hidePreview(3500);
                     }
                 };
@@ -1342,7 +1405,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 isRecording = true;
                 if (micBtn) micBtn.classList.add('recording');
                 updateTalkButton();
-                showPreview(isConversationMode ? '🎙️ Conversation: Speak now...' : '🎙️ Recording...', 'Automatically pauses when you stop speaking.', false, true);
+                showPreview(
+                    isConversationMode ? '🎙️ Conversa: Pode falar...' : '🎙️ A gravar...',
+                    'A transcrição inicia automaticamente ao terminar de falar.',
+                    false,
+                    true
+                );
                 checkSilenceAndWave();
 
             } catch(err) {
@@ -1356,13 +1424,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 var isInsecure = !isHttps && !isLocal && (err.name === 'InsecureOriginError' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia);
 
                 if (isInsecure) {
-                    showPreview('⚠️ Microphone Blocked (HTTP)', 'Mobile devices require HTTPS or browser configuration.', true, false);
+                    showPreview('⚠️ Microfone Bloqueado (HTTP)', 'Dispositivos móveis requerem HTTPS ou configuração do browser.', true, false);
                     showMicPermissionModal();
                 } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    showPreview('⚠️ Permission Denied', 'Please allow microphone access in browser settings.', true, false);
+                    showPreview('⚠️ Permissão Recusada', 'Por favor autorize o acesso ao microfone nas definições do browser.', true, false);
                     if (isFirefox) showFirefoxModal();
                 } else {
-                    showPreview('⚠️ Microphone Error', err.message || 'Could not access the microphone.', true, false);
+                    showPreview('⚠️ Erro no Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
                 }
                 hidePreview(4500);
                 if (isConversationMode) toggleConversationMode();
@@ -1384,14 +1452,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 }
                 updateTalkButton();
                 playConversationStopSound();
-                showPreview('💬 Conversation Mode Off', 'You can still use the microphone for single dictation.', false, false);
+                showPreview('💬 Modo Conversa Desativado', 'Pode usar o microfone para ditado normal.', false, false);
                 hidePreview(2500);
             } else {
                 isConversationMode = true;
                 stopSpeaking();
                 updateTalkButton();
                 playConversationStartSound();
-                showPreview('💬 Conversation Mode On', 'Speak into the microphone. AI will reply and resume listening automatically.', false, false);
+                showPreview('💬 Modo Conversa Ativado', 'Fale para o microfone. A IA responderá e voltará a ouvir.', false, false);
                 
                 if (conversationPollTimer) clearInterval(conversationPollTimer);
                 conversationPollTimer = setInterval(checkForNewAiResponse, 1000);
