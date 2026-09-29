@@ -63,7 +63,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 </svg>
             </button>
             <button id="lang-btn" class="toolbar-pill active" title="Alternar idioma">PT</button>
-            <button id="auto-enter-btn" class="toolbar-pill active" title="Envio automático">↵ Auto</button>
+            <button id="auto-enter-btn" class="toolbar-pill" title="Alternar Envio Automático / Manual">↵ Manual</button>
         `;
 
         var preview = document.createElement('div');
@@ -86,7 +86,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var langIdx = 0;
         var langs = ['pt-PT', 'pt-BR', 'en-US'];
         var labels = ['PT', 'BR', 'EN'];
-        var autoEnter = true;
+        var autoEnter = false; // Manual mode by default: user always presses Enter!
         var previewTimer = null;
 
         var micBtn = document.getElementById('mic-btn');
@@ -127,7 +127,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     micBtn.classList.add('recording');
                     micBtn.title = 'A escutar... Clique para parar';
                 }
-                showPreview('🎙️ A escutar (' + labels[langIdx] + ')...', 'Fale agora...', false);
+                showPreview('🎙️ A escutar (' + labels[langIdx] + ')...', 'Fale agora o seu texto...', false);
             };
 
             rec.onresult = function(event) {
@@ -143,7 +143,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     var recognized = final.trim();
                     var sent = window.sendTextToTerminal(recognized, autoEnter);
                     if (sent) {
-                        showPreview('✓ Enviado: ' + recognized, '', false);
+                        showPreview('✓ Inserido no prompt:', recognized, false);
                     } else {
                         showPreview('⚠️ Terminal não conectado', 'Aguarde a conexão com o terminal.', true);
                     }
@@ -222,7 +222,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 } else {
                     autoEnterBtn.classList.remove('active');
                     autoEnterBtn.textContent = '↵ Manual';
-                    showPreview('↵ Envio Manual', 'Desativado (insere o texto sem enviar)', false);
+                    showPreview('↵ Envio Manual', 'Ativado (insere o texto no prompt sem enviar)', false);
                 }
                 hidePreview(1500);
             });
