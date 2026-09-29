@@ -12,6 +12,7 @@
 #transcript-preview{position:fixed;top:calc(env(safe-area-inset-top,8px) + 54px);right:calc(env(safe-area-inset-right,8px) + 12px);max-width:min(360px,calc(100vw - 32px));background:rgba(13,17,23,0.96);border:1px solid #30363d;border-radius:10px;padding:8px 12px;color:#f0f6fc;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,0.7);backdrop-filter:blur(10px);z-index:100000;display:none;word-break:break-word}
 #transcript-preview .transcript-status{font-size:11px;font-weight:600;color:#7ee787;margin-bottom:4px}
 #transcript-preview.error .transcript-status{color:#f85149}
+#transcript-preview .audio-wave{color:#58a6ff;font-family:monospace;font-size:14px;letter-spacing:2px;margin:4px 0}
 </style>
 <script type="text/javascript">
 // 1. Viewport & responsive font size
@@ -70,6 +71,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         preview.id = 'transcript-preview';
         preview.innerHTML = `
             <div class="transcript-status" id="transcript-status">🎙️ A escutar...</div>
+            <div id="transcript-wave" class="audio-wave" style="display:none"></div>
             <div id="transcript-text"></div>
         `;
 
@@ -95,19 +97,24 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var mediaRecorder = null;
         var audioChunks = [];
         var whisperPipeline = null;
+        var animFrameId = null;
 
         var micBtn = document.getElementById('mic-btn');
         var langBtn = document.getElementById('lang-btn');
         var autoEnterBtn = document.getElementById('auto-enter-btn');
         var previewBox = document.getElementById('transcript-preview');
         var previewStatus = document.getElementById('transcript-status');
+        var previewWave = document.getElementById('transcript-wave');
         var previewText = document.getElementById('transcript-text');
 
-        function showPreview(status, text, isError) {
+        function showPreview(status, text, isError, showWave) {
             if (!previewBox) return;
             clearTimeout(previewTimer);
             previewStatus.textContent = status;
             previewText.textContent = text || '';
+            if (previewWave) {
+                previewWave.style.display = (showWave ? 'block' : 'none');
+            }
             if (isError) { previewBox.classList.add('error'); } else { previewBox.classList.remove('error'); }
             previewBox.style.display = 'block';
         }
@@ -121,7 +128,23 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        // Engine 1: Native Web Speech API (Chrome, Safari, iOS, Edge)
+        // Exact 16kHz linear resampler function (essential for accurate Whisper transcription on Firefox 44.1k/48k audio)
+        function resampleTo16k(audioData, origSampleRate) {
+            if (!origSampleRate || origSampleRate === 16000) return audioData;
+            var ratio = origSampleRate / 16000;
+            var newLength = Math.round(audioData.length / ratio);
+            var result = new Float32Array(newLength);
+            for (var i = 0; i < newLength; i++) {
+                var origIdx = i * ratio;
+                var indexFloor = Math.floor(origIdx);
+                var indexCeil = Math.min(audioData.length - 1, Math.ceil(origIdx));
+                var weight = origIdx - indexFloor;
+                result[i] = audioData[indexFloor] * (1 - weight) + audioData[indexCeil] * weight;
+            }
+            return result;
+        }
+
+        // Engine 1: Native Streaming Speech Recognition (Chrome, Edge, Safari, iOS, or Firefox with webspeech enabled)
         if (SpeechRec) {
             rec = new SpeechRec();
             rec.continuous = false;
@@ -135,7 +158,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     micBtn.classList.add('recording');
                     micBtn.title = 'A escutar... Clique para parar';
                 }
-                showPreview('🎙️ A escutar (' + labels[langIdx] + ')...', 'Fale agora o seu texto...', false);
+                showPreview('🎙️ A escutar em tempo real (' + labels[langIdx] + ')...', 'Fale agora...', false, false);
             };
 
             rec.onresult = function(event) {
@@ -146,14 +169,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     else { interim += event.results[i][0].transcript; }
                 }
                 var text = final || interim;
-                if (text) { showPreview('🎙️ Transcrição:', text, false); }
+                if (text) { showPreview('🎙️ Transcrição:', text, false, false); }
                 if (final && final.trim()) {
                     var recognized = final.trim();
                     var sent = window.sendTextToTerminal(recognized, autoEnter);
                     if (sent) {
-                        showPreview('✓ Inserido no prompt:', recognized, false);
+                        showPreview('✓ Inserido no prompt:', recognized, false, false);
                     } else {
-                        showPreview('⚠️ Terminal não conectado', 'Aguarde a conexão com o terminal.', true);
+                        showPreview('⚠️ Terminal não conectado', 'Aguarde a conexão com o terminal.', true, false);
                     }
                     hidePreview(2500);
                 }
@@ -166,9 +189,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     micBtn.classList.remove('recording');
                 }
                 if (event.error === 'not-allowed') {
-                    showPreview('⚠️ Permissão Negada', 'Autorize o acesso ao microfone no navegador.', true);
+                    showPreview('⚠️ Permissão Negada', 'Autorize o acesso ao microfone no navegador.', true, false);
                 } else if (event.error !== 'no-speech') {
-                    showPreview('⚠️ Erro de Áudio', event.error, true);
+                    showPreview('⚠️ Erro de Áudio', event.error, true, false);
                 } else {
                     hidePreview(500);
                 }
@@ -200,43 +223,84 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 micBtn.addEventListener('click', window.triggerVoiceRecognition);
             }
         } 
-        // Engine 2: Universal Fallback via MediaRecorder + Transformers.js Whisper (Firefox, etc.)
+        // Engine 2: Accurate Resampled Whisper Engine with Voice Level Meter (Firefox fallback)
         else {
+            // Background pre-load Whisper model so first click is instantaneous
+            setTimeout(async function() {
+                try {
+                    var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+                    transformers.env.allowLocalModels = false;
+                    whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
+                    console.log('Whisper AI preloaded successfully in background.');
+                } catch(e) {
+                    console.log('Whisper will load on demand:', e);
+                }
+            }, 1000);
+
             async function startMediaRecord() {
                 try {
                     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioChunks = [];
                     mediaRecorder = new MediaRecorder(mediaStream);
 
+                    // Setup real-time visualizer wave
+                    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    var liveCtx = new AudioCtx();
+                    var source = liveCtx.createMediaStreamSource(mediaStream);
+                    var analyser = liveCtx.createAnalyser();
+                    analyser.fftSize = 32;
+                    source.connect(analyser);
+                    var dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                    function updateWave() {
+                        if (!isRecording) return;
+                        analyser.getByteFrequencyData(dataArray);
+                        var avg = 0;
+                        for (var i = 0; i < dataArray.length; i++) avg += dataArray[i];
+                        avg = avg / dataArray.length;
+                        var bars = '';
+                        var count = Math.min(8, Math.max(1, Math.round(avg / 15)));
+                        for (var b = 0; b < count; b++) bars += '█';
+                        for (var s = count; s < 8; s++) bars += '░';
+                        if (previewWave) previewWave.textContent = '🔊 ' + bars;
+                        animFrameId = requestAnimationFrame(updateWave);
+                    }
+
                     mediaRecorder.ondataavailable = function(e) {
                         if (e.data.size > 0) audioChunks.push(e.data);
                     };
 
                     mediaRecorder.onstop = async function() {
+                        cancelAnimationFrame(animFrameId);
+                        try { liveCtx.close(); } catch(e) {}
                         if (mediaStream) {
                             mediaStream.getTracks().forEach(function(t) { t.stop(); });
                         }
                         if (audioChunks.length === 0) return;
 
-                        showPreview('⏳ A processar áudio...', 'A decodificar voz...', false);
+                        showPreview('⏳ A transcrever com Whisper AI...', 'A processar áudio...', false, false);
 
                         try {
                             var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
                             var arrayBuffer = await audioBlob.arrayBuffer();
-                            var AudioCtx = window.AudioContext || window.webkitAudioContext;
-                            var audioCtx = new AudioCtx({ sampleRate: 16000 });
-                            var audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-                            var audioData = audioBuffer.getChannelData(0);
+                            var decodeCtx = new AudioCtx();
+                            var audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+                            var rawData = audioBuffer.getChannelData(0);
+                            var origRate = audioBuffer.sampleRate;
+                            try { decodeCtx.close(); } catch(e) {}
+
+                            // Resample from 44.1k/48k down to 16k
+                            var audio16k = resampleTo16k(rawData, origRate);
 
                             if (!whisperPipeline) {
-                                showPreview('⏳ A carregar IA de voz...', 'A descarregar Whisper leve (apenas na 1ª vez)...', false);
+                                showPreview('⏳ A carregar IA de voz...', 'A descarregar modelo leve (apenas na 1ª vez)...', false, false);
                                 var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
                                 transformers.env.allowLocalModels = false;
                                 whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
                             }
 
-                            showPreview('⏳ A transcrever...', 'A converter fala em texto...', false);
-                            var out = await whisperPipeline(audioData, {
+                            showPreview('⏳ A transcrever...', 'A converter fala em texto...', false, false);
+                            var out = await whisperPipeline(audio16k, {
                                 language: whisperLangs[langIdx],
                                 task: 'transcribe'
                             });
@@ -245,18 +309,18 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             if (text) {
                                 var sent = window.sendTextToTerminal(text, autoEnter);
                                 if (sent) {
-                                    showPreview('✓ Inserido no prompt:', text, false);
+                                    showPreview('✓ Inserido no prompt:', text, false, false);
                                 } else {
-                                    showPreview('⚠️ Terminal desconectado', 'Aguarde a conexão com o terminal.', true);
+                                    showPreview('⚠️ Terminal desconectado', 'Aguarde a conexão com o terminal.', true, false);
                                 }
                                 hidePreview(2500);
                             } else {
-                                showPreview('⚠️ Nenhum som detetado', 'Fale mais perto do microfone.', true);
+                                showPreview('⚠️ Nenhum som detetado', 'Fale mais perto do microfone.', true, false);
                                 hidePreview(2000);
                             }
                         } catch(err) {
                             console.error('Whisper processing error:', err);
-                            showPreview('⚠️ Erro de Transcrição', (err.message || 'Falha ao processar áudio.'), true);
+                            showPreview('⚠️ Erro de Transcrição', (err.message || 'Falha ao processar áudio.'), true, false);
                             hidePreview(3500);
                         }
                     };
@@ -267,16 +331,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         micBtn.classList.add('recording');
                         micBtn.title = 'A gravar... Clique novamente para parar e transcrever';
                     }
-                    showPreview('🎙️ A gravar voz (Firefox)...', 'Fale e clique no microfone para parar e transcrever.', false);
+                    showPreview('🎙️ A gravar voz (' + labels[langIdx] + ')...', 'Fale e clique no microfone para transcrever.', false, true);
+                    updateWave();
 
                 } catch(err) {
                     console.error('MediaRecorder start error:', err);
                     isRecording = false;
                     if (micBtn) micBtn.classList.remove('recording');
                     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                        showPreview('⚠️ Permissão Negada', 'Autorize o acesso ao microfone no Firefox.', true);
+                        showPreview('⚠️ Permissão Negada', 'Autorize o acesso ao microfone no Firefox.', true, false);
                     } else {
-                        showPreview('⚠️ Erro de Microfone', err.message || 'Não foi possível aceder ao microfone.', true);
+                        showPreview('⚠️ Erro de Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
                     }
                     hidePreview(3500);
                 }
@@ -309,7 +374,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 langIdx = (langIdx + 1) % langs.length;
                 langBtn.textContent = labels[langIdx];
                 if (rec) rec.lang = langs[langIdx];
-                showPreview('🌐 Idioma', 'Reconhecimento configurado para: ' + langs[langIdx], false);
+                showPreview('🌐 Idioma', 'Reconhecimento configurado para: ' + langs[langIdx], false, false);
                 hidePreview(1500);
             });
         }
@@ -320,11 +385,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 if (autoEnter) {
                     autoEnterBtn.classList.add('active');
                     autoEnterBtn.textContent = '↵ Auto';
-                    showPreview('↵ Envio Automático', 'Ativado (envia Enter após falar)', false);
+                    showPreview('↵ Envio Automático', 'Ativado (envia Enter após falar)', false, false);
                 } else {
                     autoEnterBtn.classList.remove('active');
                     autoEnterBtn.textContent = '↵ Manual';
-                    showPreview('↵ Envio Manual', 'Ativado (insere o texto no prompt sem enviar)', false);
+                    showPreview('↵ Envio Manual', 'Ativado (insere o texto no prompt sem enviar)', false, false);
                 }
                 hidePreview(1500);
             });
