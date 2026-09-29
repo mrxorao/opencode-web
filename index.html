@@ -1339,17 +1339,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                     if (speechDetected) {
                         var silenceDuration = now - lastVoiceTime;
-                        if (silenceDuration >= 600) {
+                        if (silenceDuration >= 1000) {
                             if (previewStatus) {
                                 previewStatus.textContent = '⏳ Silêncio detetado...';
                             }
                             if (previewText) {
-                                var remaining = Math.max(0, ((1800 - silenceDuration) / 1000)).toFixed(1);
+                                var remaining = Math.max(0, ((3800 - silenceDuration) / 1000)).toFixed(1);
                                 previewText.textContent = 'A finalizar em ' + remaining + 's...';
                             }
                         }
-                        // Stop automatically after ~1800ms (1.8s) of silence after speaking
-                        if (silenceDuration >= 1800) {
+                        // Stop automatically after ~3800ms (3.8s) of silence after speaking
+                        if (silenceDuration >= 3800) {
                             stopRecordingNow();
                             return;
                         }
