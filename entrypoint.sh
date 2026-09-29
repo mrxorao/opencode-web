@@ -3,6 +3,16 @@ set -e
 
 export TERM=xterm-256color
 
+# Check and update OpenCode AI to the latest version on container startup
+AUTO_UPDATE="${AUTO_UPDATE:-true}"
+if [ "$AUTO_UPDATE" = "true" ] || [ "$AUTO_UPDATE" = "1" ]; then
+    echo "📦 Checking and updating OpenCode AI to the latest version..."
+    npm install -g opencode-ai@latest || echo "⚠️ Could not update OpenCode AI (offline/network error), continuing with installed version."
+fi
+
+CURRENT_VERSION=$(opencode --version 2>/dev/null || echo "installed")
+echo "✓ OpenCode AI active version: $CURRENT_VERSION"
+
 # Create infinite loop script for OpenCode auto-restart
 cat << 'EOF' > /start-opencode.sh
 #!/bin/bash
