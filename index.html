@@ -1142,10 +1142,69 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         var mediaStream = null;
         var mediaRecorder = null;
+        var liveCtx = null;
+        var audioSourceNode = null;
         var audioChunks = [];
         var animFrameId = null;
         var speechDetected = false;
         var silenceTimer = null;
+
+        function stopAllAudioAndMic() {
+            voiceSessionId++; // Invalidate any in-flight recording session / async awaits
+            isRecording = false;
+            isStartingRecording = false;
+
+            if (typeof cancelAnimationFrame === 'function' && animFrameId) {
+                try { cancelAnimationFrame(animFrameId); } catch(e) {}
+                animFrameId = null;
+            }
+
+            if (mediaRecorder) {
+                try {
+                    audioChunks = [];
+                    mediaRecorder.onstop = null;
+                    mediaRecorder.ondataavailable = null;
+                    if (mediaRecorder.state !== 'inactive') {
+                        mediaRecorder.stop();
+                    }
+                } catch(e) {}
+                mediaRecorder = null;
+            }
+
+            if (audioSourceNode) {
+                try { audioSourceNode.disconnect(); } catch(e) {}
+                audioSourceNode = null;
+            }
+
+            if (liveCtx) {
+                try {
+                    if (typeof liveCtx.close === 'function' && liveCtx.state !== 'closed') {
+                        liveCtx.close();
+                    }
+                } catch(e) {}
+                liveCtx = null;
+            }
+
+            if (mediaStream) {
+                try {
+                    var tracks = mediaStream.getTracks();
+                    if (tracks && tracks.length > 0) {
+                        tracks.forEach(function(t) {
+                            try { t.stop(); } catch(err) {}
+                        });
+                    }
+                } catch(e) {}
+                mediaStream = null;
+            }
+
+            // Immediately reset microphone button visual state back to green
+            if (micBtn) {
+                micBtn.classList.remove('recording');
+            }
+            if (voiceToolbar) {
+                voiceToolbar.classList.remove('recording');
+            }
+        }
 
         var micBtn = document.getElementById('mic-btn');
         var talkBtn = document.getElementById('talk-btn');
@@ -1742,13 +1801,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 mediaRecorder = new MediaRecorder(mediaStream);
 
                 var AudioCtx = window.AudioContext || window.webkitAudioContext;
-                var liveCtx = new AudioCtx();
+                liveCtx = new AudioCtx();
                 if (liveCtx.state === 'suspended') {
                     try { await liveCtx.resume(); } catch(e) {}
                 }
 
                 if (thisSession !== voiceSessionId) {
                     try { liveCtx.close(); } catch(e) {}
+                    liveCtx = null;
                     if (mediaStream) {
                         try { mediaStream.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
                         mediaStream = null;
@@ -1759,7 +1819,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     return;
                 }
 
-                var source = liveCtx.createMediaStreamSource(mediaStream);
+                audioSourceNode = liveCtx.createMediaStreamSource(mediaStream);
                 
                 // High-pass filter at 120Hz to eliminate DC offset and sub-bass rumble/hiss on Chrome/Edge
                 var highpassFilter = liveCtx.createBiquadFilter();
@@ -1771,7 +1831,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 analyser.fftSize = 512;
                 analyser.smoothingTimeConstant = 0.2;
 
-                source.connect(highpassFilter);
+                audioSourceNode.connect(highpassFilter);
                 highpassFilter.connect(analyser);
 
                 var timeDomainBuffer = new Float32Array(analyser.fftSize);
@@ -1887,10 +1947,23 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     if (micBtn) {
                         micBtn.classList.remove('recording');
                     }
+                    if (voiceToolbar) {
+                        voiceToolbar.classList.remove('recording');
+                    }
                     updateTalkButton();
-                    try { liveCtx.close(); } catch(e) {}
+                    if (audioSourceNode) {
+                        try { audioSourceNode.disconnect(); } catch(e) {}
+                        audioSourceNode = null;
+                    }
+                    if (liveCtx) {
+                        try { liveCtx.close(); } catch(e) {}
+                        liveCtx = null;
+                    }
                     if (mediaStream) {
-                        mediaStream.getTracks().forEach(function(t) { t.stop(); });
+                        try {
+                            mediaStream.getTracks().forEach(function(t) { t.stop(); });
+                        } catch(e) {}
+                        mediaStream = null;
                     }
                     if (audioChunks.length === 0 || thisSession !== voiceSessionId) return;
 
@@ -2011,34 +2084,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     conversationPollTimer = null;
                 }
                 stopSpeaking();
-                isRecording = false;
-                if (typeof cancelAnimationFrame === 'function' && animFrameId) {
-                    cancelAnimationFrame(animFrameId);
-                    animFrameId = null;
-                }
-                if (mediaRecorder) {
-                    audioChunks = [];
-                    mediaRecorder.onstop = null;
-                    mediaRecorder.ondataavailable = null;
-                    if (mediaRecorder.state !== 'inactive') {
-                        try { mediaRecorder.stop(); } catch(e) {}
-                    }
-                }
-                if (liveCtx) {
-                    try { liveCtx.close(); } catch(e) {}
-                    liveCtx = null;
-                }
-                if (mediaStream) {
-                    try {
-                        mediaStream.getTracks().forEach(function(t) { t.stop(); });
-                    } catch(e) {}
-                    mediaStream = null;
-                }
-                if (micBtn) {
-                    micBtn.classList.remove('recording');
-                }
+                stopAllAudioAndMic();
                 if (voiceToolbar) {
-                    voiceToolbar.classList.remove('recording', 'active', 'speaking');
+                    voiceToolbar.classList.remove('active', 'speaking');
                 }
                 updateTalkButton();
                 playConversationStopSound();
@@ -2071,10 +2119,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 return;
             }
 
-            if (isRecording) {
-                if (mediaRecorder && mediaRecorder.state === 'recording') {
-                    mediaRecorder.stop();
-                }
+            if (isRecording || isStartingRecording) {
+                stopAllAudioAndMic();
+                showPreview('Gravação Parada', 'Microfone desativado.', false, false);
+                hidePreview(2000);
+                updateTalkButton();
             } else {
                 if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
                     showFirefoxModal('mic');
@@ -2085,11 +2134,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         };
 
         function cancelVoiceAndConversation(showFeedback) {
-            voiceSessionId++; // Invalidate any pending recording or transcribe operations immediately
             var wasActive = isConversationMode || isRecording || isSpeaking || isStartingRecording || isWaitingForAiResponse;
-
-            isStartingRecording = false;
-            isWaitingForAiResponse = false;
 
             if (isConversationMode) {
                 isConversationMode = false;
@@ -2101,39 +2146,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
 
             stopSpeaking();
+            stopAllAudioAndMic();
 
-            isRecording = false;
-            if (typeof cancelAnimationFrame === 'function' && animFrameId) {
-                cancelAnimationFrame(animFrameId);
-                animFrameId = null;
-            }
-            if (mediaRecorder) {
-                audioChunks = [];
-                mediaRecorder.onstop = null;
-                mediaRecorder.ondataavailable = null;
-                if (mediaRecorder.state !== 'inactive') {
-                    try { mediaRecorder.stop(); } catch(e) {}
-                }
-            }
-            if (liveCtx) {
-                try { liveCtx.close(); } catch(e) {}
-                liveCtx = null;
-            }
-            if (mediaStream) {
-                try {
-                    mediaStream.getTracks().forEach(function(t) { t.stop(); });
-                } catch(e) {}
-                mediaStream = null;
-            }
+            isWaitingForAiResponse = false;
 
-            // Immediately reset microphone button visual state back to green
-            if (micBtn) {
-                micBtn.classList.remove('recording');
-            }
-
-            // Reset toolbar classes
             if (voiceToolbar) {
-                voiceToolbar.classList.remove('recording', 'active', 'speaking');
+                voiceToolbar.classList.remove('active', 'speaking');
             }
 
             updateTalkButton();
