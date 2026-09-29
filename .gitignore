@@ -1,0 +1,12 @@
+# Environment variables
+.env
+
+# Local persistent data and projects
+data/
+workspace/
+
+# OS / Editor temporary files
+.DS_Store
+Thumbs.db
+*.swp
+*.bak

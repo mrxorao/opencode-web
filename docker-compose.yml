@@ -1,0 +1,19 @@
+services:
+  opencode-web:
+    build: .
+    container_name: opencode-web
+    restart: unless-stopped
+    ports:
+      - "${OPENCODE_PORT:-7681}:7681"
+    environment:
+      - TTYD_AUTH=${TTYD_AUTH:-admin:admin123}
+      - AUTO_START_OPENCODE=true
+      - NODE_OPTIONS=--max-old-space-size=256
+    volumes:
+      - ./data/config:/root/.config/opencode
+      - ./data/share:/root/.local/share/opencode
+      - ./workspace:/workspace
+    working_dir: /workspace
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: 512m
