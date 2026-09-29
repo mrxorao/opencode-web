@@ -40,7 +40,8 @@
 #voice-toolbar.corner-bottom-left{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;top:auto}
 
 /* Transcript Preview Popup & Audio Monitor */
-#transcript-preview{position:fixed;max-width:min(340px,calc(100vw - 36px));background:rgba(15,18,25,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;color:#f8fafc;font-size:12.5px;line-height:1.45;box-shadow:0 16px 36px -4px rgba(0,0,0,0.65),0 0 0 1px rgba(255,255,255,0.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+#transcript-preview{position:fixed;max-width:min(340px,calc(100vw - 36px));background:rgba(15,18,25,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;color:#f8fafc;font-size:12.5px;line-height:1.45;box-shadow:0 16px 36px -4px rgba(0,0,0,0.65),0 0 0 1px rgba(255,255,255,0.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease, border-color .2s ease, background .2s ease;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer;user-select:text}
+#transcript-preview:hover{border-color:rgba(56,189,248,0.35);background:rgba(18,22,31,0.96)}
 #transcript-preview.preview-top-right{top:calc(env(safe-area-inset-top,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;bottom:auto}
 #transcript-preview.preview-top-left{top:calc(env(safe-area-inset-top,12px) + 68px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;bottom:auto}
 #transcript-preview.preview-bottom-right{bottom:calc(env(safe-area-inset-bottom,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;top:auto}
@@ -248,51 +249,84 @@ window.focusTerminal = function() {
     } catch(e) {}
 };
 
-// Helper: Universal, bulletproof copy to clipboard (supports HTTP & HTTPS)
-function fallbackExecCommandCopy(text) {
-    try {
-        var textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-9999px';
-        textArea.style.top = '-9999px';
-        textArea.style.opacity = '0';
-        textArea.style.pointerEvents = 'none';
-        textArea.setAttribute('readonly', '');
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        textArea.setSelectionRange(0, text.length);
-
-        var successful = document.execCommand('copy');
-        document.body.removeChild(textArea);
-        return !!successful;
-    } catch (err) {
-        console.error('[copy] fallbackExecCommandCopy error:', err);
-        return false;
-    }
-}
-
+// Helper: Universal, bulletproof copy to system clipboard
 function copyToClipboard(text) {
     if (text === undefined || text === null || text === '') {
         return Promise.resolve(false);
     }
     var str = String(text);
 
-    // 1. Try modern navigator.clipboard API if available
+    // 1. Try synchronous execCommand via temporary viewport-safe textarea
+    var execSuccess = false;
+    try {
+        var textArea = document.createElement('textarea');
+        textArea.value = str;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+        textArea.style.padding = '0';
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+        textArea.style.background = 'transparent';
+        textArea.style.opacity = '0.01';
+        textArea.style.zIndex = '-9999';
+        
+        var prevActive = document.activeElement;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        textArea.setSelectionRange(0, str.length);
+
+        execSuccess = document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        if (prevActive && typeof prevActive.focus === 'function') {
+            try { prevActive.focus({ preventScroll: true }); } catch(e) {}
+        }
+    } catch(err) {
+        console.warn('[copy] execCommand copy error:', err);
+    }
+
+    // 2. Try modern navigator.clipboard API in parallel/fallback
     if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         return navigator.clipboard.writeText(str).then(function() {
             return true;
         }).catch(function(err) {
-            console.warn('[copy] navigator.clipboard failed, using execCommand fallback:', err);
-            return fallbackExecCommandCopy(str);
+            console.warn('[copy] navigator.clipboard.writeText failed:', err);
+            return execSuccess;
         });
     }
 
-    // 2. Fallback for insecure HTTP origins and mobile webviews
-    return Promise.resolve(fallbackExecCommandCopy(str));
+    return Promise.resolve(execSuccess);
 }
 window.copyToClipboard = copyToClipboard;
+
+// Global native copy event handler: guarantees that standard Copy / Ctrl+C
+// always embeds the terminal selection into the clipboardData
+document.addEventListener('copy', function(e) {
+    var selectedText = '';
+    if (window.term && typeof window.term.getSelection === 'function') {
+        selectedText = window.term.getSelection();
+    } else if (window.__ttyd_xterm && window.__ttyd_xterm.terminal && typeof window.__ttyd_xterm.terminal.getSelection === 'function') {
+        selectedText = window.__ttyd_xterm.terminal.getSelection();
+    }
+    if (!selectedText && window.getSelection) {
+        selectedText = window.getSelection().toString();
+    }
+
+    if (selectedText && selectedText.length > 0) {
+        if (e.clipboardData) {
+            e.clipboardData.setData('text/plain', selectedText);
+            e.preventDefault();
+            if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 250);
+            }
+        }
+    }
+});
 
 // Helper: Thoroughly sanitize voice input so it never starts with shell triggers ($ / \ !) or accidental quotes/dots
 function sanitizeVoiceInput(rawText) {
@@ -909,6 +943,27 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 if (previewBox) previewBox.style.display = 'none';
                 window.focusTerminal();
             }
+        }
+
+        if (previewBox && !previewBox.__copyClickHooked) {
+            previewBox.__copyClickHooked = true;
+            previewBox.title = 'Clique para copiar texto para a área de transferência';
+            previewBox.addEventListener('click', function(e) {
+                var textToCopy = previewText ? previewText.textContent : '';
+                if (textToCopy && textToCopy.trim()) {
+                    copyToClipboard(textToCopy.trim()).then(function(ok) {
+                        if (ok) {
+                            var origStatus = previewStatus ? previewStatus.textContent : '';
+                            if (previewStatus) previewStatus.textContent = '✓ Copiado para a área de transferência!';
+                            setTimeout(function() {
+                                if (previewStatus && previewStatus.textContent === '✓ Copiado para a área de transferência!') {
+                                    previewStatus.textContent = origStatus || 'Transcrição';
+                                }
+                            }, 1800);
+                        }
+                    });
+                }
+            });
         }
 
         function showFirefoxModal(action) {
@@ -2026,6 +2081,22 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         }
                     });
 
+                    var copyBtn = document.createElement('button');
+                    copyBtn.className = 'prompt-card-btn';
+                    copyBtn.title = 'Copiar conteúdo para a área de transferência';
+                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copiar</span>';
+                    copyBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        copyToClipboard(p.content || '').then(function(ok) {
+                            if (ok) {
+                                copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span style="color:#34d399">Copiado!</span>';
+                                setTimeout(function() {
+                                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copiar</span>';
+                                }, 1800);
+                            }
+                        });
+                    });
+
                     var useBtn = document.createElement('button');
                     useBtn.className = 'prompt-card-btn use-btn';
                     useBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span>Usar Prompt</span>';
@@ -2037,6 +2108,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         hidePreview(2500);
                     });
 
+                    actions.appendChild(copyBtn);
                     actions.appendChild(editBtn);
                     actions.appendChild(deleteBtn);
                     actions.appendChild(useBtn);
@@ -2366,33 +2438,37 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'c' || ev.key === 'C') && ev.type === 'keydown') {
                         if (termInstance.hasSelection && termInstance.hasSelection()) {
                             var text = termInstance.getSelection();
-                            if (text) {
+                            if (text && text.length > 0) {
                                 copyToClipboard(text).then(function(ok) {
                                     if (ok && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
                                         window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 300);
                                     }
                                 });
+                                return false; // Prevent sending SIGINT \x03 to terminal when copying selection
                             }
-                            return false; // Prevent sending SIGINT \x03 to terminal when copying selection
                         }
                     }
                     return true;
                 });
             }
 
-            // 2. Intercept selection change event to automatically copy selected text reliably
-            if (typeof termInstance.onSelectionChange === 'function') {
-                termInstance.onSelectionChange(function() {
-                    if (termInstance.hasSelection && termInstance.hasSelection()) {
-                        var text = termInstance.getSelection();
-                        if (text && text.trim().length > 0) {
-                            copyToClipboard(text).then(function(ok) {
-                                if (ok && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                                    window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
-                                }
-                            });
+            // 2. Mouseup event on terminal container: copies reliably once user finishes highlighting text
+            var termElem = termInstance.element || document.querySelector('.xterm-screen, .xterm, #terminal');
+            if (termElem && !termElem.__mouseupCopyHooked) {
+                termElem.__mouseupCopyHooked = true;
+                termElem.addEventListener('mouseup', function() {
+                    setTimeout(function() {
+                        if (termInstance.hasSelection && termInstance.hasSelection()) {
+                            var text = termInstance.getSelection();
+                            if (text && text.trim().length > 0) {
+                                copyToClipboard(text).then(function(ok) {
+                                    if (ok && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                                        window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+                                    }
+                                });
+                            }
                         }
-                    }
+                    }, 20);
                 });
             }
         }
