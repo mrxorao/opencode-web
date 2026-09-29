@@ -323,9 +323,19 @@ function execCommandDirect(str) {
 }
 window.execCommandDirect = execCommandDirect;
 
-// Primary universal copy to clipboard function (Non-destructive, preserves terminal focus)
+// Primary universal copy to clipboard function with auto-refresh
 var _lastCopiedText = '';
 var _lastCopiedTime = 0;
+var _reloadAfterCopyTimer = null;
+
+function triggerAutoRefreshAfterCopy() {
+    if (_reloadAfterCopyTimer) clearTimeout(_reloadAfterCopyTimer);
+    _reloadAfterCopyTimer = setTimeout(function() {
+        try {
+            window.location.reload();
+        } catch(e) {}
+    }, 350);
+}
 
 function copyToClipboard(text) {
     if (text === undefined || text === null || text === '') {
@@ -341,20 +351,22 @@ function copyToClipboard(text) {
     _lastCopiedText = str;
     _lastCopiedTime = now;
 
-    // 1. Primary: Modern Async Clipboard API (Directly writes to OS Clipboard without modifying DOM or focus)
+    // 1. Primary: Modern Async Clipboard API (Directly writes to OS Clipboard)
     if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         return navigator.clipboard.writeText(str).then(function() {
             if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 300);
             }
             restoreTerminalFocus();
+            triggerAutoRefreshAfterCopy();
             return true;
         }).catch(function(err) {
             console.warn('[copy] navigator.clipboard.writeText error, fallback:', err);
             var ok = execCommandDirect(str);
             if (ok && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 300);
             }
+            if (ok) triggerAutoRefreshAfterCopy();
             return ok;
         });
     }
@@ -362,8 +374,9 @@ function copyToClipboard(text) {
     // 2. Fallback only if navigator.clipboard is unavailable
     var ok = execCommandDirect(str);
     if (ok && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-        window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+        window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 300);
     }
+    if (ok) triggerAutoRefreshAfterCopy();
     return Promise.resolve(ok);
 }
 window.copyToClipboard = copyToClipboard;
