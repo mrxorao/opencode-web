@@ -1654,6 +1654,78 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
+        function playMicStartSound() {
+            try {
+                var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                var ctx = new AudioCtx();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                var now = ctx.currentTime;
+
+                // Simple & crisp rising chime for microphone start: 587.33 Hz (D5) -> 880 Hz (A5)
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.type = 'sine';
+
+                osc.frequency.setValueAtTime(587.33, now);
+                osc.frequency.exponentialRampToValueAtTime(880.0, now + 0.08);
+
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.16, now + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.12);
+
+                setTimeout(function() {
+                    try { ctx.close(); } catch(e) {}
+                }, 300);
+            } catch(e) {
+                console.warn('Error playing mic start sound:', e);
+            }
+        }
+
+        function playMicStopSound() {
+            try {
+                var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                var ctx = new AudioCtx();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                var now = ctx.currentTime;
+
+                // Simple & subtle falling tone for microphone stop: 784 Hz (G5) -> 440 Hz (A4)
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.type = 'sine';
+
+                osc.frequency.setValueAtTime(784.0, now);
+                osc.frequency.exponentialRampToValueAtTime(440.0, now + 0.09);
+
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.14, now + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.11);
+
+                setTimeout(function() {
+                    try { ctx.close(); } catch(e) {}
+                }, 300);
+            } catch(e) {
+                console.warn('Error playing mic stop sound:', e);
+            }
+        }
+
         function speakAiMessage(rawText) {
             if (!isConversationMode) return;
             if (!window.speechSynthesis) return;
@@ -1965,6 +2037,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         } catch(e) {}
                         mediaStream = null;
                     }
+                    if (!isConversationMode && thisSession === voiceSessionId) {
+                        playMicStopSound();
+                    }
                     if (audioChunks.length === 0 || thisSession !== voiceSessionId) return;
 
                     // If no voice was ever detected (timed out)
@@ -2037,6 +2112,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 isStartingRecording = false;
                 mediaRecorder.start();
                 isRecording = true;
+                if (!isConversationMode) {
+                    playMicStartSound();
+                }
                 if (micBtn) micBtn.classList.add('recording');
                 if (voiceToolbar) voiceToolbar.classList.add('recording');
                 updateTalkButton();
@@ -2120,6 +2198,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
 
             if (isRecording || isStartingRecording) {
+                playMicStopSound();
                 stopAllAudioAndMic();
                 showPreview('Gravação Parada', 'Microfone desativado.', false, false);
                 hidePreview(2000);
@@ -2135,6 +2214,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         function cancelVoiceAndConversation(showFeedback) {
             var wasActive = isConversationMode || isRecording || isSpeaking || isStartingRecording || isWaitingForAiResponse;
+            var wasActiveConversation = isConversationMode;
+            var wasActiveMic = isRecording || isStartingRecording;
 
             if (isConversationMode) {
                 isConversationMode = false;
@@ -2143,6 +2224,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     conversationPollTimer = null;
                 }
                 playConversationStopSound();
+            } else if (wasActiveMic) {
+                playMicStopSound();
             }
 
             stopSpeaking();
