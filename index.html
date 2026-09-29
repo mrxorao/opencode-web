@@ -40,15 +40,16 @@
 #voice-toolbar.corner-bottom-left{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;top:auto}
 
 /* Transcript Preview Popup & Audio Monitor */
-#transcript-preview{position:fixed;max-width:min(360px,calc(100vw - 48px));background:rgba(13,17,23,0.96);border:1px solid #30363d;border-radius:10px;padding:8px 12px;color:#f0f6fc;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,0.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+#transcript-preview{position:fixed;max-width:min(340px,calc(100vw - 36px));background:rgba(15,18,25,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;color:#f8fafc;font-size:12.5px;line-height:1.45;box-shadow:0 16px 36px -4px rgba(0,0,0,0.65),0 0 0 1px rgba(255,255,255,0.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 #transcript-preview.preview-top-right{top:calc(env(safe-area-inset-top,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;bottom:auto}
 #transcript-preview.preview-top-left{top:calc(env(safe-area-inset-top,12px) + 68px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;bottom:auto}
 #transcript-preview.preview-bottom-right{bottom:calc(env(safe-area-inset-bottom,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;top:auto}
 #transcript-preview.preview-bottom-left{bottom:calc(env(safe-area-inset-bottom,12px) + 68px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;top:auto}
-#transcript-preview .transcript-status{font-size:11px;font-weight:600;color:#7ee787;margin-bottom:4px}
-#transcript-preview.error .transcript-status{color:#f85149}
-#transcript-preview .audio-wave{color:#58a6ff;font-family:monospace;font-size:14px;letter-spacing:2px;margin:4px 0}
-#transcript-preview #transcript-text{font-size:12px;color:#c9d1d9}
+#transcript-preview .transcript-status{font-size:11.5px;font-weight:600;color:#34d399;display:flex;align-items:center;gap:6px;letter-spacing:-0.01em;margin-bottom:3px}
+#transcript-preview .transcript-status::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+#transcript-preview.error .transcript-status{color:#f87171}
+#transcript-preview .audio-wave{color:#38bdf8;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;letter-spacing:1px;margin:4px 0}
+#transcript-preview #transcript-text{font-size:12px;color:#94a3b8}
 
 /* Corner Target Zones Hint */
 #corner-zone-container{pointer-events:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99998;display:none}
@@ -78,79 +79,82 @@ body.toolbar-dragging #corner-zone-container{display:block}
 #prompts-btn, #shortcuts-btn{background:#30363d;color:#e6edf3}
 #prompts-btn:hover, #shortcuts-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 
-/* Modals (Firefox, Mic, Shortcuts, Upload Choice & Prompts) */
-#firefox-modal, #mic-modal, #shortcuts-modal, #upload-choice-modal, #prompts-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+/* Modals System (Clean Human-Crafted Anti-AI UI) */
+#firefox-modal, #mic-modal, #shortcuts-modal, #upload-choice-modal, #prompts-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,15,0.74);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
 #firefox-modal.active, #mic-modal.active, #shortcuts-modal.active, #upload-choice-modal.active, #prompts-modal.active{display:flex}
-.modal-card{background:#161b22;border:1px solid #30363d;border-radius:12px;max-width:460px;width:100%;padding:20px;color:#c9d1d9;box-shadow:0 12px 32px rgba(0,0,0,0.85);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #30363d}
-.modal-title{font-size:15px;font-weight:700;color:#58a6ff;display:flex;align-items:center;gap:8px}
-.modal-close{background:none;border:none;color:#8b949e;font-size:22px;cursor:pointer;line-height:1;padding:0}
-.modal-close:hover{color:#f0f6fc}
-.modal-body{font-size:13px;line-height:1.6;max-height:calc(85vh - 120px);overflow-y:auto}
-.modal-body p{margin:0 0 10px 0}
-.modal-steps{margin:8px 0 14px 18px;padding:0}
+.modal-card{background:#11141b;border:1px solid rgba(255,255,255,0.08);border-radius:14px;max-width:480px;width:100%;padding:22px 24px;color:#e2e8f0;box-shadow:0 24px 50px -12px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.03);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.modal-title{font-size:14.5px;font-weight:600;color:#f8fafc;display:flex;align-items:center;gap:8px;letter-spacing:-0.015em}
+.modal-title svg{color:#94a3b8;flex-shrink:0}
+.modal-close{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#94a3b8;width:28px;height:28px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;padding:0;transition:all .15s ease}
+.modal-close:hover{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.15)}
+.modal-body{font-size:13px;line-height:1.6;max-height:calc(85vh - 130px);overflow-y:auto;color:#94a3b8}
+.modal-body p{margin:0 0 12px 0}
+.modal-steps{margin:8px 0 14px 18px;padding:0;color:#cbd5e1}
 .modal-steps li{margin-bottom:8px}
-.modal-code{background:rgba(110,118,129,0.25);color:#ff7b72;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;font-weight:600;word-break:break-all}
-.modal-note{font-size:12px;color:#8b949e;background:rgba(56,139,253,0.1);border-left:3px solid #58a6ff;padding:8px 10px;border-radius:4px;margin-bottom:14px}
-.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
-.modal-btn{background:#238636;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease}
-.modal-btn:hover{background:#2ea043}
-.modal-btn-sec{background:#30363d;color:#c9d1d9;border:1px solid rgba(255,255,255,0.15)}
-.modal-btn-sec:hover{background:#388bfd;color:#fff}
+.modal-code{background:rgba(255,255,255,0.06);color:#e2e8f0;padding:2px 6px;border-radius:5px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;font-weight:500;border:1px solid rgba(255,255,255,0.08);word-break:break-all}
+.modal-note{font-size:12.5px;color:#94a3b8;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-left:3px solid #38bdf8;padding:10px 12px;border-radius:8px;margin-bottom:14px;line-height:1.5}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06)}
+.modal-btn{background:#f8fafc;color:#0b0f17;border:none;border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s ease;box-shadow:0 1px 2px rgba(0,0,0,0.25)}
+.modal-btn:hover{background:#ffffff;transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,0.3)}
+.modal-btn-sec{background:rgba(255,255,255,0.04);color:#cbd5e1;border:1px solid rgba(255,255,255,0.08);box-shadow:none}
+.modal-btn-sec:hover{background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.14);transform:translateY(-1px)}
 
 /* Shortcuts rows */
-.shortcut-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.shortcut-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
 .shortcut-row:last-child{border-bottom:none}
-.shortcut-keys{display:flex;gap:4px;align-items:center}
-.shortcut-key{background:rgba(110,118,129,0.3);color:#58a6ff;border:1px solid rgba(88,166,255,0.35);padding:3px 8px;border-radius:6px;font-family:monospace;font-size:12px;font-weight:700;box-shadow:0 2px 4px rgba(0,0,0,0.3)}
-.shortcut-desc{font-size:13px;color:#c9d1d9}
+.shortcut-keys{display:flex;gap:5px;align-items:center}
+.shortcut-key{background:#181c25;color:#f1f5f9;border:1px solid rgba(255,255,255,0.12);border-bottom-width:2px;padding:3px 8px;border-radius:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+.shortcut-desc{font-size:12.5px;color:#cbd5e1}
 
 /* Prompts Library Modal Styles */
-.prompt-search-box{width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:8px 12px;color:#f0f6fc;font-size:13px;outline:none;transition:border-color .15s ease}
-.prompt-search-box:focus{border-color:#58a6ff;box-shadow:0 0 0 2px rgba(88,166,255,0.25)}
+.prompt-search-wrapper{position:relative;flex:1;display:flex;align-items:center}
+.prompt-search-icon{position:absolute;left:11px;color:#64748b;pointer-events:none;display:flex}
+.prompt-search-box{width:100%;box-sizing:border-box;background:#090b10;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px 8px 34px;color:#f8fafc;font-size:13px;outline:none;transition:all .15s ease}
+.prompt-search-box:focus{border-color:rgba(255,255,255,0.25);background:#0d1017;box-shadow:0 0 0 3px rgba(255,255,255,0.03)}
+.prompt-search-box::placeholder{color:#64748b}
+.prompt-count-badge{font-size:11px;color:#64748b;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);padding:2px 8px;border-radius:9999px;font-weight:500}
 .prompts-container{display:flex;flex-direction:column;gap:8px;max-height:calc(65vh - 120px);overflow-y:auto;padding-right:4px}
-.prompt-card{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;transition:all .15s ease}
-.prompt-card:hover{border-color:#58a6ff;background:rgba(88,166,255,0.04)}
+.prompt-card{background:#141720;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:all .15s ease}
+.prompt-card:hover{border-color:rgba(255,255,255,0.12);background:#171b26;box-shadow:0 4px 16px rgba(0,0,0,0.3)}
 .prompt-card-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.prompt-card-title{font-size:13px;font-weight:700;color:#58a6ff}
-.prompt-card-body{font-size:12px;color:#8b949e;line-height:1.4;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prompt-card-title{font-size:13.5px;font-weight:600;color:#f1f5f9;letter-spacing:-0.01em}
+.prompt-card-body{font-size:12px;color:#94a3b8;line-height:1.5;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.03);border-radius:6px;padding:8px 10px;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .prompt-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:2px}
-.prompt-card-btn{background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;transition:all .15s ease;font-weight:600}
-.prompt-card-btn:hover{background:#30363d;color:#fff}
-.prompt-card-btn.use-btn{background:#238636;color:#fff;border-color:transparent}
-.prompt-card-btn.use-btn:hover{background:#2ea043}
-.prompt-card-btn.delete-btn:hover{background:#da3633;color:#fff;border-color:#f85149}
+.prompt-card-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:#cbd5e1;padding:4px 9px;border-radius:6px;font-size:11.5px;cursor:pointer;transition:all .15s ease;font-weight:500;outline:none}
+.prompt-card-btn:hover{background:rgba(255,255,255,0.08);color:#f8fafc;border-color:rgba(255,255,255,0.12)}
+.prompt-card-btn.use-btn{background:#2563eb;color:#ffffff;border-color:rgba(255,255,255,0.1)}
+.prompt-card-btn.use-btn:hover{background:#1d4ed8;color:#fff}
+.prompt-card-btn.delete-btn:hover{background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.2)}
 
 /* Prompts Pagination */
-.prompts-pagination{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid #30363d;font-size:12px;color:#8b949e}
-.pagination-controls{display:flex;align-items:center;gap:8px}
-.pagination-btn{background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .15s ease}
-.pagination-btn:hover:not(:disabled){background:#30363d;color:#58a6ff;border-color:#58a6ff}
-.pagination-btn:disabled{opacity:0.35;cursor:not-allowed}
-.pagination-indicator{font-weight:600;color:#f0f6fc;font-size:12px}
+.prompts-pagination{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:#64748b}
+.pagination-controls{display:flex;align-items:center;gap:6px}
+.pagination-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#cbd5e1;padding:5px 11px;border-radius:6px;font-size:11.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s ease}
+.pagination-btn:hover:not(:disabled){background:rgba(255,255,255,0.08);color:#f8fafc;border-color:rgba(255,255,255,0.15)}
+.pagination-btn:disabled{opacity:0.3;cursor:not-allowed}
+.pagination-indicator{font-weight:600;color:#cbd5e1;font-size:12px;padding:0 4px}
 
 /* Prompt Editor Form */
-.prompt-form-group{margin-bottom:12px}
-.prompt-form-label{display:block;font-size:12px;font-weight:600;color:#8b949e;margin-bottom:4px}
-.prompt-form-input{width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 10px;color:#f0f6fc;font-size:13px;outline:none}
-.prompt-form-input:focus{border-color:#58a6ff}
-.prompt-form-textarea{width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 10px;color:#f0f6fc;font-size:13px;outline:none;min-height:95px;resize:vertical;font-family:inherit}
-.prompt-form-textarea:focus{border-color:#58a6ff}
+.prompt-form-group{margin-bottom:14px}
+.prompt-form-label{display:block;font-size:12px;font-weight:500;color:#94a3b8;margin-bottom:6px}
+.prompt-form-input{width:100%;box-sizing:border-box;background:#090b10;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;color:#f8fafc;font-size:13px;outline:none;transition:all .15s ease}
+.prompt-form-input:focus{border-color:rgba(255,255,255,0.25);background:#0d1017;box-shadow:0 0 0 3px rgba(255,255,255,0.03)}
+.prompt-form-textarea{width:100%;box-sizing:border-box;background:#090b10;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:#f8fafc;font-size:13px;outline:none;min-height:110px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;line-height:1.5;transition:all .15s ease}
+.prompt-form-textarea:focus{border-color:rgba(255,255,255,0.25);background:#0d1017;box-shadow:0 0 0 3px rgba(255,255,255,0.03)}
 
 /* Mobile Upload Choice Modal */
-.upload-choice-btn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#0d1117;border:1px solid #30363d;border-radius:8px;color:#f0f6fc;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px;transition:all .15s ease;text-align:left}
-.upload-choice-btn:hover{background:#21262d;border-color:#58a6ff;color:#58a6ff}
+.upload-choice-btn{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;background:#141720;border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#f8fafc;font-size:13.5px;font-weight:500;cursor:pointer;margin-bottom:8px;transition:all .15s ease;text-align:left}
+.upload-choice-btn:hover{background:#1a1e29;border-color:rgba(255,255,255,0.15);transform:translateY(-1px)}
 .upload-choice-btn:last-child{margin-bottom:0}
 
 /* Global File Drag & Drop Overlay */
-#file-drop-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,17,23,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100005;display:none;align-items:center;justify-content:center;pointer-events:none;transition:opacity .2s ease;opacity:0}
+#file-drop-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,15,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:100005;display:none;align-items:center;justify-content:center;pointer-events:none;transition:opacity .2s ease;opacity:0}
 #file-drop-overlay.active{display:flex;opacity:1}
-.file-drop-box{border:2.5px dashed #58a6ff;border-radius:20px;background:rgba(22,27,34,0.85);padding:36px 48px;text-align:center;color:#f0f6fc;box-shadow:0 0 35px rgba(88,166,255,0.3);transform:scale(1);animation:drop-box-pulse 1.5s infinite ease-in-out;max-width:85vw;box-sizing:border-box}
-@keyframes drop-box-pulse{0%{transform:scale(1);border-color:rgba(88,166,255,0.7)}50%{transform:scale(1.03);border-color:#58a6ff;box-shadow:0 0 45px rgba(88,166,255,0.5)}100%{transform:scale(1);border-color:rgba(88,166,255,0.7)}}
-.file-drop-icon{margin-bottom:12px;animation:float-icon 2s infinite ease-in-out;color:#58a6ff;display:flex;justify-content:center}
-@keyframes float-icon{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
-.file-drop-title{font-size:20px;font-weight:700;color:#58a6ff;margin-bottom:6px;letter-spacing:0.5px}
-.file-drop-desc{font-size:14px;color:#8b949e}
+.file-drop-box{border:2px dashed rgba(255,255,255,0.25);border-radius:16px;background:#11141b;padding:36px 48px;text-align:center;color:#f8fafc;box-shadow:0 20px 50px rgba(0,0,0,0.8);max-width:85vw;box-sizing:border-box}
+.file-drop-icon{margin-bottom:12px;color:#94a3b8;display:flex;justify-content:center}
+.file-drop-title{font-size:18px;font-weight:600;color:#f8fafc;margin-bottom:4px;letter-spacing:-0.01em}
+.file-drop-desc{font-size:13px;color:#64748b}
 </style>
 <script type="text/javascript">
 // 1. Dynamic Virtual Keyboard & Viewport Sync for Mobile
@@ -515,7 +519,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var preview = document.createElement('div');
         preview.id = 'transcript-preview';
         preview.innerHTML = `
-            <div class="transcript-status" id="transcript-status">🎙️ Listening...</div>
+            <div class="transcript-status" id="transcript-status">A escutar...</div>
             <div id="transcript-wave" class="audio-wave" style="display:none"></div>
             <div id="transcript-text"></div>
         `;
@@ -525,21 +529,26 @@ window.sendTextToTerminal = function(text, autoEnter) {
         ffModal.innerHTML = `
             <div class="modal-card">
                 <div class="modal-header">
-                    <div class="modal-title">🦊 Configuração de Voz no Firefox</div>
-                    <button id="ff-close-btn" class="modal-close" title="Fechar">&times;</button>
+                    <div class="modal-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        Configuração de Voz no Firefox
+                    </div>
+                    <button id="ff-close-btn" class="modal-close" title="Fechar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                 </div>
                 <div class="modal-body">
-                    <p>Se o reconhecimento de voz ou microfone não funcionar no Firefox, certifica-te de ativar estas opções em <span class="modal-code">about:config</span>:</p>
+                    <p>Se o reconhecimento de voz não iniciar no Firefox, certifica-te de ativar as seguintes opções em <span class="modal-code">about:config</span>:</p>
                     <ol class="modal-steps">
-                        <li>Escreve <span class="modal-code">about:config</span> na barra de endereço e prime <b>Enter</b>.</li>
+                        <li>Acede a <span class="modal-code">about:config</span> na barra de endereço e prime <b>Enter</b>.</li>
                         <li>Pesquisa por <span class="modal-code">media.webspeech.recognition.enable</span> e define como <b>true</b>.</li>
                         <li>Pesquisa por <span class="modal-code">media.webspeech.recognition.force_enable</span> e define como <b>true</b>.</li>
                     </ol>
-                    <div class="modal-note">💡 <b>Dica:</b> Clica em <b>Permitir</b> quando o Firefox solicitar acesso ao microfone.</div>
+                    <div class="modal-note">Permite o acesso ao microfone quando solicitado pelo navegador.</div>
                 </div>
                 <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center">
                     <label style="font-size:12px;color:#8b949e;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
-                        <input type="checkbox" id="ff-dont-show-checkbox" checked style="cursor:pointer;accent-color:#58a6ff">
+                        <input type="checkbox" id="ff-dont-show-checkbox" checked style="cursor:pointer;accent-color:#38bdf8">
                         Não voltar a mostrar
                     </label>
                     <button id="ff-ok-btn" class="modal-btn">Continuar</button>
@@ -552,32 +561,37 @@ window.sendTextToTerminal = function(text, autoEnter) {
         micModal.innerHTML = `
             <div class="modal-card">
                 <div class="modal-header">
-                    <div class="modal-title">🎙️ Enable Microphone on Mobile</div>
-                    <button id="mic-close-btn" class="modal-close" title="Close">&times;</button>
+                    <div class="modal-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                        Permissão de Microfone no Telemóvel
+                    </div>
+                    <button id="mic-close-btn" class="modal-close" title="Fechar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                 </div>
                 <div class="modal-body">
-                    <p>For web security reasons, mobile browsers (Chrome, Safari, Edge) <b>block microphone access on insecure HTTP</b> over local network IPs.</p>
+                    <p>Por razões de segurança, os navegadores móveis bloqueiam o acesso ao microfone em ligações HTTP não seguras na rede local.</p>
                     
                     <div class="modal-note">
-                        🔒 <b>Option 1: Enable HTTPS (Recommended for iOS and Android)</b>
+                        <b style="color:#f8fafc">Opção 1: Ativar HTTPS (Recomendado)</b>
                         <p style="margin:6px 0 0 0">
-                            1. Set <span class="modal-code">ENABLE_HTTPS=true</span> in your <span class="modal-code">.env</span> file and restart the container.<br>
-                            2. Access via: <b style="color:#7ee787;display:inline-block;margin-top:4px">https://${location.hostname}:7681</b>
+                            1. Define <span class="modal-code">ENABLE_HTTPS=true</span> no teu ficheiro <span class="modal-code">.env</span> e reinicia o container.<br>
+                            2. Acede através de: <b style="color:#38bdf8;display:inline-block;margin-top:4px">https://${location.hostname}:7681</b>
                         </p>
                     </div>
 
-                    <div class="modal-note" style="border-left-color:#f0883e;background:rgba(240,136,62,0.1)">
-                        🤖 <b>Option 2: Chrome on Android (Without HTTPS)</b>
+                    <div class="modal-note" style="border-left-color:#f59e0b">
+                        <b style="color:#f8fafc">Opção 2: Chrome / Edge no Android (Sem HTTPS)</b>
                         <ol class="modal-steps" style="margin-top:6px">
-                            <li>In a new tab open: <br><span class="modal-code">chrome://flags/#unsafely-treat-insecure-origin-as-secure</span></li>
-                            <li>Set to <b>Enabled</b> and add the URL: <br><span class="modal-code">${location.origin}</span></li>
-                            <li>Tap <b>Relaunch</b> to restart Chrome.</li>
+                            <li>Abre num novo separador: <br><span class="modal-code">chrome://flags/#unsafely-treat-insecure-origin-as-secure</span></li>
+                            <li>Ativa e adiciona o URL: <br><span class="modal-code">${location.origin}</span></li>
+                            <li>Toca em <b>Relaunch</b> para reiniciar o navegador.</li>
                         </ol>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="mic-copy-url-btn" class="modal-btn modal-btn-sec">Copy HTTPS URL</button>
-                    <button id="mic-ok-btn" class="modal-btn">Got it</button>
+                    <button id="mic-copy-url-btn" class="modal-btn modal-btn-sec">Copiar URL HTTPS</button>
+                    <button id="mic-ok-btn" class="modal-btn">Compreendido</button>
                 </div>
             </div>
         `;
@@ -585,28 +599,33 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var uploadChoiceModal = document.createElement('div');
         uploadChoiceModal.id = 'upload-choice-modal';
         uploadChoiceModal.innerHTML = `
-            <div class="modal-card" style="max-width:360px">
+            <div class="modal-card" style="max-width:380px">
                 <div class="modal-header">
-                    <div class="modal-title">📎 Anexar Ficheiro ou Foto</div>
-                    <button id="upload-choice-close-btn" class="modal-close" title="Fechar">&times;</button>
+                    <div class="modal-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                        Anexar Ficheiro ou Imagem
+                    </div>
+                    <button id="upload-choice-close-btn" class="modal-close" title="Fechar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                 </div>
                 <div class="modal-body" style="padding:4px 0">
                     <button id="choice-camera-btn" class="upload-choice-btn">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                             <circle cx="12" cy="13" r="4"></circle>
                         </svg>
-                        <span>📷 Tirar Foto / Usar Câmara</span>
+                        <span>Tirar Foto / Câmara</span>
                     </button>
                     <button id="choice-files-btn" class="upload-choice-btn">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                             <line x1="16" y1="13" x2="8" y2="13"></line>
                             <line x1="16" y1="17" x2="8" y2="17"></line>
                             <polyline points="10 9 9 9 8 9"></polyline>
                         </svg>
-                        <span>📁 Ficheiros / Galeria</span>
+                        <span>Escolher Ficheiros / Galeria</span>
                     </button>
                 </div>
             </div>
@@ -615,10 +634,25 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var shortcutsModal = document.createElement('div');
         shortcutsModal.id = 'shortcuts-modal';
         shortcutsModal.innerHTML = `
-            <div class="modal-card" style="max-width:440px">
+            <div class="modal-card" style="max-width:460px">
                 <div class="modal-header">
-                    <div class="modal-title">⌨️ Atalhos de Teclado</div>
-                    <button id="shortcuts-close-btn" class="modal-close" title="Fechar">&times;</button>
+                    <div class="modal-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                            <line x1="6" y1="8" x2="6.01" y2="8"></line>
+                            <line x1="10" y1="8" x2="10.01" y2="8"></line>
+                            <line x1="14" y1="8" x2="14.01" y2="8"></line>
+                            <line x1="18" y1="8" x2="18.01" y2="8"></line>
+                            <line x1="8" y1="12" x2="8.01" y2="12"></line>
+                            <line x1="12" y1="12" x2="12.01" y2="12"></line>
+                            <line x1="16" y1="12" x2="16.01" y2="12"></line>
+                            <line x1="6" y1="16" x2="18" y2="16"></line>
+                        </svg>
+                        Atalhos de Teclado
+                    </div>
+                    <button id="shortcuts-close-btn" class="modal-close" title="Fechar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <div class="shortcut-row">
@@ -639,7 +673,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     </div>
                     <div class="shortcut-row">
                         <div class="shortcut-desc">Anexar ficheiros / fotos ao terminal</div>
-                        <div class="shortcut-keys"><span class="shortcut-key">Arrastar (Drag & Drop)</span></div>
+                        <div class="shortcut-keys"><span class="shortcut-key">Arrastar & Largar</span></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -651,38 +685,60 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var promptsModal = document.createElement('div');
         promptsModal.id = 'prompts-modal';
         promptsModal.innerHTML = `
-            <div class="modal-card" style="max-width:540px">
+            <div class="modal-card" style="max-width:560px">
                 <div class="modal-header">
-                    <div class="modal-title">📚 Biblioteca de Prompts</div>
-                    <button id="prompts-close-btn" class="modal-close" title="Fechar">&times;</button>
+                    <div class="modal-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        Biblioteca de Prompts
+                    </div>
+                    <button id="prompts-close-btn" class="modal-close" title="Fechar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                 </div>
                 <div class="modal-body" id="prompts-list-view">
-                    <div style="display:flex;gap:8px;margin-bottom:12px">
-                        <input type="text" id="prompt-search-input" placeholder="🔍 Pesquisar por título ou descrição..." class="prompt-search-box">
-                        <button id="new-prompt-btn" class="modal-btn" style="white-space:nowrap;padding:7px 12px;font-size:12px">+ Novo</button>
+                    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+                        <div class="prompt-search-wrapper">
+                            <div class="prompt-search-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </div>
+                            <input type="text" id="prompt-search-input" placeholder="Pesquisar por título ou conteúdo..." class="prompt-search-box">
+                        </div>
+                        <button id="new-prompt-btn" class="modal-btn" style="white-space:nowrap;padding:7px 12px;font-size:12px">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Novo
+                        </button>
                     </div>
                     <div class="prompts-container" id="prompts-cards-container"></div>
                     <div class="prompts-pagination" id="prompts-pagination" style="display:none">
-                        <div id="prompt-pagination-info">0 prompt(s)</div>
+                        <div id="prompt-pagination-info">0 prompts</div>
                         <div class="pagination-controls">
-                            <button id="prompt-prev-page-btn" class="pagination-btn" title="Página anterior">&larr; Anterior</button>
+                            <button id="prompt-prev-page-btn" class="pagination-btn" title="Página anterior">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                Anterior
+                            </button>
                             <span id="prompt-page-indicator" class="pagination-indicator">1 / 1</span>
-                            <button id="prompt-next-page-btn" class="pagination-btn" title="Página seguinte">Seguinte &rarr;</button>
+                            <button id="prompt-next-page-btn" class="pagination-btn" title="Página seguinte">
+                                Seguinte
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div class="modal-body" id="prompts-edit-view" style="display:none">
                     <div class="prompt-form-group">
-                        <label class="prompt-form-label" for="prompt-input-title">Título do Prompt:</label>
-                        <input type="text" id="prompt-input-title" class="prompt-form-input" placeholder="ex: Refatorar Código...">
+                        <label class="prompt-form-label" for="prompt-input-title">Título do Prompt</label>
+                        <input type="text" id="prompt-input-title" class="prompt-form-input" placeholder="Ex: Refatorar Código TypeScript...">
                     </div>
                     <div class="prompt-form-group">
-                        <label class="prompt-form-label" for="prompt-input-content">Conteúdo do Prompt:</label>
-                        <textarea id="prompt-input-content" class="prompt-form-textarea" placeholder="Escreve o prompt completo que será enviado ao OpenCode..."></textarea>
+                        <label class="prompt-form-label" for="prompt-input-content">Conteúdo do Prompt</label>
+                        <textarea id="prompt-input-content" class="prompt-form-textarea" placeholder="Escreve o prompt que será enviado para o OpenCode..."></textarea>
                     </div>
-                    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+                    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
                         <button id="cancel-prompt-btn" class="modal-btn modal-btn-sec">Cancelar</button>
-                        <button id="save-prompt-btn" class="modal-btn">Salvar Prompt</button>
+                        <button id="save-prompt-btn" class="modal-btn">Guardar Prompt</button>
                     </div>
                 </div>
             </div>
@@ -1135,7 +1191,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
             if (validSentences.length === 0) return;
 
-            showPreview('🔊 AI (' + configuredLang + ')...', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
+            showPreview('Áudio (' + configuredLang + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
             hidePreview(4000);
 
             isSpeaking = true;
@@ -1154,7 +1210,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                         // In Conversation Mode: automatically re-activate microphone for user's turn!
                         if (isConversationMode) {
-                            showPreview('🎙️ A sua vez...', 'Pode falar para responder...', false, true);
+                            showPreview('A sua vez...', 'Pode falar para responder...', false, true);
                             setTimeout(function() {
                                 if (isConversationMode && !isRecording && !isSpeaking) {
                                     startGroqVoiceRecording();
@@ -1234,7 +1290,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
             var isConfigured = await fetchServerConfig();
             if (!isConfigured) {
-                showPreview('⚠️ Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env!', true, false);
+                showPreview('Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env', true, false);
                 hidePreview(5000);
                 if (isConversationMode) toggleConversationMode();
                 return;
@@ -1316,7 +1372,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     var bars = '';
                     for (var b = 0; b < count; b++) bars += '█';
                     for (var s = count; s < 8; s++) bars += '░';
-                    if (previewWave) previewWave.textContent = '🔊 ' + (bars || '░░░░░░░░');
+                    if (previewWave) previewWave.textContent = bars || '░░░░░░░░';
 
                     var now = Date.now();
 
@@ -1327,7 +1383,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             speechDetected = true;
                             lastVoiceTime = now;
                             if (previewStatus) {
-                                previewStatus.textContent = isConversationMode ? '🎙️ Conversa: A ouvir...' : '🎙️ A gravar...';
+                                previewStatus.textContent = isConversationMode ? 'Modo Conversa: A ouvir...' : 'A gravar áudio...';
                             }
                             if (previewText) {
                                 previewText.textContent = 'Voz detetada...';
@@ -1341,7 +1397,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         var silenceDuration = now - lastVoiceTime;
                         if (silenceDuration >= 1000) {
                             if (previewStatus) {
-                                previewStatus.textContent = '⏳ Silêncio detetado...';
+                                previewStatus.textContent = 'Silêncio detetado';
                             }
                             if (previewText) {
                                 var remaining = Math.max(0, ((3800 - silenceDuration) / 1000)).toFixed(1);
@@ -1389,7 +1445,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                     // If no voice was ever detected (timed out)
                     if (!speechDetected && (Date.now() - recordStartTime >= 9500)) {
-                        showPreview('⚠️ Nenhuma voz detetada', 'Fale mais perto do microfone.', true, false);
+                        showPreview('Nenhuma voz detetada', 'Fale mais perto do microfone.', true, false);
                         hidePreview(3000);
                         if (isConversationMode) {
                             setTimeout(function() {
@@ -1401,7 +1457,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         return;
                     }
 
-                    showPreview('⚡ A transcrever...', 'A processar com IA...', false, false);
+                    showPreview('A transcrever...', 'A processar com IA...', false, false);
 
                     try {
                         var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
@@ -1426,10 +1482,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             // In conversation mode: always auto-enter and trigger AI response wait
                             var autoSend = isConversationMode;
                             window.sendTextToTerminal(text, autoSend);
-                            showPreview('✓ ' + text, isConversationMode ? 'Enviado para a IA...' : 'Inserido no terminal.', false, false);
+                            showPreview(text, isConversationMode ? 'Enviado para a IA...' : 'Inserido no terminal.', false, false);
                             if (!isConversationMode) hidePreview(2500);
                         } else if (resp.ok && !text) {
-                            showPreview('⚠️ Nenhuma fala reconhecida', 'Fale mais perto do microfone.', true, false);
+                            showPreview('Nenhuma fala reconhecida', 'Fale mais perto do microfone.', true, false);
                             hidePreview(3000);
                             if (isConversationMode) {
                                 setTimeout(function() {
@@ -1439,16 +1495,16 @@ window.sendTextToTerminal = function(text, autoEnter) {
                                 }, 1000);
                             }
                         } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
-                            showPreview('⚠️ Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env!', true, false);
+                            showPreview('Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env', true, false);
                             hidePreview(4500);
                             if (isConversationMode) toggleConversationMode();
                         } else {
-                            showPreview('⚠️ Erro na Transcrição', (data.error || 'Nenhuma fala reconhecida.'), true, false);
+                            showPreview('Erro na Transcrição', (data.error || 'Nenhuma fala reconhecida.'), true, false);
                             hidePreview(3500);
                         }
                     } catch(err) {
                         console.error('Groq transcription fetch error:', err);
-                        showPreview('⚠️ Erro de Conexão', 'Não foi possível ligar ao servidor de transcrição.', true, false);
+                        showPreview('Erro de Ligação', 'Não foi possível ligar ao servidor de transcrição.', true, false);
                         hidePreview(3500);
                     }
                 };
@@ -1458,7 +1514,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 if (micBtn) micBtn.classList.add('recording');
                 updateTalkButton();
                 showPreview(
-                    isConversationMode ? '🎙️ Conversa: Pode falar...' : '🎙️ A gravar...',
+                    isConversationMode ? 'Modo Conversa: Pode falar...' : 'A gravar áudio...',
                     'A transcrição inicia automaticamente ao terminar de falar.',
                     false,
                     true
@@ -1476,13 +1532,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 var isInsecure = !isHttps && !isLocal && (err.name === 'InsecureOriginError' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia);
 
                 if (isInsecure) {
-                    showPreview('⚠️ Microfone Bloqueado (HTTP)', 'Dispositivos móveis requerem HTTPS ou configuração do browser.', true, false);
+                    showPreview('Microfone Bloqueado (HTTP)', 'Dispositivos móveis requerem HTTPS ou configuração do navegador.', true, false);
                     showMicPermissionModal();
                 } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    showPreview('⚠️ Permissão Recusada', 'Por favor autorize o acesso ao microfone nas definições do browser.', true, false);
+                    showPreview('Permissão Recusada', 'Por favor autorize o acesso ao microfone nas definições do navegador.', true, false);
                     if (isFirefox) showFirefoxModal();
                 } else {
-                    showPreview('⚠️ Erro no Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
+                    showPreview('Erro no Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
                 }
                 hidePreview(4500);
                 if (isConversationMode) toggleConversationMode();
@@ -1504,14 +1560,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 }
                 updateTalkButton();
                 playConversationStopSound();
-                showPreview('💬 Modo Conversa Desativado', 'Pode usar o microfone para ditado normal.', false, false);
+                showPreview('Modo Conversa Desativado', 'Pode usar o microfone para ditado normal.', false, false);
                 hidePreview(2500);
             } else {
                 isConversationMode = true;
                 stopSpeaking();
                 updateTalkButton();
                 playConversationStartSound();
-                showPreview('💬 Modo Conversa Ativado', 'Fale para o microfone. A IA responderá e voltará a ouvir.', false, false);
+                showPreview('Modo Conversa Ativado', 'Fale para o microfone. A IA responderá e voltará a ouvir.', false, false);
                 
                 if (conversationPollTimer) clearInterval(conversationPollTimer);
                 conversationPollTimer = setInterval(checkForNewAiResponse, 1000);
@@ -1561,7 +1617,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
 
             if (uploadBtn) uploadBtn.classList.add('uploading');
-            showPreview('📎 A enviar anexo(s)...', 'A processar ' + files.length + ' ficheiro(s)...', false, false);
+            showPreview('A enviar anexo(s)...', 'A processar ' + files.length + ' ficheiro(s)...', false, false);
 
             try {
                 var resp = await fetch('/api/upload', {
@@ -1574,7 +1630,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     window.sendTextToTerminal(references + ' ', false);
 
                     var names = data.files.map(function(f) { return f.name; }).join(', ');
-                    showPreview('✓ Anexo(s) adicionado(s)', names + ' associado(s) ao terminal.', false, false);
+                    showPreview('Anexo(s) adicionado(s)', names + ' associado(s) ao terminal.', false, false);
                     hidePreview(3500);
 
                     // If in conversation mode, prompt user to speak prompt
@@ -1586,12 +1642,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         }, 600);
                     }
                 } else {
-                    showPreview('⚠️ Erro no Upload', data.message || data.error || 'Falha ao processar ficheiros.', true, false);
+                    showPreview('Erro no Upload', data.message || data.error || 'Falha ao processar ficheiros.', true, false);
                     hidePreview(4000);
                 }
             } catch(err) {
                 console.error('Upload fetch error:', err);
-                showPreview('⚠️ Erro no Envio', 'Não foi possível ligar ao servidor de upload.', true, false);
+                showPreview('Erro no Envio', 'Não foi possível ligar ao servidor de upload.', true, false);
                 hidePreview(4000);
             } finally {
                 if (uploadBtn) uploadBtn.classList.remove('uploading');
@@ -1765,7 +1821,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                     var editBtn = document.createElement('button');
                     editBtn.className = 'prompt-card-btn';
-                    editBtn.textContent = '✏️ Editar';
+                    editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg><span>Editar</span>';
                     editBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         openEditPrompt(p);
@@ -1773,7 +1829,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                     var deleteBtn = document.createElement('button');
                     deleteBtn.className = 'prompt-card-btn delete-btn';
-                    deleteBtn.textContent = '🗑️ Apagar';
+                    deleteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span>Apagar</span>';
                     deleteBtn.addEventListener('click', async function(e) {
                         e.stopPropagation();
                         if (confirm('Tens a certeza que queres apagar o prompt "' + (p.title || '') + '"?')) {
@@ -1800,12 +1856,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                     var useBtn = document.createElement('button');
                     useBtn.className = 'prompt-card-btn use-btn';
-                    useBtn.textContent = '⚡ Usar Prompt';
+                    useBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span>Usar Prompt</span>';
                     useBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         if (promptsModal) promptsModal.classList.remove('active');
                         window.sendTextToTerminal(p.content, false);
-                        showPreview('✓ Prompt Inserido', p.title, false, false);
+                        showPreview('Prompt Inserido', p.title, false, false);
                         hidePreview(2500);
                     });
 
@@ -1990,7 +2046,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 if (!isInputFocused) {
                     e.preventDefault();
                     stopSpeaking();
-                    showPreview('⏹️ Fala Interrompida', 'Podes falar ou escrever...', false, false);
+                    showPreview('Fala Interrompida', 'Pode falar ou escrever...', false, false);
                     hidePreview(2000);
                     if (isConversationMode && !isRecording) {
                         setTimeout(function() {
