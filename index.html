@@ -97,8 +97,6 @@ body.toolbar-dragging #corner-zone-container{display:block}
 .modal-btn:hover{background:#2ea043}
 .modal-btn-sec{background:#30363d;color:#c9d1d9;border:1px solid rgba(255,255,255,0.15)}
 .modal-btn-sec:hover{background:#388bfd;color:#fff}
-#install-pwa-btn{background:#1f6feb;color:#fff;border-color:rgba(88,166,255,0.4)}
-#install-pwa-btn:hover{background:#388bfd;box-shadow:0 0 12px rgba(56,139,253,0.7)}
 
 /* Shortcuts rows */
 .shortcut-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
@@ -241,20 +239,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
 // 3. Mount and ensure UI elements exist persistently
 (function() {
-    var deferredInstallPrompt = null;
-    window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        deferredInstallPrompt = e;
-        var btn = document.getElementById('install-pwa-btn');
-        if (btn) btn.style.display = 'flex';
-    });
-
-    window.addEventListener('appinstalled', function() {
-        deferredInstallPrompt = null;
-        var btn = document.getElementById('install-pwa-btn');
-        if (btn) btn.style.display = 'none';
-        console.log('[PWA] OpenCode AI installed successfully!');
-    });
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
@@ -490,13 +474,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         <line x1="14" y1="12" x2="14" y2="12"></line>
                         <line x1="18" y1="12" x2="18" y2="12"></line>
                         <line x1="8" y1="16" x2="16" y2="16"></line>
-                    </svg>
-                </button>
-                <button id="install-pwa-btn" class="voice-btn" style="display:none" title="Install App (PWA)" aria-label="Install App">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
                 </button>
             </div>
@@ -823,24 +800,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
-        var installBtn = document.getElementById('install-pwa-btn');
-        if (installBtn) {
-            if (deferredInstallPrompt) {
-                installBtn.style.display = 'flex';
-            }
-            installBtn.addEventListener('click', async function() {
-                if (!deferredInstallPrompt) return;
-                deferredInstallPrompt.prompt();
-                try {
-                    var choice = await deferredInstallPrompt.userChoice;
-                    if (choice && choice.outcome === 'accepted') {
-                        console.log('[PWA] User accepted the install prompt');
-                    }
-                } catch(e) {}
-                deferredInstallPrompt = null;
-                installBtn.style.display = 'none';
-            });
-        }
 
         // Fetch server configuration on load
         async function fetchServerConfig() {
