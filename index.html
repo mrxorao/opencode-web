@@ -1,14 +1,17 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0d1117"><title>OpenCode AI - Web Terminal</title><link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAcCAYAAAAAwr0iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA0xpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDY3IDc5LjE1Nzc0NywgMjAxNS8wMy8zMC0yMzo0MDo0MiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OTgyRjc1RjA3MTZEMTFFNjg2M0NCOEY3RjJBMEY3N0EiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OTgyRjc1RUY3MTZEMTFFNjg2M0NCOEY3RjJBMEY3N0EiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjU3YmQxNjhjLWI5ZDctMTE3OS1hM2RlLWZmNjQyYTM4NTJmMCIgc3RSZWY6ZG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjU3YmQxNjhjLWI5ZDctMTE3OS1hM2RlLWZmNjQyYTM4NTJmMCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PhsssMYAAALDSURBVHjaxFa9jxJBFH8zDMdCYrhIAppgIjaG5C5RQ+zO2Gty5gpbY2KsbOyu1MrGGEtj/A9stLPXs6CjJ5GYIF6AE5IDBHZmfG92F4ZzvQAnyyO7O8zX+73f+5gRd3bvvSgffN4/l948YgASFhQ9aWhqM6+pYfrVjD5WH9NK8f7x8ebNnVtvWC6b/RaPxy8zxsxmbB5lIfNsIDMggreezqG1o9GIGj8E45zFNzYgnU4D5xyUUkBglpFAKfgWa5gFY89rNVvgJJMgSBkpjcViIISA4XAI4/EYkBXTdyYQ9LOUU9sw7bmG2lqgPwwAKSV9D/P5/G2csNtoNJ71+32HFjqOszyQkDY9xLbrjkEorSe+wYGc67o72Wz2dSqV+tjr9e4iiAfdbnfL+G4B10wtDV/nBSYAN5O053eivVqtvq1UKr/RDaVCofCyVCo9ogXE0qISppgsJ3GlCzzGkQHcOEgT8n2xWLyfy+XeDwaDK7Va7Xm73X4YUHaaRfMwcbIPdTNBGWBSwkP3Ewdr9Xr9FcbAUwpICkyKAXuTRdkIAxH4QThOEn61W2YSKruAVpeJiUQiYRQjqHImk9nDjDiPijnO+d7pdN5hXOwRuGXdYRggANIdM9sy2tTeGPsuNpvNJwgkRVUMpYPdV5dJURsIZZ9WBEB6aRhKkeeWSzi2j9kxk8vLFqsABFkvlWSYhoqdni6zY2dRfHJfYoErvxBFLb5expVUDFlYCwDpM8CU0pEDoADUGH9YCf8dgKuQSRagXoo/Lg0Da3CBVwm9syBKBv46FfHNIlc+BYFZQHe0yBnQPgN0HFtV8H8VmXko8ABgEOo1uIDZMbCWALRiQAR/gkvpqsU+Rcl4gW9zR6JLCXXQ5XTVAKR/sqIvGODl89BnJfLHcRJNceP6tQ9fDr4+RmRHmAUqoiLEkOnM1vb2pz8CDACUMgcHE3VMqAAAAABJRU5ErkJggg=="><style type="text/css">.xterm{cursor:text;position:relative;user-select:none;-ms-user-select:none;-webkit-user-select:none}.xterm.focus,.xterm:focus{outline:none}.xterm .xterm-helpers{position:absolute;top:0;z-index:5}.xterm .xterm-helper-textarea{border:0;height:0;left:-9999em;margin:0;opacity:0;overflow:hidden;padding:0;position:absolute;resize:none;top:0;white-space:nowrap;width:0;z-index:-5}.xterm .composition-view{background:#000;color:#fff;display:none;position:absolute;white-space:nowrap;z-index:1}.xterm .composition-view.active{display:block}.xterm .xterm-viewport{background-color:#000;bottom:0;cursor:default;left:0;overflow-y:scroll;position:absolute;right:0;top:0}.xterm .xterm-screen{position:relative}.xterm .xterm-screen canvas{left:0;position:absolute;top:0}.xterm .xterm-scroll-area{visibility:hidden}.xterm-char-measure-element{display:inline-block;left:-9999em;line-height:normal;position:absolute;top:0;visibility:hidden}.xterm.enable-mouse-events{cursor:default}.xterm .xterm-cursor-pointer,.xterm.xterm-cursor-pointer{cursor:pointer}.xterm.column-select.focus{cursor:crosshair}.xterm .xterm-accessibility:not(.debug),.xterm .xterm-message{bottom:0;color:transparent;left:0;pointer-events:none;position:absolute;right:0;top:0;z-index:10}.xterm .xterm-accessibility-tree:not(.debug) ::selection{color:transparent}.xterm .xterm-accessibility-tree{user-select:text;white-space:pre}.xterm .live-region{height:1px;left:-9999px;overflow:hidden;position:absolute;width:1px}.xterm-dim{opacity:1!important}.xterm-underline-1{text-decoration:underline}.xterm-underline-2{text-decoration:double underline}.xterm-underline-3{text-decoration:wavy underline}.xterm-underline-4{text-decoration:dotted underline}.xterm-underline-5{text-decoration:dashed underline}.xterm-overline{text-decoration:overline}.xterm-overline.xterm-underline-1{text-decoration:overline underline}.xterm-overline.xterm-underline-2{text-decoration:overline double underline}.xterm-overline.xterm-underline-3{text-decoration:overline wavy underline}.xterm-overline.xterm-underline-4{text-decoration:overline dotted underline}.xterm-overline.xterm-underline-5{text-decoration:overline dashed underline}.xterm-strikethrough{text-decoration:line-through}.xterm-screen .xterm-decoration-container .xterm-decoration{position:absolute;z-index:6}.xterm-screen .xterm-decoration-container .xterm-decoration.xterm-decoration-top-layer{z-index:7}.xterm-decoration-overview-ruler{pointer-events:none;position:absolute;right:0;top:0;z-index:8}.xterm-decoration-top{position:relative;z-index:2}.modal{align-items:center;display:flex;overflow:hidden;position:fixed;z-index:40}.modal,.modal-background{bottom:0;left:0;right:0;top:0}.modal-background{background-color:rgba(74,74,74,.8);position:absolute}.modal-content{margin:0 20px;max-height:calc(100vh - 160px);overflow:auto;position:relative;width:100%}.modal-content .box{background-color:#fff;color:#4a4a4a;display:block;padding:1.25rem}.modal-content header{border-bottom:1px solid #ddd;font-weight:700;margin-bottom:10px;padding-bottom:10px;text-align:center}.modal-content .file-input{height:.01em;left:0;outline:none;position:absolute;top:0;width:.01em}.modal-content .file-cta{align-items:center;background-color:#f5f5f5;border-color:#dbdbdb;border-radius:3px;box-shadow:none;color:#6200ee;cursor:pointer;display:inline-flex;font-size:1em;font-weight:500;height:2.25em;justify-content:flex-start;line-height:1.5;outline:none;padding:calc(.375em - 1px) 1em;position:relative;vertical-align:top;white-space:nowrap}@media print,screen and (min-width:769px){.modal-content{margin:0 auto;max-height:calc(100vh - 40px);width:640px}}body,html{height:100%;width:100%;margin:0;min-height:100%;overflow:hidden;background-color:#000;-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}#terminal-container{height:100dvh;height:100vh;width:100vw;margin:0 auto;padding:0;overflow:hidden;box-sizing:border-box}#terminal-container .terminal{height:100%;padding:env(safe-area-inset-top, 4px) env(safe-area-inset-right, 4px) env(safe-area-inset-bottom, 4px) env(safe-area-inset-left, 4px);box-sizing:border-box}
 
 /* Floating Voice Control Toolbar */
-#voice-toolbar{position:fixed;top:calc(env(safe-area-inset-top,8px) + 8px);right:calc(env(safe-area-inset-right,8px) + 12px);z-index:99999;display:flex;align-items:center;gap:6px;background:rgba(22,27,34,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.18);border-radius:30px;padding:4px 8px;box-shadow:0 4px 16px rgba(0,0,0,0.6);user-select:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+#voice-toolbar{position:fixed;top:calc(env(safe-area-inset-top,8px) + 8px);right:calc(env(safe-area-inset-right,8px) + 12px);z-index:99999;display:flex;align-items:center;gap:8px;background:rgba(22,27,34,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.18);border-radius:30px;padding:4px 8px;box-shadow:0 4px 16px rgba(0,0,0,0.6);user-select:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 .voice-btn{background:transparent;border:none;color:#e6edf3;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:4px;border-radius:50%;outline:none;transition:transform .15s ease}
 .voice-btn:active{transform:scale(.92)}
-#mic-btn{width:34px;height:34px;background:#238636;color:#fff;border-radius:50%;box-shadow:0 2px 8px rgba(35,134,54,0.5)}
+#mic-btn{width:34px;height:34px;background:#238636;color:#fff;border-radius:50%;box-shadow:0 2px 8px rgba(35,134,54,0.5);display:flex;align-items:center;justify-content:center}
 #mic-btn.recording{background:#da3633!important;animation:mic-pulse 1.2s infinite ease-in-out;box-shadow:0 0 16px rgba(218,54,51,0.9)}
 @keyframes mic-pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:.85}100%{transform:scale(1);opacity:1}}
-.toolbar-pill{font-size:11px;font-weight:600;color:#8b949e;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:4px 8px;cursor:pointer;transition:all .2s ease}
-.toolbar-pill:hover,.toolbar-pill.active{color:#58a6ff;background:rgba(56,139,253,0.2);border-color:rgba(56,139,253,0.5)}
+.toolbar-pill{font-size:12px;font-weight:600;color:#8b949e;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:5px 11px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s ease}
+.toolbar-pill:hover{color:#58a6ff;background:rgba(56,139,253,0.15);border-color:rgba(56,139,253,0.4)}
+#talk-btn.active{color:#fff!important;background:#1f6feb!important;border-color:#58a6ff!important;box-shadow:0 0 14px rgba(31,111,235,0.7)}
+#talk-btn.active.speaking{background:#8957e5!important;border-color:#a371f7!important;animation:talk-pulse 1.5s infinite ease-in-out}
+@keyframes talk-pulse{0%{opacity:1}50%{opacity:.75}100%{opacity:1}}
 #transcript-preview{position:fixed;top:calc(env(safe-area-inset-top,8px) + 54px);right:calc(env(safe-area-inset-right,8px) + 12px);max-width:min(360px,calc(100vw - 32px));background:rgba(13,17,23,0.96);border:1px solid #30363d;border-radius:10px;padding:8px 12px;color:#f0f6fc;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,0.7);backdrop-filter:blur(10px);z-index:100000;display:none;word-break:break-word}
 #transcript-preview .transcript-status{font-size:11px;font-weight:600;color:#7ee787;margin-bottom:4px}
 #transcript-preview.error .transcript-status{color:#f85149}
@@ -32,12 +35,6 @@
 .ff-btn{background:#238636;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s ease}
 .ff-btn:hover{background:#2ea043}
 .ff-pill{color:#f0883e!important;border-color:rgba(240,136,62,0.4)!important}
-
-
-#tts-btn.active{color:#7ee787!important;background:rgba(46,160,67,0.2)!important;border-color:rgba(46,160,67,0.5)!important}
-#tts-btn.speaking{animation:tts-pulse 1s infinite ease-in-out;color:#58a6ff!important;background:rgba(56,139,253,0.3)!important;border-color:#58a6ff!important}
-@keyframes tts-pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.75}100%{transform:scale(1);opacity:1}}
-
 </style>
 <script type="text/javascript">
 // 1. Viewport & responsive font size
@@ -85,7 +82,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var toolbar = document.createElement('div');
         toolbar.id = 'voice-toolbar';
         toolbar.innerHTML = `
-            <button id="mic-btn" class="voice-btn" title="Voice Recognition (Groq Whisper) or type /voice" aria-label="Microphone">
+            <button id="mic-btn" class="voice-btn" title="Record Voice Prompt (Click to speak)" aria-label="Microphone">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -93,9 +90,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     <line x1="8" y1="23" x2="16" y2="23"></line>
                 </svg>
             </button>
-            <button id="lang-btn" class="toolbar-pill active" title="Switch language">EN</button>
-            <button id="auto-enter-btn" class="toolbar-pill" title="Toggle Auto-Send / Manual mode">↵ Manual</button>
-            <button id="tts-btn" class="toolbar-pill" title="Toggle Text-to-Speech (Reads AI responses aloud)">🔇 TTS Off</button>
+            <button id="talk-btn" class="toolbar-pill" title="Conversation Mode (Continuous voice loop: Speak ➔ AI Answers ➔ AI Reads ➔ Auto-Mic)">💬 Conversa</button>
             ${isFirefox ? '<button id="ff-help-btn" class="toolbar-pill ff-pill" title="Firefox Voice Setup Guide">🦊 Help</button>' : ''}
         `;
 
@@ -139,12 +134,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
     function setupVoiceHandlers() {
         var isRecording = false;
-        var langs = ['en', 'pt', 'pt'];
-        var labels = ['EN', 'PT', 'BR'];
-        var langIdx = 0; // Will be initialized by server config
-        var autoEnter = false;
+        var isConversationMode = false;
+        var isSpeaking = false;
+        var isWaitingForAiResponse = false;
+        var promptSubmittedAt = 0;
+        var lastKnownAiMessageId = null;
+        var pollTimer = null;
         var previewTimer = null;
-        var hasGroqKeyCached = null;
+        var configuredLang = 'PT'; // Loaded dynamically from server
 
         var mediaStream = null;
         var mediaRecorder = null;
@@ -154,12 +151,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var silenceTimer = null;
 
         var micBtn = document.getElementById('mic-btn');
-        var langBtn = document.getElementById('lang-btn');
-        var autoEnterBtn = document.getElementById('auto-enter-btn');
+        var talkBtn = document.getElementById('talk-btn');
         var previewBox = document.getElementById('transcript-preview');
         var previewStatus = document.getElementById('transcript-status');
         var previewWave = document.getElementById('transcript-wave');
         var previewText = document.getElementById('transcript-text');
+
+        var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        var ffModal = document.getElementById('firefox-modal');
+        var ffCloseBtn = document.getElementById('ff-close-btn');
+        var ffOkBtn = document.getElementById('ff-ok-btn');
+        var ffHelpBtn = document.getElementById('ff-help-btn');
 
         function showPreview(status, text, isError, showWave) {
             if (!previewBox) return;
@@ -182,24 +184,34 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        // Fetch server configuration on load to set default language & API key status
+        function showFirefoxModal() {
+            if (ffModal) ffModal.classList.add('active');
+        }
+
+        function closeFirefoxModal(markAsSeen) {
+            if (ffModal) ffModal.classList.remove('active');
+            if (markAsSeen) {
+                try { localStorage.setItem('firefox_voice_tip_shown', 'true'); } catch(e) {}
+            }
+        }
+
+        if (ffCloseBtn) ffCloseBtn.addEventListener('click', function() { closeFirefoxModal(true); });
+        if (ffOkBtn) ffOkBtn.addEventListener('click', function() { 
+            closeFirefoxModal(true);
+            startGroqVoiceRecording();
+        });
+        if (ffHelpBtn) ffHelpBtn.addEventListener('click', function() { showFirefoxModal(); });
+
+        // Fetch server configuration on load
         async function fetchServerConfig() {
             try {
                 var resp = await fetch('/api/config');
                 if (resp.ok) {
                     var data = await resp.json();
-                    hasGroqKeyCached = Boolean(data.hasGroqKey);
-                    
-                    // Set default language from server environment variable (VOICE_LANGUAGE)
                     if (data.defaultLanguage) {
-                        var def = String(data.defaultLanguage).toUpperCase();
-                        var foundIdx = labels.indexOf(def);
-                        if (foundIdx !== -1) {
-                            langIdx = foundIdx;
-                            if (langBtn) langBtn.textContent = labels[langIdx];
-                        }
+                        configuredLang = String(data.defaultLanguage).toUpperCase();
                     }
-                    return hasGroqKeyCached;
+                    return Boolean(data.hasGroqKey);
                 }
             } catch(e) {}
             return false;
@@ -207,11 +219,181 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         fetchServerConfig();
 
+        // Sync initial DB message id
+        async function syncInitialMessageId() {
+            try {
+                var resp = await fetch('/api/latest-ai-message');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    if (data && data.id) {
+                        lastKnownAiMessageId = data.id;
+                    }
+                }
+            } catch(e) {}
+        }
+        syncInitialMessageId();
+
+        function stopSpeaking() {
+            if (window.speechSynthesis) {
+                try { window.speechSynthesis.cancel(); } catch(e) {}
+            }
+            isSpeaking = false;
+            updateTalkButton();
+        }
+
+        function updateTalkButton() {
+            if (!talkBtn) return;
+            if (isConversationMode) {
+                if (isSpeaking) {
+                    talkBtn.className = 'toolbar-pill active speaking';
+                    talkBtn.textContent = '🔊 A falar...';
+                    talkBtn.title = 'A IA está a responder... Clica para parar o modo conversa';
+                } else if (isRecording) {
+                    talkBtn.className = 'toolbar-pill active';
+                    talkBtn.textContent = '🎙️ A ouvir...';
+                    talkBtn.title = 'A ouvir a tua voz... Clica para parar o modo conversa';
+                } else {
+                    talkBtn.className = 'toolbar-pill active';
+                    talkBtn.textContent = '💬 Conversa Ativa';
+                    talkBtn.title = 'Modo Conversa Ativo (Clica para desligar)';
+                }
+            } else {
+                talkBtn.className = 'toolbar-pill';
+                talkBtn.textContent = '💬 Conversa';
+                talkBtn.title = 'Iniciar Modo Conversa (Diálogo contínuo por voz)';
+            }
+        }
+
+        function cleanMarkdownForSpeech(raw) {
+            if (!raw) return '';
+            return raw
+                .replace(/```[a-zA-Z0-9_-]*\n([\s\S]*?)```/g, ' [Código omitido] ')
+                .replace(/```[\s\S]*?```/g, ' [Código omitido] ')
+                .replace(/`([^`]+)`/g, '$1')
+                .replace(/#{1,6}\s+/g, '')
+                .replace(/\*\*([^\*]+)\*\*/g, '$1')
+                .replace(/\*([^\*]+)\*/g, '$1')
+                .replace(/__([^_]+)__/g, '$1')
+                .replace(/_([^_]+)_/g, '$1')
+                .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+                .replace(/https?:\/\/[^\s]+/g, 'link')
+                .replace(/^[\s*>-]+/gm, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function getBestVoiceForLang(langCode) {
+            if (!window.speechSynthesis) return null;
+            var voices = window.speechSynthesis.getVoices();
+            if (!voices || voices.length === 0) return null;
+
+            var target = (langCode || 'pt').toLowerCase().trim();
+            if (target === 'pt') target = 'pt-pt';
+            if (target === 'br') target = 'pt-br';
+            if (target === 'en') target = 'en-us';
+
+            var exact = voices.find(function(v) { return v.lang && v.lang.toLowerCase().replace('_', '-') === target; });
+            if (exact) return exact;
+
+            var prefix = target.split('-')[0];
+            var prefMatch = voices.find(function(v) { return v.lang && v.lang.toLowerCase().startsWith(prefix); });
+            if (prefMatch) return prefMatch;
+
+            return voices.find(function(v) { return v.default; }) || voices[0];
+        }
+
+        if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        function speakAiMessage(rawText) {
+            if (!window.speechSynthesis) return;
+            var text = cleanMarkdownForSpeech(rawText);
+            if (!text || text.length < 2) return;
+
+            stopSpeaking();
+
+            var voice = getBestVoiceForLang(configuredLang);
+            var sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
+            var validSentences = [];
+            for (var i = 0; i < sentences.length; i++) {
+                var s = sentences[i].trim();
+                if (s.length > 0) validSentences.push(s);
+            }
+            if (validSentences.length === 0) return;
+
+            showPreview('🔊 IA (' + configuredLang + ')...', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
+            hidePreview(4000);
+
+            isSpeaking = true;
+            updateTalkButton();
+
+            validSentences.forEach(function(sentence, idx) {
+                var utterance = new SpeechSynthesisUtterance(sentence);
+                if (voice) utterance.voice = voice;
+                utterance.rate = 1.05;
+                utterance.pitch = 1.0;
+
+                if (idx === validSentences.length - 1) {
+                    utterance.onend = function() {
+                        isSpeaking = false;
+                        updateTalkButton();
+
+                        // In Conversation Mode: automatically re-activate microphone for user's turn!
+                        if (isConversationMode) {
+                            showPreview('🎙️ A tua vez...', 'Fala agora para responder...', false, true);
+                            setTimeout(function() {
+                                if (isConversationMode && !isRecording && !isSpeaking) {
+                                    startGroqVoiceRecording();
+                                }
+                            }, 450);
+                        }
+                    };
+                    utterance.onerror = function() {
+                        isSpeaking = false;
+                        updateTalkButton();
+                        if (isConversationMode) {
+                            setTimeout(function() {
+                                if (isConversationMode && !isRecording && !isSpeaking) {
+                                    startGroqVoiceRecording();
+                                }
+                            }, 450);
+                        }
+                    };
+                }
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+
+        async function checkForNewAiResponse() {
+            if (!isWaitingForAiResponse) return;
+            try {
+                var resp = await fetch('/api/latest-ai-message');
+                if (resp.ok) {
+                    var data = await resp.json();
+                    if (data && data.id && data.id !== lastKnownAiMessageId && data.text) {
+                        if (!data.time || data.time >= (promptSubmittedAt - 3000)) {
+                            lastKnownAiMessageId = data.id;
+                            isWaitingForAiResponse = false;
+                            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                            speakAiMessage(data.text);
+                        }
+                    }
+                }
+            } catch(e) {}
+        }
+
         async function startGroqVoiceRecording() {
+            // Immediately stop any active TTS reading when recording starts
+            stopSpeaking();
+
             var isConfigured = await fetchServerConfig();
             if (!isConfigured) {
                 showPreview('⚠️ API Key Required', 'Please configure VOICE_GROQ_API_KEY in your .env file first!', true, false);
                 hidePreview(5000);
+                if (isConversationMode) toggleConversationMode();
                 return;
             }
 
@@ -238,24 +420,24 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
                     var avg = sum / dataArray.length;
 
-                    // Live sound wave animation
+                    // Wave animation
                     var count = Math.min(8, Math.max(1, Math.round(avg / 10)));
                     var bars = '';
                     for (var b = 0; b < count; b++) bars += '█';
                     for (var s = count; s < 8; s++) bars += '░';
                     if (previewWave) previewWave.textContent = '🔊 ' + bars;
 
-                    // Voice Activity Detection (Auto finish when silence detected)
+                    // VAD (Silence detection)
                     if (avg > 7) {
                         speechDetected = true;
                         if (silenceTimer) {
                             clearTimeout(silenceTimer);
                             silenceTimer = null;
                         }
-                        if (previewStatus) previewStatus.textContent = '🎙️ Listening (' + labels[langIdx] + ')...';
+                        if (previewStatus) previewStatus.textContent = isConversationMode ? '🎙️ Conversa: A ouvir...' : '🎙️ A gravar...';
                     } else if (speechDetected) {
                         if (!silenceTimer) {
-                            if (previewStatus) previewStatus.textContent = '⏳ Silence detected... Transcribing...';
+                            if (previewStatus) previewStatus.textContent = '⏳ Silêncio... A transcrever...';
                             silenceTimer = setTimeout(function() {
                                 if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
                                     mediaRecorder.stop();
@@ -277,23 +459,26 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     cancelAnimationFrame(animFrameId);
                     if (micBtn) {
                         micBtn.classList.remove('recording');
-                        micBtn.title = 'Voice Recognition (Groq Whisper) or type /voice';
                     }
+                    updateTalkButton();
                     try { liveCtx.close(); } catch(e) {}
                     if (mediaStream) {
                         mediaStream.getTracks().forEach(function(t) { t.stop(); });
                     }
                     if (audioChunks.length === 0) return;
 
-                    showPreview('⚡ Transcribing with Groq Whisper...', 'Processing audio with Whisper Large V3 Turbo...', false, false);
+                    showPreview('⚡ A transcrever com Groq Whisper...', 'A processar áudio...', false, false);
 
                     try {
                         var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
+                        var langParam = configuredLang.toLowerCase();
+                        if (langParam === 'br') langParam = 'pt';
+
                         var resp = await fetch('/api/transcribe', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': audioBlob.type,
-                                'X-Audio-Language': langs[langIdx]
+                                'X-Audio-Language': langParam
                             },
                             body: audioBlob
                         });
@@ -301,12 +486,15 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         var data = await resp.json();
                         if (resp.ok && data.text && data.text.trim()) {
                             var text = data.text.trim();
-                            window.sendTextToTerminal(text, autoEnter);
-                            showPreview('✓ Inserted into prompt:', text, false, false);
-                            hidePreview(2500);
+                            // In conversation mode: always auto-enter and trigger AI response wait
+                            var autoSend = isConversationMode;
+                            window.sendTextToTerminal(text, autoSend);
+                            showPreview('✓ Prompt: ' + text, isConversationMode ? 'Enviado para a IA...' : 'Inserido no terminal.', false, false);
+                            if (!isConversationMode) hidePreview(2500);
                         } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
                             showPreview('⚠️ API Key Required', 'Please configure VOICE_GROQ_API_KEY in your .env file!', true, false);
                             hidePreview(4500);
+                            if (isConversationMode) toggleConversationMode();
                         } else {
                             showPreview('⚠️ Transcription Error', (data.error || 'No speech recognized.'), true, false);
                             hidePreview(3500);
@@ -320,17 +508,16 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                 mediaRecorder.start();
                 isRecording = true;
-                if (micBtn) {
-                    micBtn.classList.add('recording');
-                    micBtn.title = 'Listening... Speak now (auto-stops on silence)';
-                }
-                showPreview('🎙️ Listening (' + labels[langIdx] + ')...', 'Speak your prompt. Stops automatically after speaking.', false, true);
+                if (micBtn) micBtn.classList.add('recording');
+                updateTalkButton();
+                showPreview(isConversationMode ? '🎙️ Conversa: Fala agora...' : '🎙️ A gravar...', 'Pausa automaticamente ao terminar de falar.', false, true);
                 checkSilenceAndWave();
 
             } catch(err) {
                 console.error('Microphone access error:', err);
                 isRecording = false;
                 if (micBtn) micBtn.classList.remove('recording');
+                updateTalkButton();
                 if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                     showPreview('⚠️ Permission Denied', 'Please allow microphone access in your browser.', true, false);
                 } else {
@@ -340,40 +527,47 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 if (isFirefox) {
                     showFirefoxModal();
                 }
+                if (isConversationMode) toggleConversationMode();
             }
         }
 
-        var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-        var ffModal = document.getElementById('firefox-modal');
-        var ffCloseBtn = document.getElementById('ff-close-btn');
-        var ffOkBtn = document.getElementById('ff-ok-btn');
-        var ffHelpBtn = document.getElementById('ff-help-btn');
-
-        function showFirefoxModal() {
-            if (ffModal) ffModal.classList.add('active');
-        }
-
-        function closeFirefoxModal(markAsSeen) {
-            if (ffModal) ffModal.classList.remove('active');
-            if (markAsSeen) {
-                try { localStorage.setItem('firefox_voice_tip_shown', 'true'); } catch(e) {}
+        function toggleConversationMode() {
+            if (isConversationMode) {
+                isConversationMode = false;
+                stopSpeaking();
+                if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+                updateTalkButton();
+                showPreview('💬 Modo Conversa Desligado', 'Podes usar o microfone para gravações normais.', false, false);
+                hidePreview(2500);
+            } else {
+                isConversationMode = true;
+                stopSpeaking();
+                updateTalkButton();
+                showPreview('💬 Modo Conversa Ativado', 'Fala para o microfone. A IA responderá e reativará a escuta automaticamente.', false, false);
+                
+                // If on Firefox and first time, show modal
+                if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
+                    showFirefoxModal();
+                    return;
+                }
+                startGroqVoiceRecording();
             }
         }
-
-        if (ffCloseBtn) ffCloseBtn.addEventListener('click', function() { closeFirefoxModal(true); });
-        if (ffOkBtn) ffOkBtn.addEventListener('click', function() { 
-            closeFirefoxModal(true);
-            startGroqVoiceRecording();
-        });
-        if (ffHelpBtn) ffHelpBtn.addEventListener('click', function() { showFirefoxModal(); });
 
         window.triggerVoiceRecognition = function() {
+            if (isConversationMode) {
+                // If in conversation mode, clicking mic stops conversation mode
+                toggleConversationMode();
+                return;
+            }
+
             if (isRecording) {
                 if (mediaRecorder && mediaRecorder.state === 'recording') {
                     mediaRecorder.stop();
                 }
             } else {
-                // If first time on Firefox, show the setup guide once
                 if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
                     showFirefoxModal();
                     return;
@@ -386,212 +580,20 @@ window.sendTextToTerminal = function(text, autoEnter) {
             micBtn.addEventListener('click', window.triggerVoiceRecognition);
         }
 
-        if (langBtn) {
-            langBtn.addEventListener('click', function() {
-                langIdx = (langIdx + 1) % langs.length;
-                langBtn.textContent = labels[langIdx];
-                showPreview('🌐 Language', 'Voice recognition set to: ' + labels[langIdx], false, false);
-                hidePreview(1500);
-            });
+        if (talkBtn) {
+            talkBtn.addEventListener('click', toggleConversationMode);
         }
 
-        
-        // === Text-to-Speech (TTS) Engine via SQLite Database Sync ===
-        var ttsBtn = document.getElementById('tts-btn');
-        var ttsEnabled = false;
-        try { ttsEnabled = (localStorage.getItem('opencode_tts_enabled') === 'true'); } catch(e) {}
-        var isSpeaking = false;
-        var isWaitingForAiResponse = false;
-        var promptSubmittedAt = 0;
-        var lastKnownAiMessageId = null;
-        var pollTimer = null;
-
-        // Preload latest message ID so we don't speak past chat history on load
-        async function syncInitialMessageId() {
-            try {
-                var resp = await fetch('/api/latest-ai-message');
-                if (resp.ok) {
-                    var data = await resp.json();
-                    if (data && data.id) {
-                        lastKnownAiMessageId = data.id;
-                    }
-                }
-            } catch(e) {}
-        }
-        syncInitialMessageId();
-
-        function updateTtsButton() {
-            if (!ttsBtn) return;
-            if (isSpeaking) {
-                ttsBtn.className = 'toolbar-pill active speaking';
-                ttsBtn.textContent = '🔊 Stop';
-                ttsBtn.title = 'Speaking AI response... Click to stop';
-            } else if (ttsEnabled) {
-                ttsBtn.className = 'toolbar-pill active';
-                ttsBtn.textContent = '🔊 TTS On';
-                ttsBtn.title = 'Text-to-Speech Enabled (Reads AI responses only - Click to mute)';
-            } else {
-                ttsBtn.className = 'toolbar-pill';
-                ttsBtn.textContent = '🔇 TTS Off';
-                ttsBtn.title = 'Text-to-Speech Disabled (Click to activate)';
-            }
-        }
-
-        updateTtsButton();
-
-        function stopSpeaking() {
-            if (window.speechSynthesis) {
-                try { window.speechSynthesis.cancel(); } catch(e) {}
-            }
-            isSpeaking = false;
-            updateTtsButton();
-        }
-
-        function cleanMarkdownForSpeech(raw) {
-            if (!raw) return '';
-            return raw
-                // Replace long code blocks with a brief audio cue
-                .replace(/```[a-zA-Z0-9_-]*\n([\s\S]*?)```/g, ' [Bloco de código] ')
-                .replace(/```[\s\S]*?```/g, ' [Bloco de código] ')
-                .replace(/`([^`]+)`/g, '$1')
-                // Remove Markdown headers, bold, italics, links
-                .replace(/#{1,6}\s+/g, '')
-                .replace(/\*\*([^\*]+)\*\*/g, '$1')
-                .replace(/\*([^\*]+)\*/g, '$1')
-                .replace(/__([^_]+)__/g, '$1')
-                .replace(/_([^_]+)_/g, '$1')
-                .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-                .replace(/https?:\/\/[^\s]+/g, 'link')
-                .replace(/^[\s*>-]+/gm, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        function getBestVoiceForLang(langCode) {
-            if (!window.speechSynthesis) return null;
-            var voices = window.speechSynthesis.getVoices();
-            if (!voices || voices.length === 0) return null;
-
-            var target = (langCode || 'en').toLowerCase().trim();
-            if (target === 'pt') target = 'pt-pt';
-            if (target === 'br') target = 'pt-br';
-            if (target === 'en') target = 'en-us';
-
-            var exact = voices.find(function(v) { return v.lang && v.lang.toLowerCase().replace('_', '-') === target; });
-            if (exact) return exact;
-
-            var prefix = target.split('-')[0];
-            var prefMatch = voices.find(function(v) { return v.lang && v.lang.toLowerCase().startsWith(prefix); });
-            if (prefMatch) return prefMatch;
-
-            return voices.find(function(v) { return v.default; }) || voices[0];
-        }
-
-        if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
-            window.speechSynthesis.onvoiceschanged = function() {
-                window.speechSynthesis.getVoices();
-            };
-        }
-
-        function speakAiMessage(rawText) {
-            if (!ttsEnabled || !window.speechSynthesis) return;
-            var text = cleanMarkdownForSpeech(rawText);
-            if (!text || text.length < 2) return;
-
-            stopSpeaking();
-
-            var currentLang = labels[langIdx] || 'EN';
-            var voice = getBestVoiceForLang(currentLang);
-
-            // Split into sentences for smooth streaming synthesis
-            var sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
-            var validSentences = [];
-            for (var i = 0; i < sentences.length; i++) {
-                var s = sentences[i].trim();
-                if (s.length > 0) validSentences.push(s);
-            }
-            if (validSentences.length === 0) return;
-
-            showPreview('🔊 AI Response (' + currentLang + ')...', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
-            hidePreview(4000);
-
-            isSpeaking = true;
-            updateTtsButton();
-
-            validSentences.forEach(function(sentence, idx) {
-                var utterance = new SpeechSynthesisUtterance(sentence);
-                if (voice) utterance.voice = voice;
-                utterance.rate = 1.05;
-                utterance.pitch = 1.0;
-
-                if (idx === validSentences.length - 1) {
-                    utterance.onend = function() {
-                        isSpeaking = false;
-                        updateTtsButton();
-                    };
-                    utterance.onerror = function() {
-                        isSpeaking = false;
-                        updateTtsButton();
-                    };
-                }
-                window.speechSynthesis.speak(utterance);
-            });
-        }
-
-        async function checkForNewAiResponse() {
-            if (!ttsEnabled || !isWaitingForAiResponse) return;
-            try {
-                var resp = await fetch('/api/latest-ai-message');
-                if (resp.ok) {
-                    var data = await resp.json();
-                    if (data && data.id && data.id !== lastKnownAiMessageId && data.text) {
-                        // Check that this message was created around or after our prompt
-                        if (!data.time || data.time >= (promptSubmittedAt - 3000)) {
-                            lastKnownAiMessageId = data.id;
-                            isWaitingForAiResponse = false;
-                            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                            speakAiMessage(data.text);
-                        }
-                    }
-                }
-            } catch(e) {}
-        }
-
-        window.toggleTTS = function() {
-            if (isSpeaking) {
-                stopSpeaking();
-                return;
-            }
-            ttsEnabled = !ttsEnabled;
-            try { localStorage.setItem('opencode_tts_enabled', ttsEnabled ? 'true' : 'false'); } catch(e) {}
-            updateTtsButton();
-            if (ttsEnabled) {
-                showPreview('🔊 Text-to-Speech Enabled', 'Will read AI responses aloud (' + labels[langIdx] + ').', false, false);
-            } else {
-                stopSpeaking();
-                if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-                isWaitingForAiResponse = false;
-                showPreview('🔇 Text-to-Speech Disabled', 'Voice output muted.', false, false);
-            }
-            hidePreview(2500);
-        };
-
-        if (ttsBtn) {
-            ttsBtn.addEventListener('click', window.toggleTTS);
-        }
-
-        // Triggered exclusively when user submits a prompt (Enter key or voice auto-send)
+        // Called when user submits prompt in terminal (Enter / voice auto-send)
         window.__onPromptSubmitted = function(promptText) {
-            if (!ttsEnabled) return;
             isWaitingForAiResponse = true;
             promptSubmittedAt = Date.now();
             
             if (pollTimer) clearInterval(pollTimer);
             var pollCount = 0;
-            // Poll for response up to 60 seconds
             pollTimer = setInterval(function() {
                 pollCount++;
-                if (pollCount > 60 || !isWaitingForAiResponse || !ttsEnabled) {
+                if (pollCount > 60 || !isWaitingForAiResponse) {
                     clearInterval(pollTimer);
                     pollTimer = null;
                     isWaitingForAiResponse = false;
@@ -601,27 +603,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }, 1000);
         };
 
-        // When terminal output arrives, also do a quick check
         window.__onTerminalOutput = function(chunk) {
-            if (!ttsEnabled || !isWaitingForAiResponse) return;
+            if (!isWaitingForAiResponse) return;
             checkForNewAiResponse();
         };
-        
-        if (autoEnterBtn) {
-            autoEnterBtn.addEventListener('click', function() {
-                autoEnter = !autoEnter;
-                if (autoEnter) {
-                    autoEnterBtn.classList.add('active');
-                    autoEnterBtn.textContent = '↵ Auto';
-                    showPreview('↵ Auto-Send', 'Enabled (sends Enter automatically)', false, false);
-                } else {
-                    autoEnterBtn.classList.remove('active');
-                    autoEnterBtn.textContent = '↵ Manual';
-                    showPreview('↵ Manual Mode', 'Enabled (inserts text into prompt without sending)', false, false);
-                }
-                hidePreview(1500);
-            });
-        }
     }
 
     if (document.readyState === 'loading') {
