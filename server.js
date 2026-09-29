@@ -463,6 +463,83 @@ async function handleDeletePrompt(req, res, parsedUrl) {
     }
 }
 
+// Clipboard synchronization state & SSE management
+let currentClipboard = { id: '0', text: '', timestamp: 0 };
+let clipboardClients = [];
+
+function broadcastClipboard(data) {
+    const payload = `data: ${JSON.stringify(data)}\n\n`;
+    clipboardClients.forEach(client => {
+        try {
+            client.write(payload);
+        } catch(e) {}
+    });
+}
+
+function handleClipboardPost(req, res) {
+    let body = '';
+    req.on('data', chunk => {
+        body += chunk;
+        if (body.length > 5e6) { // 5MB limit
+            res.writeHead(413, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Payload too large' }));
+            req.destroy();
+        }
+    });
+    req.on('end', () => {
+        let textToSave = '';
+        try {
+            if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+                const json = JSON.parse(body);
+                textToSave = (json.text || '').toString();
+            } else {
+                textToSave = body.toString();
+            }
+        } catch(e) {
+            textToSave = body.toString();
+        }
+
+        if (textToSave) {
+            currentClipboard = {
+                id: 'clip_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                text: textToSave,
+                timestamp: Date.now()
+            };
+            broadcastClipboard(currentClipboard);
+            console.log(`[clipboard] Received & broadcasted new clipboard content (${textToSave.length} chars)`);
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, id: currentClipboard.id }));
+    });
+}
+
+function handleClipboardEvents(req, res) {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*'
+    });
+
+    if (currentClipboard.text) {
+        res.write(`data: ${JSON.stringify(currentClipboard)}\n\n`);
+    }
+
+    clipboardClients.push(res);
+
+    const keepAliveTimer = setInterval(() => {
+        try {
+            res.write(': ping\n\n');
+        } catch(e) {}
+    }, 15000);
+
+    req.on('close', () => {
+        clearInterval(keepAliveTimer);
+        clipboardClients = clipboardClients.filter(c => c !== res);
+    });
+}
+
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const PWA_MIME_TYPES = {
@@ -577,6 +654,26 @@ function requestListener(req, res) {
 
     if ((pathname === '/api/prompts/delete' || pathname === '/api/prompts') && (req.method === 'DELETE' || (pathname === '/api/prompts/delete' && req.method === 'POST'))) {
         handleDeletePrompt(req, res, parsedUrl);
+        return;
+    }
+
+    // Handle Clipboard Sync APIs
+    if (pathname === '/api/clipboard' && req.method === 'POST') {
+        handleClipboardPost(req, res);
+        return;
+    }
+    if (pathname === '/api/clipboard' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(currentClipboard));
+        return;
+    }
+    if (pathname === '/api/clipboard/text' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end(currentClipboard.text || '');
+        return;
+    }
+    if (pathname === '/api/clipboard-events' && req.method === 'GET') {
+        handleClipboardEvents(req, res);
         return;
     }
 

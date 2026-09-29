@@ -27,6 +27,10 @@ set -g status off
 set -s escape-time 0
 set -g history-limit 50000
 set -g aggressive-resize on
+set -g allow-passthrough on
+set -s set-clipboard on
+set -as terminal-features ',xterm-256color:clipboard'
+set -as terminal-overrides ',xterm*:Ms=\\E]52;%p1%s;%p2%s\\7'
 EOF
 
 # Create persistent tmux session wrapper for OpenCode

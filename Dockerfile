@@ -32,6 +32,14 @@ COPY public /public
 # Copy voice transcription proxy server
 COPY server.js /server.js
 
+# Copy clipboard helper and create symlinks for Linux clipboard commands
+COPY clipboard-helper.sh /usr/local/bin/clipboard-helper
+RUN chmod +x /usr/local/bin/clipboard-helper \
+    && ln -sf /usr/local/bin/clipboard-helper /usr/local/bin/xclip \
+    && ln -sf /usr/local/bin/clipboard-helper /usr/local/bin/xsel \
+    && ln -sf /usr/local/bin/clipboard-helper /usr/local/bin/wl-copy \
+    && ln -sf /usr/local/bin/clipboard-helper /usr/local/bin/wl-paste
+
 # Entrypoint startup script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
