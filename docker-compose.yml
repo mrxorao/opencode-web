@@ -1,5 +1,6 @@
 services:
   opencode-web:
+    image: xorao/opencode-web:latest
     build: .
     container_name: opencode-web
     restart: unless-stopped

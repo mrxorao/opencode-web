@@ -2,6 +2,8 @@
 
 Access the **OpenCode AI CLI** directly from your browser on desktop or mobile through a modern web terminal (`ttyd`), with a fully self-contained environment and persistent local storage.
 
+[![Docker Hub](https://img.shields.io/docker/pulls/xorao/opencode-web?logo=docker&label=Docker%20Hub)](https://hub.docker.com/r/xorao/opencode-web)
+
 ---
 
 ## 📁 File Structure
@@ -22,22 +24,41 @@ opencode-web/
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
+
+### Option 1: Run directly with Docker Compose (Pre-built Image)
 
 1. **Start the Container:**
    ```bash
    docker compose up -d
    ```
 
-2. **Access in Your Browser (Desktop or Smartphone):**
-   - **Local URL:** [http://localhost:7681](http://localhost:7681)
-   - **Local Network (Wi-Fi):** `http://<YOUR-PC-LOCAL-IP>:7681`
-   - **Remote Access (Tailscale):** `http://<YOUR-PC-TAILSCALE-IP>:7681`
+### Option 2: Run directly with Docker CLI
 
-3. **Default Login Credentials:**
-   - **Username:** `admin`
-   - **Password:** `admin123`
-   *(You can change or disable this in the `.env` file under `TTYD_AUTH`)*
+```bash
+docker run -d \
+  --name opencode-web \
+  --restart unless-stopped \
+  -p 7681:7681 \
+  -e TTYD_AUTH=admin:admin123 \
+  -v $(pwd)/workspace:/workspace \
+  -v $(pwd)/data/config:/root/.config/opencode \
+  -v $(pwd)/data/share:/root/.local/share/opencode \
+  xorao/opencode-web:latest
+```
+
+---
+
+## 🌐 Accessing the Web Terminal (Desktop & Mobile)
+
+- **Local Access:** [http://localhost:7681](http://localhost:7681)
+- **Local Network (Wi-Fi):** `http://<YOUR-PC-LOCAL-IP>:7681`
+- **Remote Access (Tailscale):** `http://<YOUR-PC-TAILSCALE-IP>:7681`
+
+### 🔐 Default Login Credentials
+- **Username:** `admin`
+- **Password:** `admin123`
+*(You can change or disable this in `.env` via `TTYD_AUTH`)*
 
 ---
 
@@ -61,8 +82,8 @@ API keys and custom providers (OpenAI, Anthropic Claude, Google Gemini, OpenRout
   docker compose down
   ```
 
-- **Rebuild image (after updates):**
+- **Pull latest image version:**
   ```bash
-  docker compose build --no-cache
+  docker compose pull
   docker compose up -d
   ```
