@@ -765,6 +765,48 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
+        function playConversationStopSound() {
+            try {
+                var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                var ctx = new AudioCtx();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                var now = ctx.currentTime;
+
+                // Descending melodic arpeggio for conversation stop: G5 (783.99 Hz) -> E5 (659.25 Hz) -> C5 (523.25 Hz)
+                var notes = [783.99, 659.25, 523.25];
+                var durations = [0.08, 0.08, 0.25];
+                var noteOffset = 0;
+
+                notes.forEach(function(freq, i) {
+                    var osc = ctx.createOscillator();
+                    var gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + noteOffset);
+
+                    gain.gain.setValueAtTime(0, now + noteOffset);
+                    gain.gain.linearRampToValueAtTime(0.20, now + noteOffset + 0.015);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + noteOffset + durations[i]);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(now + noteOffset);
+                    osc.stop(now + noteOffset + durations[i]);
+
+                    noteOffset += 0.07;
+                });
+
+                setTimeout(function() {
+                    try { ctx.close(); } catch(e) {}
+                }, 600);
+            } catch(e) {
+                console.warn('Error playing conversation stop sound:', e);
+            }
+        }
+
         function speakAiMessage(rawText) {
             if (!isConversationMode) return;
             if (!window.speechSynthesis) return;
@@ -1036,6 +1078,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     mediaRecorder.stop();
                 }
                 updateTalkButton();
+                playConversationStopSound();
                 showPreview('💬 Conversation Mode Off', 'You can still use the microphone for single dictation.', false, false);
                 hidePreview(2500);
             } else {
