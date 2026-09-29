@@ -158,6 +158,70 @@ async function handleTranscribe(req, res) {
     });
 }
 
+const { Readable } = require('stream');
+const WORKSPACE_DIR = process.env.WORKSPACE_DIR || '/workspace';
+
+async function handleUpload(req, res) {
+    try {
+        const uploadsFolder = path.join(WORKSPACE_DIR, 'uploads');
+        if (!fs.existsSync(uploadsFolder)) {
+            fs.mkdirSync(uploadsFolder, { recursive: true });
+        }
+
+        const webReq = new Request('http://localhost' + req.url, {
+            method: req.method,
+            headers: req.headers,
+            body: Readable.toWeb(req),
+            duplex: 'half'
+        });
+
+        const formData = await webReq.formData();
+        const uploadedFiles = [];
+
+        for (const [key, value] of formData.entries()) {
+            if (typeof value === 'object' && typeof value.arrayBuffer === 'function') {
+                const originalName = value.name || 'attachment';
+                const safeName = path.basename(originalName).replace(/[^a-zA-Z0-9._-]/g, '_');
+                
+                let finalName = safeName;
+                let targetPath = path.join(uploadsFolder, finalName);
+                let counter = 1;
+                const ext = path.extname(safeName);
+                const base = path.basename(safeName, ext);
+                while (fs.existsSync(targetPath)) {
+                    finalName = `${base}_${counter}${ext}`;
+                    targetPath = path.join(uploadsFolder, finalName);
+                    counter++;
+                }
+
+                const buffer = Buffer.from(await value.arrayBuffer());
+                fs.writeFileSync(targetPath, buffer);
+
+                uploadedFiles.push({
+                    name: finalName,
+                    originalName: originalName,
+                    relativePath: `uploads/${finalName}`,
+                    absolutePath: targetPath,
+                    size: buffer.length
+                });
+            }
+        }
+
+        if (uploadedFiles.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'NO_FILES_UPLOADED', message: 'No valid files received.' }));
+            return;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, files: uploadedFiles }));
+    } catch (err) {
+        console.error('Server upload error:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message || 'Upload failed' }));
+    }
+}
+
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const PWA_MIME_TYPES = {
@@ -247,6 +311,12 @@ function requestListener(req, res) {
     // Handle audio transcription
     if (req.url === '/api/transcribe' && req.method === 'POST') {
         handleTranscribe(req, res);
+        return;
+    }
+
+    // Handle file upload attachments
+    if (req.url === '/api/upload' && req.method === 'POST') {
+        handleUpload(req, res);
         return;
     }
 

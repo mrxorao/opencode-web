@@ -48,6 +48,9 @@ body.toolbar-dragging #corner-zone-container{display:block}
 #talk-btn.active{background:#1f6feb!important;color:#fff!important;border-color:#58a6ff!important;box-shadow:0 0 14px rgba(31,111,235,0.8);animation:talk-pulse 1.8s infinite ease-in-out}
 #talk-btn.active.speaking{background:#8957e5!important;border-color:#a371f7!important;box-shadow:0 0 16px rgba(137,87,229,0.9);animation:talk-pulse 1.2s infinite ease-in-out}
 @keyframes talk-pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.85}100%{transform:scale(1);opacity:1}}
+#upload-btn{background:#30363d;color:#e6edf3}
+#upload-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
+#upload-btn.uploading{background:#1f6feb!important;color:#fff!important;animation:mic-pulse 1s infinite ease-in-out;box-shadow:0 0 14px rgba(31,111,235,0.8)}
 
 #transcript-preview{position:fixed;max-width:min(360px,calc(100vw - 48px));background:rgba(13,17,23,0.96);border:1px solid #30363d;border-radius:10px;padding:8px 12px;color:#f0f6fc;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,0.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease}
 #transcript-preview.preview-top-right{top:calc(env(safe-area-inset-top,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;bottom:auto}
@@ -391,6 +394,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                     </svg>
                 </button>
+                <button id="upload-btn" class="voice-btn" title="Anexar Ficheiro / Imagem" aria-label="Upload Attachment">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                </button>
+                <input type="file" id="file-upload-input" multiple style="display:none">
                 ${isFirefox ? '<button id="ff-help-btn" class="voice-btn ff-btn-icon" title="Firefox Voice Setup Guide" aria-label="Firefox Guide">🦊</button>' : ''}
                 <button id="install-pwa-btn" class="voice-btn" style="display:none" title="Install App (PWA)" aria-label="Install App">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -498,6 +507,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         var micBtn = document.getElementById('mic-btn');
         var talkBtn = document.getElementById('talk-btn');
+        var uploadBtn = document.getElementById('upload-btn');
+        var fileUploadInput = document.getElementById('file-upload-input');
         var dragHandle = document.getElementById('drag-handle');
         var voiceToolbar = document.getElementById('voice-toolbar');
         var previewBox = document.getElementById('transcript-preview');
@@ -1228,6 +1239,79 @@ window.sendTextToTerminal = function(text, autoEnter) {
         if (talkBtn) {
             talkBtn.addEventListener('click', toggleConversationMode);
         }
+
+        async function uploadFiles(files) {
+            if (!files || files.length === 0) return;
+            var formData = new FormData();
+            for (var i = 0; i < files.length; i++) {
+                formData.append('file', files[i]);
+            }
+
+            if (uploadBtn) uploadBtn.classList.add('uploading');
+            showPreview('📎 A enviar anexo(s)...', 'A processar ' + files.length + ' ficheiro(s)...', false, false);
+
+            try {
+                var resp = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                var data = await resp.json();
+                if (resp.ok && data.success && data.files && data.files.length > 0) {
+                    var references = data.files.map(function(f) { return '@' + f.relativePath; }).join(' ');
+                    window.sendTextToTerminal(references + ' ', false);
+
+                    var names = data.files.map(function(f) { return f.name; }).join(', ');
+                    showPreview('✓ Anexo(s) adicionado(s)', names + ' associado(s) ao terminal.', false, false);
+                    hidePreview(3500);
+
+                    // If in conversation mode, prompt user to speak prompt
+                    if (isConversationMode && !isRecording && !isSpeaking) {
+                        setTimeout(function() {
+                            if (isConversationMode && !isRecording && !isSpeaking) {
+                                startGroqVoiceRecording();
+                            }
+                        }, 600);
+                    }
+                } else {
+                    showPreview('⚠️ Erro no Upload', data.message || data.error || 'Falha ao processar ficheiros.', true, false);
+                    hidePreview(4000);
+                }
+            } catch(err) {
+                console.error('Upload fetch error:', err);
+                showPreview('⚠️ Erro no Envio', 'Não foi possível ligar ao servidor de upload.', true, false);
+                hidePreview(4000);
+            } finally {
+                if (uploadBtn) uploadBtn.classList.remove('uploading');
+                if (fileUploadInput) fileUploadInput.value = '';
+            }
+        }
+
+        if (uploadBtn && fileUploadInput) {
+            uploadBtn.addEventListener('click', function() {
+                fileUploadInput.click();
+            });
+            fileUploadInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files.length > 0) {
+                    uploadFiles(e.target.files);
+                }
+            });
+        }
+
+        // Window drag & drop file upload support
+        window.addEventListener('dragover', function(e) {
+            if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).indexOf('Files') > -1) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+        window.addEventListener('drop', function(e) {
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadFiles(e.dataTransfer.files);
+            }
+        });
 
         // Called when user submits prompt in terminal (Enter / voice auto-send)
         window.__onPromptSubmitted = function(promptText) {
