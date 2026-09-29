@@ -360,7 +360,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var toolbar = document.createElement('div');
         toolbar.id = 'voice-toolbar';
         toolbar.innerHTML = `
-            <div id="drag-handle" class="drag-handle" title="Drag to move • Click to collapse" aria-label="Drag and collapse handle">
+            <div id="drag-handle" class="drag-handle" title="Drag to move • Double-click to collapse" aria-label="Drag handle (Double-click to collapse)">
                 <svg class="handle-icon-expanded" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="8" cy="5" r="2.5"></circle>
                     <circle cx="16" cy="5" r="2.5"></circle>
@@ -660,7 +660,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             if (!voiceToolbar || !dragHandle) return;
             var isCollapsed = voiceToolbar.classList.contains('collapsed');
             if (isCollapsed) {
-                dragHandle.title = 'Drag to move • Click to expand controls';
+                dragHandle.title = 'Drag to move • Double-click to expand';
                 if (isConversationMode) {
                     voiceToolbar.classList.add('active');
                     if (isSpeaking) {
@@ -677,29 +677,53 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     voiceToolbar.classList.remove('recording');
                 }
             } else {
-                dragHandle.title = 'Drag to move • Click to collapse controls';
+                dragHandle.title = 'Drag to move • Double-click to collapse';
                 voiceToolbar.classList.remove('recording', 'active', 'speaking');
             }
         }
 
+        var lastDragTapTime = 0;
+        function handleToggleCollapse() {
+            var isCollapsed = voiceToolbar.classList.toggle('collapsed');
+            try {
+                localStorage.setItem('opencode_toolbar_collapsed', isCollapsed ? 'true' : 'false');
+            } catch(err) {}
+            updateCollapseState();
+        }
+
+        function handleDragDoubleTap(e) {
+            var now = Date.now();
+            var diff = now - lastDragTapTime;
+            if (diff > 0 && diff < 400) {
+                lastDragTapTime = now;
+                handleToggleCollapse();
+            } else {
+                lastDragTapTime = now;
+            }
+        }
+
         if (dragHandle) {
-            dragHandle.addEventListener('click', function(e) {
-                var isCollapsed = voiceToolbar.classList.toggle('collapsed');
-                try {
-                    localStorage.setItem('opencode_toolbar_collapsed', isCollapsed ? 'true' : 'false');
-                } catch(err) {}
-                updateCollapseState();
+            dragHandle.addEventListener('click', handleDragDoubleTap);
+            dragHandle.addEventListener('dblclick', function(e) {
+                e.preventDefault();
+                if (Date.now() - lastDragTapTime > 150) {
+                    handleToggleCollapse();
+                }
             });
         }
 
         if (voiceToolbar) {
             voiceToolbar.addEventListener('click', function(e) {
                 if (voiceToolbar.classList.contains('collapsed')) {
-                    voiceToolbar.classList.remove('collapsed');
-                    try {
-                        localStorage.setItem('opencode_toolbar_collapsed', 'false');
-                    } catch(err) {}
-                    updateCollapseState();
+                    handleDragDoubleTap(e);
+                }
+            });
+            voiceToolbar.addEventListener('dblclick', function(e) {
+                if (voiceToolbar.classList.contains('collapsed')) {
+                    e.preventDefault();
+                    if (Date.now() - lastDragTapTime > 150) {
+                        handleToggleCollapse();
+                    }
                 }
             });
         }
