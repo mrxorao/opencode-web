@@ -3,15 +3,15 @@ const net = require('net');
 
 const TTYD_PORT = 7680;
 const PROXY_PORT = 7681;
-const GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
+const VOICE_GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
 
 async function handleTranscribe(req, res) {
-    if (!GROQ_API_KEY) {
+    if (!VOICE_GROQ_API_KEY) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             error: 'GROQ_API_KEY_NOT_CONFIGURED',
-            message: 'Please configure GROQ_API_KEY in your .env file first!' 
+            message: 'Please configure VOICE_GROQ_API_KEY in your .env file first!' 
         }));
         return;
     }
@@ -36,7 +36,7 @@ async function handleTranscribe(req, res) {
             const groqResp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${GROQ_API_KEY}`
+                    'Authorization': `Bearer ${VOICE_GROQ_API_KEY}`
                 },
                 body: formData
             });
@@ -64,9 +64,9 @@ const server = http.createServer((req, res) => {
     if (req.url === '/api/config' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
-            hasGroqKey: Boolean(GROQ_API_KEY),
+            hasGroqKey: Boolean(VOICE_GROQ_API_KEY),
             defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
-            status: Boolean(GROQ_API_KEY) ? 'ready' : 'missing_groq_key'
+            status: Boolean(VOICE_GROQ_API_KEY) ? 'ready' : 'missing_groq_key'
         }));
         return;
     }
@@ -125,9 +125,9 @@ server.on('upgrade', (req, socket, head) => {
 server.listen(PROXY_PORT, '0.0.0.0', () => {
     console.log(`[proxy] Web Terminal & Voice Server listening on port ${PROXY_PORT} -> ttyd :${TTYD_PORT}`);
     console.log(`[proxy] Default Voice Language: ${DEFAULT_VOICE_LANGUAGE}`);
-    if (GROQ_API_KEY) {
+    if (VOICE_GROQ_API_KEY) {
         console.log(`[proxy] Groq Whisper Cloud API enabled (whisper-large-v3-turbo)`);
     } else {
-        console.log(`[proxy] GROQ_API_KEY not configured in .env`);
+        console.log(`[proxy] VOICE_GROQ_API_KEY not configured in .env`);
     }
 });

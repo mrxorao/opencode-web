@@ -154,7 +154,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         async function startGroqVoiceRecording() {
             var isConfigured = await fetchServerConfig();
             if (!isConfigured) {
-                showPreview('⚠️ API Key Required', 'Please configure GROQ_API_KEY in your .env file first!', true, false);
+                showPreview('⚠️ API Key Required', 'Please configure VOICE_GROQ_API_KEY in your .env file first!', true, false);
                 hidePreview(5000);
                 return;
             }
@@ -249,7 +249,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             showPreview('✓ Inserted into prompt:', text, false, false);
                             hidePreview(2500);
                         } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
-                            showPreview('⚠️ API Key Required', 'Please configure GROQ_API_KEY in your .env file!', true, false);
+                            showPreview('⚠️ API Key Required', 'Please configure VOICE_GROQ_API_KEY in your .env file!', true, false);
                             hidePreview(4500);
                         } else {
                             showPreview('⚠️ Transcription Error', (data.error || 'No speech recognized.'), true, false);
