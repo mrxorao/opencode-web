@@ -13,7 +13,6 @@ services:
       - ENABLE_HTTPS=${ENABLE_HTTPS:-false}
       - AUTO_UPDATE=${AUTO_UPDATE:-true}
       - AUTO_START_OPENCODE=true
-      - NODE_OPTIONS=--max-old-space-size=256
     volumes:
       - ./data/config:/root/.config/opencode
       - ./data/share:/root/.local/share/opencode
@@ -21,4 +20,3 @@ services:
     working_dir: /workspace
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    mem_limit: 512m
