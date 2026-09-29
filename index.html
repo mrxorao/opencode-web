@@ -33,6 +33,17 @@
 #voice-toolbar.collapsed.active .drag-handle, #voice-toolbar.collapsed.active .collapse-btn{color:#58a6ff;animation:talk-pulse 1.8s infinite ease-in-out}
 #voice-toolbar.collapsed.active.speaking .drag-handle, #voice-toolbar.collapsed.active.speaking .collapse-btn{color:#d2a8ff;animation:talk-pulse 1.2s infinite ease-in-out}
 
+/* Vertical Orientation for Voice Toolbar */
+#voice-toolbar.vertical{flex-direction:column;padding:6px 5px;border-radius:30px;gap:6px}
+#voice-toolbar.vertical .toolbar-actions{flex-direction:column;gap:7px}
+#voice-toolbar.vertical .drag-handle{width:32px;height:16px;margin:1px 0}
+#voice-toolbar.vertical .drag-handle svg{transform:rotate(90deg)}
+#voice-toolbar.vertical .collapse-btn{width:32px;height:18px;margin:1px 0}
+#voice-toolbar.vertical .collapse-btn svg{transform:rotate(90deg)}
+#voice-toolbar.vertical.collapsed .collapse-btn svg{transform:rotate(270deg)}
+#voice-toolbar.vertical.collapsed{padding:6px 4px;border-radius:18px;gap:2px}
+#voice-toolbar.vertical.collapsed .drag-handle, #voice-toolbar.vertical.collapsed .collapse-btn{width:30px;height:18px;margin:0}
+
 /* Corner Presets for Voice Toolbar */
 #voice-toolbar.corner-top-right{top:calc(env(safe-area-inset-top,12px) + 16px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;bottom:auto}
 #voice-toolbar.corner-top-left{top:calc(env(safe-area-inset-top,12px) + 16px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;bottom:auto}
@@ -46,6 +57,13 @@
 #transcript-preview.preview-top-left{top:calc(env(safe-area-inset-top,12px) + 68px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;bottom:auto}
 #transcript-preview.preview-bottom-right{bottom:calc(env(safe-area-inset-bottom,12px) + 68px);right:calc(env(safe-area-inset-right,12px) + 24px);left:auto;top:auto}
 #transcript-preview.preview-bottom-left{bottom:calc(env(safe-area-inset-bottom,12px) + 68px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;top:auto}
+
+/* Transcript preview offset when toolbar is vertical */
+#voice-toolbar.vertical.corner-top-right ~ #transcript-preview.preview-top-right{right:calc(env(safe-area-inset-right,12px) + 64px);top:calc(env(safe-area-inset-top,12px) + 16px)}
+#voice-toolbar.vertical.corner-top-left ~ #transcript-preview.preview-top-left{left:calc(env(safe-area-inset-left,12px) + 64px);top:calc(env(safe-area-inset-top,12px) + 16px)}
+#voice-toolbar.vertical.corner-bottom-right ~ #transcript-preview.preview-bottom-right{right:calc(env(safe-area-inset-right,12px) + 64px);bottom:calc(env(safe-area-inset-bottom,12px) + 20px)}
+#voice-toolbar.vertical.corner-bottom-left ~ #transcript-preview.preview-bottom-left{left:calc(env(safe-area-inset-left,12px) + 64px);bottom:calc(env(safe-area-inset-bottom,12px) + 20px)}
+
 #transcript-preview .transcript-status{font-size:11.5px;font-weight:600;color:#34d399;display:flex;align-items:center;gap:6px;letter-spacing:-0.01em;margin-bottom:3px}
 #transcript-preview .transcript-status::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 #transcript-preview.error .transcript-status{color:#f87171}
@@ -77,8 +95,8 @@ body.toolbar-dragging #corner-zone-container{display:block}
 #upload-btn{background:#30363d;color:#e6edf3}
 #upload-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 #upload-btn.uploading{background:#1f6feb!important;color:#fff!important;animation:mic-pulse 1s infinite ease-in-out;box-shadow:0 0 14px rgba(31,111,235,0.8)}
-#prompts-btn, #shortcuts-btn, #font-size-btn, #refresh-btn{background:#30363d;color:#e6edf3}
-#prompts-btn:hover, #shortcuts-btn:hover, #font-size-btn:hover, #refresh-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
+#prompts-btn, #shortcuts-btn, #font-size-btn, #refresh-btn, #orientation-btn{background:#30363d;color:#e6edf3}
+#prompts-btn:hover, #shortcuts-btn:hover, #font-size-btn:hover, #refresh-btn:hover, #orientation-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 #refresh-btn.rotating svg{animation:refresh-spin .6s cubic-bezier(0.4,0,0.2,1)}
 @keyframes refresh-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
@@ -746,6 +764,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         <path d="M15.5 15h5"></path>
                     </svg>
                 </button>
+                <button id="orientation-btn" class="voice-btn" title="Alternar Orientação (Horizontal / Vertical)" aria-label="Toggle Orientation">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="18" rx="1.5"></rect>
+                        <rect x="14" y="3" width="7" height="8" rx="1.5"></rect>
+                        <rect x="14" y="13" width="7" height="8" rx="1.5"></rect>
+                    </svg>
+                </button>
                 <button id="refresh-btn" class="voice-btn" title="Recarregar Terminal (Atualizar Página)" aria-label="Refresh Terminal">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 4 23 10 17 10"></polyline>
@@ -983,6 +1008,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     <div class="shortcut-row">
                         <div class="shortcut-desc">Recarregar Terminal / Página</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">R</span> / <span class="shortcut-key">F5</span></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <div class="shortcut-desc">Alternar Menu Horizontal / Vertical</div>
+                        <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">Alt</span> + <span class="shortcut-key">O</span></div>
                     </div>
                     <div class="shortcut-row">
                         <div class="shortcut-desc">Copiar texto selecionado</div>
@@ -2325,6 +2354,50 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
+        // Toolbar Orientation Handling (Horizontal / Vertical)
+        var orientationBtn = document.getElementById('orientation-btn');
+        function setToolbarOrientation(orientation, showToast) {
+            var isVert = (orientation === 'vertical');
+            if (voiceToolbar) {
+                if (isVert) {
+                    voiceToolbar.classList.add('vertical');
+                } else {
+                    voiceToolbar.classList.remove('vertical');
+                }
+            }
+            try {
+                localStorage.setItem('opencode_toolbar_orientation', isVert ? 'vertical' : 'horizontal');
+            } catch(e) {}
+            if (orientationBtn) {
+                orientationBtn.title = isVert ? 'Mudar para Horizontal (Ctrl+Alt+O)' : 'Mudar para Vertical (Ctrl+Alt+O)';
+            }
+            if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                try {
+                    window.__ttyd_xterm.overlayAddon.showOverlay(isVert ? 'Menu Vertical' : 'Menu Horizontal', 350);
+                } catch(e) {}
+            }
+        }
+        function toggleToolbarOrientation() {
+            var currentIsVert = voiceToolbar ? voiceToolbar.classList.contains('vertical') : false;
+            setToolbarOrientation(currentIsVert ? 'horizontal' : 'vertical', true);
+        }
+        window.setToolbarOrientation = setToolbarOrientation;
+        window.toggleToolbarOrientation = toggleToolbarOrientation;
+
+        if (orientationBtn) {
+            orientationBtn.addEventListener('click', function() {
+                toggleToolbarOrientation();
+            });
+        }
+
+        // Apply saved orientation on load
+        try {
+            var savedOrientation = localStorage.getItem('opencode_toolbar_orientation');
+            if (savedOrientation === 'vertical') {
+                setToolbarOrientation('vertical', false);
+            }
+        } catch(e) {}
+
         // Keyboard Shortcuts Modal Handling
         var shortcutsBtn = document.getElementById('shortcuts-btn');
         var shortcutsModal = document.getElementById('shortcuts-modal');
@@ -2840,6 +2913,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     }
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === '0' || ev.code === 'Digit0' || ev.code === 'Numpad0') && ev.type === 'keydown') {
                         setTerminalFontSize(14, true);
+                        return false;
+                    }
+                    if ((ev.ctrlKey || ev.metaKey) && ev.altKey && (ev.key === 'o' || ev.key === 'O' || ev.code === 'KeyO') && ev.type === 'keydown') {
+                        toggleToolbarOrientation();
                         return false;
                     }
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'c' || ev.key === 'C') && ev.type === 'keydown') {
