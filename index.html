@@ -327,22 +327,23 @@ function copyToClipboard(text) {
     var str = String(text);
     _currentPendingCopyText = str;
 
-    // 1. Primary: Modern Async Clipboard API (Directly writes to Windows OS Clipboard)
+    // 1. Synchronously execute execCommandDirect while user activation is 100% active
+    var execOk = execCommandDirect(str);
+
+    // 2. In parallel, also invoke modern navigator.clipboard API
     if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-        return navigator.clipboard.writeText(str).then(function() {
+        navigator.clipboard.writeText(str).then(function() {
             _currentPendingCopyText = '';
-            if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
-            }
-            return true;
         }).catch(function(err) {
-            console.warn('[copy] navigator.clipboard.writeText failed, using execCommand:', err);
-            return execCommandDirect(str);
+            console.warn('[copy] navigator.clipboard.writeText rejected:', err);
         });
     }
 
-    // 2. Fallback: execCommandDirect
-    return Promise.resolve(execCommandDirect(str));
+    if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+        window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+    }
+
+    return Promise.resolve(true);
 }
 window.copyToClipboard = copyToClipboard;
 
@@ -2444,7 +2445,27 @@ window.sendTextToTerminal = function(text, autoEnter) {
             if (!termInstance || termInstance.__copyHooked) return;
             termInstance.__copyHooked = true;
 
-            // 1. Intercept Ctrl+C in xterm via attachCustomKeyEventHandler
+            // 1. OSC 52 escape sequence handler (for OpenCode CLI, tmux, vim clipboard)
+            if (termInstance.parser && typeof termInstance.parser.registerOscHandler === 'function') {
+                try {
+                    termInstance.parser.registerOscHandler(52, function(data) {
+                        try {
+                            var parts = data.split(';');
+                            var b64 = parts.length > 1 ? parts.slice(1).join(';') : parts[0];
+                            if (b64) {
+                                var decoded = atob(b64);
+                                if (decoded) {
+                                    copyToClipboard(decoded);
+                                    return true;
+                                }
+                            }
+                        } catch(e) {}
+                        return false;
+                    });
+                } catch(e) {}
+            }
+
+            // 2. Intercept Ctrl+C in xterm via attachCustomKeyEventHandler
             if (typeof termInstance.attachCustomKeyEventHandler === 'function') {
                 termInstance.attachCustomKeyEventHandler(function(ev) {
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'c' || ev.key === 'C') && ev.type === 'keydown') {
@@ -2452,9 +2473,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             var text = termInstance.getSelection();
                             if (text && text.length > 0) {
                                 copyToClipboard(text);
-                                if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                                    window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 300);
-                                }
                                 return false; // Prevent sending SIGINT \x03 to terminal when copying selection
                             }
                         }
@@ -2463,10 +2481,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 });
             }
 
-            // 2. Mouseup event on window & terminal: copies immediately and synchronously once user finishes highlighting text
+            // 3. Mouseup event on window & terminal: copies immediately and synchronously once user finishes highlighting text
             if (!window.__globalMouseupCopyHooked) {
                 window.__globalMouseupCopyHooked = true;
-                window.addEventListener('mouseup', function() {
+                var handleMouseUpCopy = function() {
                     var inst = window.term || (window.__ttyd_xterm && window.__ttyd_xterm.terminal);
                     if (inst && typeof inst.getSelection === 'function' && inst.hasSelection()) {
                         var selText = inst.getSelection();
@@ -2474,7 +2492,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             copyToClipboard(selText);
                         }
                     }
-                }, false);
+                };
+                window.addEventListener('mouseup', handleMouseUpCopy, true);
+                document.addEventListener('mouseup', handleMouseUpCopy, true);
             }
         }
 
