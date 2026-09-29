@@ -656,6 +656,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 </div>
                 <div class="modal-body">
                     <div class="shortcut-row">
+                        <div class="shortcut-desc">Cancelar Microfone / Conversa / Fechar Janelas</div>
+                        <div class="shortcut-keys"><span class="shortcut-key">Esc</span></div>
+                    </div>
+                    <div class="shortcut-row">
                         <div class="shortcut-desc">Ativar / Parar Ditado por Voz</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">K</span></div>
                     </div>
@@ -1004,20 +1008,63 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         function cleanMarkdownForSpeech(raw) {
             if (!raw) return '';
-            return raw
-                .replace(/```[a-zA-Z0-9_-]*\n([\s\S]*?)```/g, ' [Code omitted] ')
-                .replace(/```[\s\S]*?```/g, ' [Code omitted] ')
-                .replace(/`([^`]+)`/g, '$1')
-                .replace(/#{1,6}\s+/g, '')
-                .replace(/\*\*([^\*]+)\*\*/g, '$1')
-                .replace(/\*([^\*]+)\*/g, '$1')
-                .replace(/__([^_]+)__/g, '$1')
-                .replace(/_([^_]+)_/g, '$1')
-                .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-                .replace(/https?:\/\/[^\s]+/g, 'link')
-                .replace(/^[\s*>-]+/gm, '')
-                .replace(/\s+/g, ' ')
-                .trim();
+            var text = String(raw);
+
+            // 1. Remove reasoning / thought tags
+            text = text.replace(/<think[\s\S]*?<\/think>/gi, ' ');
+            text = text.replace(/<details[\s\S]*?<\/details>/gi, ' ');
+            text = text.replace(/<[^>]+>/g, ' ');
+
+            // 2. Remove fenced code blocks completely
+            text = text.replace(/```[\s\S]*?```/g, ' ');
+            // Remove inline code ticks but preserve code content inside
+            text = text.replace(/`([^`]+)`/g, ' $1 ');
+
+            // 3. Remove URLs and web links
+            text = text.replace(/https?:\/\/[^\s]+/g, ' ');
+            text = text.replace(/www\.[^\s]+/g, ' ');
+
+            // 4. Extract text from Markdown links: [Title](url) -> Title
+            text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, ' $1 ');
+
+            // 5. Remove Unicode Emojis and Pictographic symbols (without matching ASCII numbers)
+            try {
+                text = text.replace(/\p{Extended_Pictographic}/gu, ' ');
+            } catch(e) {
+                text = text.replace(/[\uD83C-\uDBFF\uDC00-\uDFFF]+/g, ' ');
+            }
+
+            // 6. Remove ASCII Emoticons and smileys (e.g. :( :) :-( :-) :D :-D :P :p ;) ;-) :O :o <3 XD etc.)
+            text = text.replace(/(?:^|\s|[^\p{L}\p{N}])[:;=8]['`\-~]?[()\[\]{}DPpOo\\\/|](?=\s|$|[^\p{L}\p{N}])/gu, ' ');
+            text = text.replace(/(?:^|\s|[^\p{L}\p{N}])[()\[\]{}][\-~]?[:;=8](?=\s|$|[^\p{L}\p{N}])/gu, ' ');
+            text = text.replace(/<3+/g, ' ');
+            text = text.replace(/\b[xX][dD]+\b/g, ' ');
+            text = text.replace(/[\^><_\-][_\.\-][\^><_\-]/g, ' ');
+            text = text.replace(/\(y\)|\(n\)/gi, ' ');
+
+            // 7. Strip Markdown syntax formatting and symbols
+            text = text.replace(/#{1,6}\s+/g, ' ');
+            text = text.replace(/[*_~`#$@^&+=|\\<>{}\[\]()\"\/%]/g, ' ');
+
+            // 8. Keep ONLY letters (including accents), digits (0-9), whitespace, and standard sentence punctuation (. , ! ?)
+            text = text.replace(/[^\p{L}\p{N}\s\.,!\?:;]/gu, ' ');
+
+            // 9. Remove colons and semicolons so they aren't spoken as "dois pontos" or "ponto e vírgula"
+            text = text.replace(/[:;]+/g, ' ');
+
+            // 10. Clean up repeated punctuation (e.g. "..." -> ".", "???" -> "?", "!!!" -> "!")
+            text = text.replace(/\.{2,}/g, '.');
+            text = text.replace(/!{2,}/g, '!');
+            text = text.replace(/\?{2,}/g, '?');
+            text = text.replace(/,{2,}/g, ',');
+
+            // 11. Remove standalone punctuation marks not connected to words
+            text = text.replace(/(^|\s)[.,!?]+(?=\s|$)/g, ' ');
+
+            // 12. Collapse multiple whitespaces and trim
+            text = text.replace(/\s+/g, ' ').trim();
+
+            return text;
         }
 
         function getBestVoiceForLang(langCode) {
@@ -1601,6 +1648,59 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         };
 
+        function cancelVoiceAndConversation(showFeedback) {
+            var wasActive = isConversationMode || isRecording || isSpeaking;
+
+            if (isConversationMode) {
+                isConversationMode = false;
+                if (conversationPollTimer) {
+                    clearInterval(conversationPollTimer);
+                    conversationPollTimer = null;
+                }
+                playConversationStopSound();
+            }
+
+            stopSpeaking();
+
+            if (isRecording) {
+                isRecording = false;
+                if (typeof cancelAnimationFrame === 'function' && animFrameId) {
+                    cancelAnimationFrame(animFrameId);
+                }
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    audioChunks = [];
+                    mediaRecorder.onstop = null;
+                    try { mediaRecorder.stop(); } catch(e) {}
+                }
+                if (liveCtx) {
+                    try { liveCtx.close(); } catch(e) {}
+                }
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(function(t) { t.stop(); });
+                }
+                if (micBtn) micBtn.classList.remove('recording');
+            }
+
+            updateTalkButton();
+
+            // Close any open modals
+            [ffModal, micModal, shortcutsModal, uploadChoiceModal, promptsModal].forEach(function(m) {
+                if (m && m.classList.contains('active')) {
+                    m.classList.remove('active');
+                }
+            });
+
+            if (wasActive && showFeedback !== false) {
+                showPreview('Cancelado (ESC)', 'Microfone e modo conversa desativados.', false, false);
+                hidePreview(2000);
+            } else if (!wasActive) {
+                hidePreview(0);
+            }
+
+            window.focusTerminal();
+        }
+        window.cancelVoiceAndConversation = cancelVoiceAndConversation;
+
         if (micBtn) {
             micBtn.addEventListener('click', window.triggerVoiceRecognition);
         }
@@ -2034,6 +2134,16 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         // Global Keyboard Shortcuts Listener
         window.addEventListener('keydown', function(e) {
+            // Escape (ESQ): Deactivate voice dictation, conversation mode, and close modals
+            if (e.key === 'Escape' || e.key === 'Esc' || e.code === 'Escape') {
+                if (typeof window.cancelVoiceAndConversation === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.cancelVoiceAndConversation(true);
+                    return;
+                }
+            }
+
             var activeEl = document.activeElement;
             var isInputFocused = activeEl && (
                 (activeEl.tagName === 'INPUT' && activeEl.type !== 'file') ||
