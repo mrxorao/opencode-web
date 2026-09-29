@@ -73,6 +73,7 @@ A built-in floating voice toolbar is available directly on the web interface (de
 - **⚡ Ultra-Fast Cloud STT:** Powered by Groq's `whisper-large-v3-turbo` via `VOICE_GROQ_API_KEY` (~200ms transcription).
 - **🔒 Dedicated Voice Key:** `VOICE_GROQ_API_KEY` is used exclusively for speech-to-text without cluttering OpenCode AI models.
 - **⚙️ Configurable Language:** Set `VOICE_LANGUAGE=EN` (default), `PT`, or `BR` in your `.env` file.
+- **📌 4-Corner Drag & Drop Snapping:** Drag the floating toolbar anywhere across the screen to automatically snap and dock to any of the 4 screen corners (Top-Left, Top-Right, Bottom-Left, Bottom-Right), with your preference saved in local storage.
 - **📱 Mobile Responsive:** Floating toolbar designed specifically for touchscreen devices and mobile browsers (Chrome, Safari, Firefox, Edge).
 
 ---

@@ -1,7 +1,29 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"><meta name="application-name" content="OpenCode AI"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="OpenCode AI"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0d1117"><title>OpenCode AI - Web Terminal</title><link rel="manifest" href="/manifest.json"><link rel="icon" type="image/svg+xml" href="/icon.svg"><link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png"><link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png"><link rel="alternate icon" type="image/png" sizes="192x192" href="/icon-192.png"><style type="text/css">.xterm{cursor:text;position:relative;user-select:none;-ms-user-select:none;-webkit-user-select:none}.xterm.focus,.xterm:focus{outline:none}.xterm .xterm-helpers{position:absolute;top:0;z-index:5}.xterm .xterm-helper-textarea{border:0;height:0;left:-9999em;margin:0;opacity:0;overflow:hidden;padding:0;position:absolute;resize:none;top:0;white-space:nowrap;width:0;z-index:-5}.xterm .composition-view{background:#000;color:#fff;display:none;position:absolute;white-space:nowrap;z-index:1}.xterm .composition-view.active{display:block}.xterm .xterm-viewport{background-color:#000;bottom:0;cursor:default;left:0;overflow-y:scroll;position:absolute;right:0;top:0}.xterm .xterm-screen{position:relative}.xterm .xterm-screen canvas{left:0;position:absolute;top:0}.xterm .xterm-scroll-area{visibility:hidden}.xterm-char-measure-element{display:inline-block;left:-9999em;line-height:normal;position:absolute;top:0;visibility:hidden}.xterm.enable-mouse-events{cursor:default}.xterm .xterm-cursor-pointer,.xterm.xterm-cursor-pointer{cursor:pointer}.xterm.column-select.focus{cursor:crosshair}.xterm .xterm-accessibility:not(.debug),.xterm .xterm-message{bottom:0;color:transparent;left:0;pointer-events:none;position:absolute;right:0;top:0;z-index:10}.xterm .xterm-accessibility-tree:not(.debug) ::selection{color:transparent}.xterm .xterm-accessibility-tree{user-select:text;white-space:pre}.xterm .live-region{height:1px;left:-9999px;overflow:hidden;position:absolute;width:1px}.xterm-dim{opacity:1!important}.xterm-underline-1{text-decoration:underline}.xterm-underline-2{text-decoration:double underline}.xterm-underline-3{text-decoration:wavy underline}.xterm-underline-4{text-decoration:dotted underline}.xterm-underline-5{text-decoration:dashed underline}.xterm-overline{text-decoration:overline}.xterm-overline.xterm-underline-1{text-decoration:overline underline}.xterm-overline.xterm-underline-2{text-decoration:overline double underline}.xterm-overline.xterm-underline-3{text-decoration:overline wavy underline}.xterm-overline.xterm-underline-4{text-decoration:overline dotted underline}.xterm-overline.xterm-underline-5{text-decoration:overline dashed underline}.xterm-strikethrough{text-decoration:line-through}.xterm-screen .xterm-decoration-container .xterm-decoration{position:absolute;z-index:6}.xterm-screen .xterm-decoration-container .xterm-decoration.xterm-decoration-top-layer{z-index:7}.xterm-decoration-overview-ruler{pointer-events:none;position:absolute;right:0;top:0;z-index:8}.xterm-decoration-top{position:relative;z-index:2}.modal{align-items:center;display:flex;overflow:hidden;position:fixed;z-index:40}.modal,.modal-background{bottom:0;left:0;right:0;top:0}.modal-background{background-color:rgba(74,74,74,.8);position:absolute}.modal-content{margin:0 20px;max-height:calc(100vh - 160px);overflow:auto;position:relative;width:100%}.modal-content .box{background-color:#fff;color:#4a4a4a;display:block;padding:1.25rem}.modal-content header{border-bottom:1px solid #ddd;font-weight:700;margin-bottom:10px;padding-bottom:10px;text-align:center}.modal-content .file-input{height:.01em;left:0;outline:none;position:absolute;top:0;width:.01em}.modal-content .file-cta{align-items:center;background-color:#f5f5f5;border-color:#dbdbdb;border-radius:3px;box-shadow:none;color:#6200ee;cursor:pointer;display:inline-flex;font-size:1em;font-weight:500;height:2.25em;justify-content:flex-start;line-height:1.5;outline:none;padding:calc(.375em - 1px) 1em;position:relative;vertical-align:top;white-space:nowrap}@media print,screen and (min-width:769px){.modal-content{margin:0 auto;max-height:calc(100vh - 40px);width:640px}}body,html{height:100%;width:100%;margin:0;padding:0;min-height:100%;overflow:hidden;position:fixed;top:0;left:0;right:0;bottom:0;background-color:#000;-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}#terminal-container{position:absolute;top:0;left:0;width:100%;height:100%;height:100dvh;margin:0;padding:0;overflow:hidden;box-sizing:border-box}#terminal-container .terminal{height:100%!important;padding:env(safe-area-inset-top, 4px) env(safe-area-inset-right, 4px) env(safe-area-inset-bottom, 4px) env(safe-area-inset-left, 4px);box-sizing:border-box}
 
 /* Floating Voice Control Toolbar */
-#voice-toolbar{position:fixed;top:calc(env(safe-area-inset-top,8px) + 8px);right:calc(env(safe-area-inset-right,8px) + 12px);z-index:99999;display:flex;align-items:center;gap:8px;background:rgba(22,27,34,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.18);border-radius:30px;padding:5px 8px;box-shadow:0 4px 16px rgba(0,0,0,0.6);user-select:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+#voice-toolbar{position:fixed;z-index:99999;display:flex;align-items:center;gap:7px;background:rgba(22,27,34,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.18);border-radius:30px;padding:5px 8px;box-shadow:0 4px 16px rgba(0,0,0,0.6);user-select:none;-webkit-user-select:none;touch-action:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;cursor:grab;transition:top .3s cubic-bezier(0.2,0.9,0.3,1.2), bottom .3s cubic-bezier(0.2,0.9,0.3,1.2), left .3s cubic-bezier(0.2,0.9,0.3,1.2), right .3s cubic-bezier(0.2,0.9,0.3,1.2), transform .18s ease, box-shadow .18s ease}
+#voice-toolbar.dragging{transition:none!important;cursor:grabbing!important;transform:scale(1.06);box-shadow:0 12px 32px rgba(0,0,0,0.85),0 0 0 2px rgba(88,166,255,0.6);opacity:0.96}
+
+/* Corner Presets for Voice Toolbar */
+#voice-toolbar.corner-top-right{top:calc(env(safe-area-inset-top,8px) + 8px);right:calc(env(safe-area-inset-right,8px) + 12px);left:auto;bottom:auto}
+#voice-toolbar.corner-top-left{top:calc(env(safe-area-inset-top,8px) + 8px);left:calc(env(safe-area-inset-left,8px) + 12px);right:auto;bottom:auto}
+#voice-toolbar.corner-bottom-right{bottom:calc(env(safe-area-inset-bottom,8px) + 12px);right:calc(env(safe-area-inset-right,8px) + 12px);left:auto;top:auto}
+#voice-toolbar.corner-bottom-left{bottom:calc(env(safe-area-inset-bottom,8px) + 12px);left:calc(env(safe-area-inset-left,8px) + 12px);right:auto;top:auto}
+
+/* Drag Handle */
+.drag-handle{display:flex;align-items:center;justify-content:center;width:14px;height:30px;color:#6e7681;cursor:grab;touch-action:none;margin-left:2px;margin-right:-1px;transition:color .15s ease}
+.drag-handle:hover, #voice-toolbar.dragging .drag-handle{color:#58a6ff}
+
+/* Corner Target Zones Hint */
+#corner-zone-container{pointer-events:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99998;display:none}
+body.toolbar-dragging #corner-zone-container{display:block}
+.corner-zone-hint{position:absolute;width:130px;height:44px;border:2px dashed rgba(88,166,255,0.35);border-radius:24px;background:rgba(22,27,34,0.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-sizing:border-box;transition:all .2s cubic-bezier(0.2,0.9,0.3,1.2)}
+.corner-zone-hint.active{border-color:#58a6ff;border-style:solid;background:rgba(56,139,253,0.22);box-shadow:0 0 18px rgba(56,139,253,0.5);transform:scale(1.08)}
+.corner-hint-tr{top:calc(env(safe-area-inset-top,8px) + 8px);right:calc(env(safe-area-inset-right,8px) + 12px)}
+.corner-hint-tl{top:calc(env(safe-area-inset-top,8px) + 8px);left:calc(env(safe-area-inset-left,8px) + 12px)}
+.corner-hint-br{bottom:calc(env(safe-area-inset-bottom,8px) + 12px);right:calc(env(safe-area-inset-right,8px) + 12px)}
+.corner-hint-bl{bottom:calc(env(safe-area-inset-bottom,8px) + 12px);left:calc(env(safe-area-inset-left,8px) + 12px)}
+
 .voice-btn{background:#30363d;border:1px solid rgba(255,255,255,0.14);color:#c9d1d9;cursor:pointer;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;outline:none;transition:all .2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.4)}
 .voice-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 .voice-btn:active{transform:scale(.92)}
@@ -14,7 +36,12 @@
 #talk-btn.active{background:#1f6feb!important;color:#fff!important;border-color:#58a6ff!important;box-shadow:0 0 14px rgba(31,111,235,0.8);animation:talk-pulse 1.8s infinite ease-in-out}
 #talk-btn.active.speaking{background:#8957e5!important;border-color:#a371f7!important;box-shadow:0 0 16px rgba(137,87,229,0.9);animation:talk-pulse 1.2s infinite ease-in-out}
 @keyframes talk-pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.85}100%{transform:scale(1);opacity:1}}
-#transcript-preview{position:fixed;top:calc(env(safe-area-inset-top,8px) + 54px);right:calc(env(safe-area-inset-right,8px) + 12px);max-width:min(360px,calc(100vw - 32px));background:rgba(13,17,23,0.96);border:1px solid #30363d;border-radius:10px;padding:8px 12px;color:#f0f6fc;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,0.7);backdrop-filter:blur(10px);z-index:100000;display:none;word-break:break-word}
+
+#transcript-preview{position:fixed;max-width:min(360px,calc(100vw - 32px));background:rgba(13,17,23,0.96);border:1px solid #30363d;border-radius:10px;padding:8px 12px;color:#f0f6fc;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,0.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease}
+#transcript-preview.preview-top-right{top:calc(env(safe-area-inset-top,8px) + 54px);right:calc(env(safe-area-inset-right,8px) + 12px);left:auto;bottom:auto}
+#transcript-preview.preview-top-left{top:calc(env(safe-area-inset-top,8px) + 54px);left:calc(env(safe-area-inset-left,8px) + 12px);right:auto;bottom:auto}
+#transcript-preview.preview-bottom-right{bottom:calc(env(safe-area-inset-bottom,8px) + 54px);right:calc(env(safe-area-inset-right,8px) + 12px);left:auto;top:auto}
+#transcript-preview.preview-bottom-left{bottom:calc(env(safe-area-inset-bottom,8px) + 54px);left:calc(env(safe-area-inset-left,8px) + 12px);right:auto;top:auto}
 #transcript-preview .transcript-status{font-size:11px;font-weight:600;color:#7ee787;margin-bottom:4px}
 #transcript-preview.error .transcript-status{color:#f85149}
 #transcript-preview .audio-wave{color:#58a6ff;font-family:monospace;font-size:14px;letter-spacing:2px;margin:4px 0}
@@ -157,14 +184,181 @@ window.sendTextToTerminal = function(text, autoEnter) {
         });
     }
 
+    function initCornerDragAndDrop(toolbar, preview) {
+        var isDragging = false;
+        var hasMoved = false;
+        var dragStartX = 0;
+        var dragStartY = 0;
+        var initialLeft = 0;
+        var initialTop = 0;
+        var suppressClickUntil = 0;
+        var currentCorner = 'top-right';
+
+        var validCorners = ['top-right', 'top-left', 'bottom-right', 'bottom-left'];
+
+        try {
+            var saved = localStorage.getItem('opencode_toolbar_corner');
+            if (saved && validCorners.indexOf(saved) > -1) {
+                currentCorner = saved;
+            }
+        } catch(e) {}
+
+        function applyCorner(corner) {
+            if (validCorners.indexOf(corner) === -1) corner = 'top-right';
+            currentCorner = corner;
+
+            validCorners.forEach(function(c) {
+                toolbar.classList.remove('corner-' + c);
+                if (preview) preview.classList.remove('preview-' + c);
+            });
+
+            toolbar.classList.add('corner-' + corner);
+            if (preview) preview.classList.add('preview-' + corner);
+
+            try {
+                localStorage.setItem('opencode_toolbar_corner', corner);
+            } catch(e) {}
+        }
+
+        applyCorner(currentCorner);
+
+        function getClosestCorner(cx, cy) {
+            var isLeft = cx < (window.innerWidth / 2);
+            var isTop = cy < (window.innerHeight / 2);
+            return (isTop ? 'top' : 'bottom') + '-' + (isLeft ? 'left' : 'right');
+        }
+
+        function updateHints(targetCorner) {
+            var hints = document.querySelectorAll('.corner-zone-hint');
+            hints.forEach(function(h) {
+                if (h.dataset.corner === targetCorner) {
+                    h.classList.add('active');
+                } else {
+                    h.classList.remove('active');
+                }
+            });
+        }
+
+        toolbar.addEventListener('pointerdown', function(e) {
+            if (e.button !== undefined && e.button !== 0) return;
+            isDragging = true;
+            hasMoved = false;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+
+            var rect = toolbar.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+
+            try {
+                toolbar.setPointerCapture(e.pointerId);
+            } catch(err) {}
+        });
+
+        toolbar.addEventListener('pointermove', function(e) {
+            if (!isDragging) return;
+            var deltaX = e.clientX - dragStartX;
+            var deltaY = e.clientY - dragStartY;
+
+            if (!hasMoved) {
+                if (Math.hypot(deltaX, deltaY) > 6) {
+                    hasMoved = true;
+                    toolbar.classList.add('dragging');
+                    document.body.classList.add('toolbar-dragging');
+                }
+            }
+
+            if (hasMoved) {
+                var rect = toolbar.getBoundingClientRect();
+                var newLeft = initialLeft + deltaX;
+                var newTop = initialTop + deltaY;
+
+                var maxLeft = window.innerWidth - rect.width;
+                var maxTop = window.innerHeight - rect.height;
+
+                newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+                newTop = Math.max(0, Math.min(newTop, maxTop));
+
+                toolbar.style.left = newLeft + 'px';
+                toolbar.style.top = newTop + 'px';
+                toolbar.style.right = 'auto';
+                toolbar.style.bottom = 'auto';
+
+                var centerX = newLeft + rect.width / 2;
+                var centerY = newTop + rect.height / 2;
+                var closest = getClosestCorner(centerX, centerY);
+                updateHints(closest);
+            }
+        });
+
+        function onPointerEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+
+            if (hasMoved) {
+                suppressClickUntil = Date.now() + 300;
+                toolbar.classList.remove('dragging');
+                document.body.classList.remove('toolbar-dragging');
+
+                var rect = toolbar.getBoundingClientRect();
+                var centerX = rect.left + rect.width / 2;
+                var centerY = rect.top + rect.height / 2;
+                var targetCorner = getClosestCorner(centerX, centerY);
+
+                toolbar.style.left = '';
+                toolbar.style.top = '';
+                toolbar.style.right = '';
+                toolbar.style.bottom = '';
+
+                applyCorner(targetCorner);
+            }
+
+            try {
+                toolbar.releasePointerCapture(e.pointerId);
+            } catch(err) {}
+        }
+
+        toolbar.addEventListener('pointerup', onPointerEnd);
+        toolbar.addEventListener('pointercancel', onPointerEnd);
+
+        // Suppress button click action if user was dragging
+        toolbar.addEventListener('click', function(e) {
+            if (Date.now() < suppressClickUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                return false;
+            }
+        }, true);
+    }
+
     function mountVoiceUI() {
         if (document.getElementById('voice-toolbar')) return;
 
         var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
+        var cornerContainer = document.createElement('div');
+        cornerContainer.id = 'corner-zone-container';
+        cornerContainer.innerHTML = `
+            <div class="corner-zone-hint corner-hint-tl" data-corner="top-left"></div>
+            <div class="corner-zone-hint corner-hint-tr" data-corner="top-right"></div>
+            <div class="corner-zone-hint corner-hint-bl" data-corner="bottom-left"></div>
+            <div class="corner-zone-hint corner-hint-br" data-corner="bottom-right"></div>
+        `;
+
         var toolbar = document.createElement('div');
         toolbar.id = 'voice-toolbar';
         toolbar.innerHTML = `
+            <div id="drag-handle" class="drag-handle" title="Drag to snap to any of the 4 corners" aria-label="Drag handle">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="8" cy="5" r="2.5"></circle>
+                    <circle cx="16" cy="5" r="2.5"></circle>
+                    <circle cx="8" cy="12" r="2.5"></circle>
+                    <circle cx="16" cy="12" r="2.5"></circle>
+                    <circle cx="8" cy="19" r="2.5"></circle>
+                    <circle cx="16" cy="19" r="2.5"></circle>
+                </svg>
+            </div>
             <button id="mic-btn" class="voice-btn" title="Voice Dictation (Click to dictate prompt)" aria-label="Microphone">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
@@ -254,11 +448,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
             </div>
         `;
 
+        document.body.appendChild(cornerContainer);
         document.body.appendChild(toolbar);
         document.body.appendChild(preview);
         document.body.appendChild(ffModal);
         document.body.appendChild(micModal);
 
+        initCornerDragAndDrop(toolbar, preview);
         setupVoiceHandlers();
     }
 
