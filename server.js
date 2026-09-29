@@ -160,12 +160,29 @@ async function handleTranscribe(req, res) {
 
 const { Readable } = require('stream');
 const WORKSPACE_DIR = process.env.WORKSPACE_DIR || '/workspace';
+const UPLOADS_DIR = path.join(WORKSPACE_DIR, 'uploads');
+
+// Clean uploads folder on startup
+try {
+    if (fs.existsSync(UPLOADS_DIR)) {
+        const files = fs.readdirSync(UPLOADS_DIR);
+        for (const file of files) {
+            try {
+                fs.unlinkSync(path.join(UPLOADS_DIR, file));
+            } catch(e) {}
+        }
+        console.log(`[cleanup] Cleaned ${files.length} file(s) from uploads directory on startup.`);
+    } else {
+        fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    }
+} catch(err) {
+    console.warn('[cleanup] Failed to clean uploads folder on startup:', err.message);
+}
 
 async function handleUpload(req, res) {
     try {
-        const uploadsFolder = path.join(WORKSPACE_DIR, 'uploads');
-        if (!fs.existsSync(uploadsFolder)) {
-            fs.mkdirSync(uploadsFolder, { recursive: true });
+        if (!fs.existsSync(UPLOADS_DIR)) {
+            fs.mkdirSync(UPLOADS_DIR, { recursive: true });
         }
 
         const webReq = new Request('http://localhost' + req.url, {
@@ -184,13 +201,13 @@ async function handleUpload(req, res) {
                 const safeName = path.basename(originalName).replace(/[^a-zA-Z0-9._-]/g, '_');
                 
                 let finalName = safeName;
-                let targetPath = path.join(uploadsFolder, finalName);
+                let targetPath = path.join(UPLOADS_DIR, finalName);
                 let counter = 1;
                 const ext = path.extname(safeName);
                 const base = path.basename(safeName, ext);
                 while (fs.existsSync(targetPath)) {
                     finalName = `${base}_${counter}${ext}`;
-                    targetPath = path.join(uploadsFolder, finalName);
+                    targetPath = path.join(UPLOADS_DIR, finalName);
                     counter++;
                 }
 

@@ -13,6 +13,11 @@ fi
 CURRENT_VERSION=$(opencode --version 2>/dev/null || echo "installed")
 echo "✓ OpenCode AI active version: $CURRENT_VERSION"
 
+# Clean uploads directory on startup
+mkdir -p /workspace/uploads
+rm -rf /workspace/uploads/* 2>/dev/null || true
+echo "🧹 Cleaned uploads folder on startup"
+
 # Create infinite loop script for OpenCode auto-restart
 cat << 'EOF' > /start-opencode.sh
 #!/bin/bash
