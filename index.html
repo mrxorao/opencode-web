@@ -142,17 +142,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
         deferredInstallPrompt = null;
         var btn = document.getElementById('install-pwa-btn');
         if (btn) btn.style.display = 'none';
-        console.log('[PWA] OpenCode AI instalado com sucesso!');
+        console.log('[PWA] OpenCode AI installed successfully!');
     });
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
             navigator.serviceWorker.register('/sw.js', { scope: '/' })
                 .then(function(reg) {
-                    console.log('[PWA] Service Worker registrado com escopo:', reg.scope);
+                    console.log('[PWA] Service Worker registered with scope:', reg.scope);
                 })
                 .catch(function(err) {
-                    console.warn('[PWA] Falha no registo do Service Worker:', err);
+                    console.warn('[PWA] Failed to register Service Worker:', err);
                 });
         });
     }
@@ -165,7 +165,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var toolbar = document.createElement('div');
         toolbar.id = 'voice-toolbar';
         toolbar.innerHTML = `
-            <button id="mic-btn" class="voice-btn" title="Gravar voz (Clica para ditar prompt)" aria-label="Microfone">
+            <button id="mic-btn" class="voice-btn" title="Voice Dictation (Click to dictate prompt)" aria-label="Microphone">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -173,13 +173,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     <line x1="8" y1="23" x2="16" y2="23"></line>
                 </svg>
             </button>
-            <button id="talk-btn" class="voice-btn" title="Modo Conversa (Diálogo contínuo por voz)" aria-label="Modo Conversa">
+            <button id="talk-btn" class="voice-btn" title="Conversation Mode (Continuous voice dialogue)" aria-label="Conversation Mode">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                 </svg>
             </button>
             ${isFirefox ? '<button id="ff-help-btn" class="voice-btn ff-btn-icon" title="Firefox Voice Setup Guide" aria-label="Firefox Guide">🦊</button>' : ''}
-            <button id="install-pwa-btn" class="voice-btn" style="display:none" title="Instalar Aplicação (PWA)" aria-label="Instalar App">
+            <button id="install-pwa-btn" class="voice-btn" style="display:none" title="Install App (PWA)" aria-label="Install App">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -201,20 +201,20 @@ window.sendTextToTerminal = function(text, autoEnter) {
         ffModal.innerHTML = `
             <div class="modal-card">
                 <div class="modal-header">
-                    <div class="modal-title">🦊 Configuração de Voz no Firefox</div>
-                    <button id="ff-close-btn" class="modal-close" title="Fechar">&times;</button>
+                    <div class="modal-title">🦊 Firefox Voice Setup Guide</div>
+                    <button id="ff-close-btn" class="modal-close" title="Close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p>Se o reconhecimento de voz não funcionar no Firefox, ativa estas opções em <span class="modal-code">about:config</span>:</p>
+                    <p>If voice recognition does not work in Firefox, enable these settings in <span class="modal-code">about:config</span>:</p>
                     <ol class="modal-steps">
-                        <li>Escreve <span class="modal-code">about:config</span> na barra de endereço e prime <b>Enter</b>.</li>
-                        <li>Procura por <span class="modal-code">media.webspeech.recognition.enable</span> e muda para <b>true</b>.</li>
-                        <li>Procura por <span class="modal-code">media.webspeech.recognition.force_enable</span> e muda para <b>true</b>.</li>
+                        <li>Type <span class="modal-code">about:config</span> in the address bar and press <b>Enter</b>.</li>
+                        <li>Search for <span class="modal-code">media.webspeech.recognition.enable</span> and set to <b>true</b>.</li>
+                        <li>Search for <span class="modal-code">media.webspeech.recognition.force_enable</span> and set to <b>true</b>.</li>
                     </ol>
-                    <div class="modal-note">💡 <b>Dica:</b> Lembra-te de clicar em <b>Permitir</b> quando o Firefox solicitar acesso ao microfone.</div>
+                    <div class="modal-note">💡 <b>Tip:</b> Remember to click <b>Allow</b> when Firefox prompts for microphone access.</div>
                 </div>
                 <div class="modal-footer">
-                    <button id="ff-ok-btn" class="modal-btn">Entendido</button>
+                    <button id="ff-ok-btn" class="modal-btn">Got it</button>
                 </div>
             </div>
         `;
@@ -224,32 +224,32 @@ window.sendTextToTerminal = function(text, autoEnter) {
         micModal.innerHTML = `
             <div class="modal-card">
                 <div class="modal-header">
-                    <div class="modal-title">🎙️ Ativar Microfone no Telemóvel</div>
-                    <button id="mic-close-btn" class="modal-close" title="Fechar">&times;</button>
+                    <div class="modal-title">🎙️ Enable Microphone on Mobile</div>
+                    <button id="mic-close-btn" class="modal-close" title="Close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p>Por razões de segurança da Web, os navegadores móveis (Chrome, Safari, Edge) <b>bloqueiam o microfone em ligações HTTP normais</b> através do IP da rede local.</p>
+                    <p>For web security reasons, mobile browsers (Chrome, Safari, Edge) <b>block microphone access on insecure HTTP</b> over local network IPs.</p>
                     
                     <div class="modal-note">
-                        🔒 <b>Opção 1: Ativar HTTPS (Recomendado para iOS e Android)</b>
+                        🔒 <b>Option 1: Enable HTTPS (Recommended for iOS and Android)</b>
                         <p style="margin:6px 0 0 0">
-                            1. Define <span class="modal-code">ENABLE_HTTPS=true</span> no teu <span class="modal-code">.env</span> e reinicia o contentor.<br>
-                            2. Acede através de: <b style="color:#7ee787;display:inline-block;margin-top:4px">https://${location.hostname}:7681</b>
+                            1. Set <span class="modal-code">ENABLE_HTTPS=true</span> in your <span class="modal-code">.env</span> file and restart the container.<br>
+                            2. Access via: <b style="color:#7ee787;display:inline-block;margin-top:4px">https://${location.hostname}:7681</b>
                         </p>
                     </div>
 
                     <div class="modal-note" style="border-left-color:#f0883e;background:rgba(240,136,62,0.1)">
-                        🤖 <b>Opção 2: Chrome no Android (Sem HTTPS)</b>
+                        🤖 <b>Option 2: Chrome on Android (Without HTTPS)</b>
                         <ol class="modal-steps" style="margin-top:6px">
-                            <li>Numa nova aba abre: <br><span class="modal-code">chrome://flags/#unsafely-treat-insecure-origin-as-secure</span></li>
-                            <li>Ativa (<b>Enabled</b>) e adiciona o URL: <br><span class="modal-code">${location.origin}</span></li>
-                            <li>Toca em <b>Relaunch</b> para reiniciar o Chrome.</li>
+                            <li>In a new tab open: <br><span class="modal-code">chrome://flags/#unsafely-treat-insecure-origin-as-secure</span></li>
+                            <li>Set to <b>Enabled</b> and add the URL: <br><span class="modal-code">${location.origin}</span></li>
+                            <li>Tap <b>Relaunch</b> to restart Chrome.</li>
                         </ol>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="mic-copy-url-btn" class="modal-btn modal-btn-sec">Copiar URL HTTPS</button>
-                    <button id="mic-ok-btn" class="modal-btn">Entendido</button>
+                    <button id="mic-copy-url-btn" class="modal-btn modal-btn-sec">Copy HTTPS URL</button>
+                    <button id="mic-ok-btn" class="modal-btn">Got it</button>
                 </div>
             </div>
         `;
@@ -352,11 +352,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 var targetHttpsUrl = 'https://' + location.hostname + ':7681';
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(targetHttpsUrl).then(function() {
-                        micCopyUrlBtn.textContent = '✓ Copiado!';
-                        setTimeout(function() { micCopyUrlBtn.textContent = 'Copiar URL HTTPS'; }, 2000);
+                        micCopyUrlBtn.textContent = '✓ Copied!';
+                        setTimeout(function() { micCopyUrlBtn.textContent = 'Copy HTTPS URL'; }, 2000);
                     });
                 } else {
-                    prompt('Copia o URL HTTPS:', targetHttpsUrl);
+                    prompt('Copy HTTPS URL:', targetHttpsUrl);
                 }
             });
         }
@@ -372,7 +372,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 try {
                     var choice = await deferredInstallPrompt.userChoice;
                     if (choice && choice.outcome === 'accepted') {
-                        console.log('[PWA] Utilizador aceitou instalar a aplicação');
+                        console.log('[PWA] User accepted the install prompt');
                     }
                 } catch(e) {}
                 deferredInstallPrompt = null;
@@ -424,25 +424,25 @@ window.sendTextToTerminal = function(text, autoEnter) {
             if (isConversationMode) {
                 if (isSpeaking) {
                     talkBtn.className = 'voice-btn active speaking';
-                    talkBtn.title = 'A IA está a falar... Clica para parar o modo conversa';
+                    talkBtn.title = 'AI is speaking... Click to stop conversation mode';
                 } else if (isRecording) {
                     talkBtn.className = 'voice-btn active';
-                    talkBtn.title = 'A ouvir a tua voz... Clica para parar o modo conversa';
+                    talkBtn.title = 'Listening to your voice... Click to stop conversation mode';
                 } else {
                     talkBtn.className = 'voice-btn active';
-                    talkBtn.title = 'Modo Conversa Ativo (Clica para desligar)';
+                    talkBtn.title = 'Conversation Mode Active (Click to turn off)';
                 }
             } else {
                 talkBtn.className = 'voice-btn';
-                talkBtn.title = 'Iniciar Modo Conversa (Diálogo contínuo por voz)';
+                talkBtn.title = 'Start Conversation Mode (Continuous voice dialogue)';
             }
         }
 
         function cleanMarkdownForSpeech(raw) {
             if (!raw) return '';
             return raw
-                .replace(/```[a-zA-Z0-9_-]*\n([\s\S]*?)```/g, ' [Código omitido] ')
-                .replace(/```[\s\S]*?```/g, ' [Código omitido] ')
+                .replace(/```[a-zA-Z0-9_-]*\n([\s\S]*?)```/g, ' [Code omitted] ')
+                .replace(/```[\s\S]*?```/g, ' [Code omitted] ')
                 .replace(/`([^`]+)`/g, '$1')
                 .replace(/#{1,6}\s+/g, '')
                 .replace(/\*\*([^\*]+)\*\*/g, '$1')
@@ -522,7 +522,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     try { ctx.close(); } catch(e) {}
                 }, 600);
             } catch(e) {
-                console.warn('Erro ao reproduzir som de notificação:', e);
+                console.warn('Error playing notification sound:', e);
             }
         }
 
@@ -543,7 +543,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
             if (validSentences.length === 0) return;
 
-            showPreview('🔊 IA (' + configuredLang + ')...', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
+            showPreview('🔊 AI (' + configuredLang + ')...', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
             hidePreview(4000);
 
             isSpeaking = true;
@@ -562,7 +562,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                         // In Conversation Mode: automatically re-activate microphone for user's turn!
                         if (isConversationMode) {
-                            showPreview('🎙️ A tua vez...', 'Fala agora para responder...', false, true);
+                            showPreview('🎙️ Your turn...', 'Speak now to respond...', false, true);
                             setTimeout(function() {
                                 if (isConversationMode && !isRecording && !isSpeaking) {
                                     startGroqVoiceRecording();
@@ -637,7 +637,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
             var isConfigured = await fetchServerConfig();
             if (!isConfigured) {
-                showPreview('⚠️ Chave API Necessária', 'Configura VOICE_GROQ_API_KEY no teu ficheiro .env primeiro!', true, false);
+                showPreview('⚠️ API Key Required', 'Set VOICE_GROQ_API_KEY in your .env file first!', true, false);
                 hidePreview(5000);
                 if (isConversationMode) toggleConversationMode();
                 return;
@@ -680,10 +680,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             clearTimeout(silenceTimer);
                             silenceTimer = null;
                         }
-                        if (previewStatus) previewStatus.textContent = isConversationMode ? '🎙️ Conversa: A ouvir...' : '🎙️ A gravar...';
+                        if (previewStatus) previewStatus.textContent = isConversationMode ? '🎙️ Conversation: Listening...' : '🎙️ Recording...';
                     } else if (speechDetected) {
                         if (!silenceTimer) {
-                            if (previewStatus) previewStatus.textContent = '⏳ Silêncio... A transcrever...';
+                            if (previewStatus) previewStatus.textContent = '⏳ Silence detected... Transcribing...';
                             silenceTimer = setTimeout(function() {
                                 if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
                                     mediaRecorder.stop();
@@ -713,7 +713,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     }
                     if (audioChunks.length === 0) return;
 
-                    showPreview('⚡ A transcrever com Groq Whisper...', 'A processar áudio...', false, false);
+                    showPreview('⚡ Transcribing with Groq Whisper...', 'Processing audio...', false, false);
 
                     try {
                         var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
@@ -735,19 +735,19 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             // In conversation mode: always auto-enter and trigger AI response wait
                             var autoSend = isConversationMode;
                             window.sendTextToTerminal(text, autoSend);
-                            showPreview('✓ Prompt: ' + text, isConversationMode ? 'Enviado para a IA...' : 'Inserido no terminal.', false, false);
+                            showPreview('✓ Prompt: ' + text, isConversationMode ? 'Sent to AI...' : 'Inserted into terminal.', false, false);
                             if (!isConversationMode) hidePreview(2500);
                         } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
-                            showPreview('⚠️ Chave API Necessária', 'Configura VOICE_GROQ_API_KEY no teu ficheiro .env!', true, false);
+                            showPreview('⚠️ API Key Required', 'Configure VOICE_GROQ_API_KEY in your .env file!', true, false);
                             hidePreview(4500);
                             if (isConversationMode) toggleConversationMode();
                         } else {
-                            showPreview('⚠️ Erro de Transcrição', (data.error || 'Nenhuma fala reconhecida.'), true, false);
+                            showPreview('⚠️ Transcription Error', (data.error || 'No speech recognized.'), true, false);
                             hidePreview(3500);
                         }
                     } catch(err) {
                         console.error('Groq transcription fetch error:', err);
-                        showPreview('⚠️ Erro de Conexão', 'Não foi possível contactar o servidor de transcrição.', true, false);
+                        showPreview('⚠️ Connection Error', 'Could not reach the transcription server.', true, false);
                         hidePreview(3500);
                     }
                 };
@@ -756,7 +756,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 isRecording = true;
                 if (micBtn) micBtn.classList.add('recording');
                 updateTalkButton();
-                showPreview(isConversationMode ? '🎙️ Conversa: Fala agora...' : '🎙️ A gravar...', 'Pausa automaticamente ao terminar de falar.', false, true);
+                showPreview(isConversationMode ? '🎙️ Conversation: Speak now...' : '🎙️ Recording...', 'Automatically pauses when you stop speaking.', false, true);
                 checkSilenceAndWave();
 
             } catch(err) {
@@ -770,13 +770,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 var isInsecure = !isHttps && !isLocal && (err.name === 'InsecureOriginError' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia);
 
                 if (isInsecure) {
-                    showPreview('⚠️ Microfone Bloqueado (HTTP)', 'O telemóvel requer HTTPS ou configuração no navegador.', true, false);
+                    showPreview('⚠️ Microphone Blocked (HTTP)', 'Mobile devices require HTTPS or browser configuration.', true, false);
                     showMicPermissionModal();
                 } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    showPreview('⚠️ Permissão Negada', 'Permite o acesso ao microfone nas definições do navegador.', true, false);
+                    showPreview('⚠️ Permission Denied', 'Please allow microphone access in browser settings.', true, false);
                     if (isFirefox) showFirefoxModal();
                 } else {
-                    showPreview('⚠️ Erro de Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
+                    showPreview('⚠️ Microphone Error', err.message || 'Could not access the microphone.', true, false);
                 }
                 hidePreview(4500);
                 if (isConversationMode) toggleConversationMode();
@@ -797,13 +797,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     mediaRecorder.stop();
                 }
                 updateTalkButton();
-                showPreview('💬 Modo Conversa Desligado', 'Podes usar o microfone para gravações normais.', false, false);
+                showPreview('💬 Conversation Mode Off', 'You can still use the microphone for single dictation.', false, false);
                 hidePreview(2500);
             } else {
                 isConversationMode = true;
                 stopSpeaking();
                 updateTalkButton();
-                showPreview('💬 Modo Conversa Ativado', 'Fala para o microfone. A IA responderá e reativará a escuta automaticamente.', false, false);
+                showPreview('💬 Conversation Mode On', 'Speak into the microphone. AI will reply and resume listening automatically.', false, false);
                 
                 if (conversationPollTimer) clearInterval(conversationPollTimer);
                 conversationPollTimer = setInterval(checkForNewAiResponse, 1000);

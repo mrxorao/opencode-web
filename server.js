@@ -57,6 +57,8 @@ function handleLatestAiMessage(req, res) {
             if (data.type === 'tool' && data.tool === 'question') {
                 const questions = data.state?.input?.questions || [];
                 let questionText = '';
+                const isPt = (DEFAULT_VOICE_LANGUAGE === 'PT' || DEFAULT_VOICE_LANGUAGE === 'BR');
+                const optPrefix = isPt ? 'Opção' : 'Option';
                 questions.forEach((q) => {
                     if (q.question) {
                         questionText += (q.header ? `${q.header}: ` : '') + `${q.question}\n`;
@@ -65,7 +67,7 @@ function handleLatestAiMessage(req, res) {
                         q.options.forEach((opt, optIdx) => {
                             const label = typeof opt === 'string' ? opt : (opt.label || opt.title || '');
                             const desc = (typeof opt === 'object' && opt.description) ? ` - ${opt.description}` : '';
-                            questionText += `Opção ${optIdx + 1}: ${label}${desc}\n`;
+                            questionText += `${optPrefix} ${optIdx + 1}: ${label}${desc}\n`;
                         });
                     }
                 });

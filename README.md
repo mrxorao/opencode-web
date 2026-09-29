@@ -68,8 +68,8 @@ docker run -d \
 ## 🎙️ Cloud Voice Recognition & Conversation Mode (STT / TTS)
 
 A built-in floating voice toolbar is available directly on the web interface (desktop and mobile/smartphone):
-- **🎙️ Gravar (Single Dictation):** Click the microphone to dictate your prompt in real-time.
-- **💬 Modo Conversa (Interactive Dialogue Loop):** Continuous hands-free conversation — you speak, Groq Whisper transcribes and sends the prompt, OpenCode responds, TTS reads the AI answer aloud, and the microphone automatically reopens for your next reply!
+- **🎙️ Microphone (Single Voice Dictation):** Click the microphone to dictate your prompt in real-time.
+- **💬 Conversation Mode (Interactive Dialogue Loop):** Continuous hands-free conversation — you speak, Groq Whisper transcribes and sends the prompt, OpenCode responds, TTS reads the AI answer and interactive options aloud, and the microphone automatically reopens for your next reply!
 - **⚡ Ultra-Fast Cloud STT:** Powered by Groq's `whisper-large-v3-turbo` via `VOICE_GROQ_API_KEY` (~200ms transcription).
 - **🔒 Dedicated Voice Key:** `VOICE_GROQ_API_KEY` is used exclusively for speech-to-text without cluttering OpenCode AI models.
 - **⚙️ Configurable Language:** Set `VOICE_LANGUAGE=EN` (default), `PT`, or `BR` in your `.env` file.
@@ -83,7 +83,7 @@ OpenCode Web can be installed directly as a standalone application on any device
 
 - **Desktop (Chrome / Edge / Brave):** Click the **Install App** button on the address bar or the toolbar download icon to install OpenCode as a dedicated desktop window without browser borders.
 - **Android (Chrome / Samsung Internet / Firefox):** Tap the install prompt or select **"Install app"** / **"Add to Home screen"** from the browser menu.
-- **iOS / iPadOS (Safari):** Tap the **Share** button (📤) and select **"Add to Home Screen"** (`Adicionar ao ecrã principal`).
+- **iOS / iPadOS (Safari):** Tap the **Share** button (📤) and select **"Add to Home Screen"**.
 - **Features:**
   - Standalone fullscreen UI optimized for touch and keyboard.
   - Dedicated modern app icon and splash screen.

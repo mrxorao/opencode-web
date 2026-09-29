@@ -2,7 +2,7 @@
   "id": "/",
   "name": "OpenCode AI - Web Terminal",
   "short_name": "OpenCode AI",
-  "description": "Terminal Web e Assistente de Código com Modo Conversa e Controlo por Voz",
+  "description": "Web Terminal and AI Coding Assistant with Hands-Free Voice Conversation Mode",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
