@@ -239,6 +239,210 @@ async function handleUpload(req, res) {
     }
 }
 
+// Prompts SQLite Database Management
+let promptsDbInstance = null;
+
+function getPromptsDb() {
+    if (promptsDbInstance) return promptsDbInstance;
+
+    let dbDir = '/root/.local/share/opencode';
+    if (!fs.existsSync(dbDir)) {
+        dbDir = path.join(__dirname, 'data', 'share');
+    }
+    if (!fs.existsSync(dbDir)) {
+        dbDir = WORKSPACE_DIR;
+    }
+    try {
+        if (!fs.existsSync(dbDir)) {
+            fs.mkdirSync(dbDir, { recursive: true });
+        }
+    } catch(e) {}
+
+    const dbPath = path.join(dbDir, 'prompts.db');
+
+    try {
+        const { DatabaseSync } = require('node:sqlite');
+        const db = new DatabaseSync(dbPath);
+        
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS prompts (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                time_created INTEGER NOT NULL,
+                time_updated INTEGER NOT NULL
+            );
+        `);
+
+        const countRow = db.prepare('SELECT COUNT(*) as count FROM prompts').get();
+        if (countRow && countRow.count === 0) {
+            const insertStmt = db.prepare(`
+                INSERT INTO prompts (id, title, content, time_created, time_updated)
+                VALUES (?, ?, ?, ?, ?)
+            `);
+            const now = Date.now();
+            const seed = [
+                { id: 'p1', title: '⚡ Refatorar Código', content: 'Por favor refatora o seguinte código para torná-lo mais limpo, modular, eficiente e legível:\n\n' },
+                { id: 'p2', title: '🧪 Gerar Testes Unitários', content: 'Cria testes unitários abrangentes cobrindo casos normais e extremos para a seguinte implementação:\n\n' },
+                { id: 'p3', title: '🐛 Explicar & Corrigir Bug', content: 'Analisa o seguinte erro/comportamento inesperado e explica a causa raiz com a respetiva correção detalhada:\n\n' },
+                { id: 'p4', title: '🛡️ Auditoria de Segurança', content: 'Revê este código identificando possíveis vulnerabilidades de segurança, injeções, validações em falta e boas práticas:\n\n' }
+            ];
+            for (const item of seed) {
+                insertStmt.run(item.id, item.title, item.content, now, now);
+            }
+        }
+
+        promptsDbInstance = db;
+        console.log('[db] SQLite prompts database initialized at:', dbPath);
+        return db;
+    } catch(err) {
+        console.error('[db] Failed to initialize SQLite prompts DB:', err);
+        return null;
+    }
+}
+
+function parseJsonBody(req) {
+    return new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk;
+            if (body.length > 2e6) {
+                reject(new Error('Payload too large'));
+            }
+        });
+        req.on('end', () => {
+            try {
+                resolve(body ? JSON.parse(body) : {});
+            } catch(e) {
+                reject(e);
+            }
+        });
+        req.on('error', reject);
+    });
+}
+
+function handleGetPrompts(req, res, parsedUrl) {
+    try {
+        const db = getPromptsDb();
+        if (!db) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'DB_UNAVAILABLE', message: 'Could not connect to SQLite database.' }));
+            return;
+        }
+
+        const search = (parsedUrl.searchParams.get('search') || '').trim();
+        const page = Math.max(1, parseInt(parsedUrl.searchParams.get('page'), 10) || 1);
+        const limit = Math.max(1, Math.min(50, parseInt(parsedUrl.searchParams.get('limit'), 10) || 5));
+        const offset = (page - 1) * limit;
+
+        let total = 0;
+        let prompts = [];
+
+        if (search) {
+            const pattern = `%${search}%`;
+            const countRow = db.prepare('SELECT COUNT(*) as count FROM prompts WHERE title LIKE ? OR content LIKE ?').get(pattern, pattern);
+            total = countRow ? countRow.count : 0;
+            prompts = db.prepare('SELECT id, title, content, time_created, time_updated FROM prompts WHERE title LIKE ? OR content LIKE ? ORDER BY time_updated DESC, time_created DESC LIMIT ? OFFSET ?').all(pattern, pattern, limit, offset);
+        } else {
+            const countRow = db.prepare('SELECT COUNT(*) as count FROM prompts').get();
+            total = countRow ? countRow.count : 0;
+            prompts = db.prepare('SELECT id, title, content, time_created, time_updated FROM prompts ORDER BY time_updated DESC, time_created DESC LIMIT ? OFFSET ?').all(limit, offset);
+        }
+
+        const totalPages = Math.ceil(total / limit) || 1;
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            prompts,
+            total,
+            page,
+            limit,
+            totalPages
+        }));
+    } catch(err) {
+        console.error('Error fetching prompts from SQLite:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+    }
+}
+
+async function handleSavePrompt(req, res) {
+    try {
+        const db = getPromptsDb();
+        if (!db) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'DB_UNAVAILABLE' }));
+            return;
+        }
+
+        const body = await parseJsonBody(req);
+        const title = (body.title || '').trim();
+        const content = (body.content || '').trim();
+        let id = (body.id || '').trim();
+
+        if (!title || !content) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'INVALID_INPUT', message: 'Title and content are required.' }));
+            return;
+        }
+
+        const now = Date.now();
+        if (id) {
+            const existing = db.prepare('SELECT id, time_created FROM prompts WHERE id = ?').get(id);
+            if (existing) {
+                db.prepare('UPDATE prompts SET title = ?, content = ?, time_updated = ? WHERE id = ?').run(title, content, now, id);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, prompt: { id, title, content, time_created: existing.time_created, time_updated: now } }));
+                return;
+            }
+        }
+
+        if (!id) {
+            id = 'p_' + now + '_' + Math.random().toString(36).substring(2, 7);
+        }
+        db.prepare('INSERT INTO prompts (id, title, content, time_created, time_updated) VALUES (?, ?, ?, ?, ?)').run(id, title, content, now, now);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, prompt: { id, title, content, time_created: now, time_updated: now } }));
+    } catch(err) {
+        console.error('Error saving prompt to SQLite:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+    }
+}
+
+async function handleDeletePrompt(req, res, parsedUrl) {
+    try {
+        const db = getPromptsDb();
+        if (!db) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'DB_UNAVAILABLE' }));
+            return;
+        }
+
+        let id = parsedUrl.searchParams.get('id');
+        if (!id && (req.method === 'POST' || req.method === 'DELETE')) {
+            const body = await parseJsonBody(req);
+            id = body.id;
+        }
+
+        if (!id) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'MISSING_ID', message: 'Prompt ID is required.' }));
+            return;
+        }
+
+        db.prepare('DELETE FROM prompts WHERE id = ?').run(id);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, id }));
+    } catch(err) {
+        console.error('Error deleting prompt from SQLite:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+    }
+}
+
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const PWA_MIME_TYPES = {
@@ -307,8 +511,11 @@ function requestListener(req, res) {
         return;
     }
 
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const pathname = parsedUrl.pathname;
+
     // Return server configuration (Groq status, default language & HTTPS status)
-    if (req.url === '/api/config' && req.method === 'GET') {
+    if (pathname === '/api/config' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             hasGroqKey: Boolean(VOICE_GROQ_API_KEY),
@@ -320,20 +527,36 @@ function requestListener(req, res) {
     }
 
     // Return latest clean assistant message for Text-to-Speech
-    if (req.url === '/api/latest-ai-message' && req.method === 'GET') {
+    if (pathname === '/api/latest-ai-message' && req.method === 'GET') {
         handleLatestAiMessage(req, res);
         return;
     }
 
     // Handle audio transcription
-    if (req.url === '/api/transcribe' && req.method === 'POST') {
+    if (pathname === '/api/transcribe' && req.method === 'POST') {
         handleTranscribe(req, res);
         return;
     }
 
     // Handle file upload attachments
-    if (req.url === '/api/upload' && req.method === 'POST') {
+    if (pathname === '/api/upload' && req.method === 'POST') {
         handleUpload(req, res);
+        return;
+    }
+
+    // Handle SQLite Prompts API
+    if (pathname === '/api/prompts' && req.method === 'GET') {
+        handleGetPrompts(req, res, parsedUrl);
+        return;
+    }
+
+    if ((pathname === '/api/prompts' || pathname === '/api/prompts/save') && (req.method === 'POST' || req.method === 'PUT')) {
+        handleSavePrompt(req, res);
+        return;
+    }
+
+    if ((pathname === '/api/prompts/delete' || pathname === '/api/prompts') && (req.method === 'DELETE' || (pathname === '/api/prompts/delete' && req.method === 'POST'))) {
+        handleDeletePrompt(req, res, parsedUrl);
         return;
     }
 

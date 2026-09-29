@@ -112,6 +112,14 @@ body.toolbar-dragging #corner-zone-container{display:block}
 .prompt-card-btn.use-btn:hover{background:#2ea043}
 .prompt-card-btn.delete-btn:hover{background:#da3633;color:#fff;border-color:#f85149}
 
+/* Prompts Pagination */
+.prompts-pagination{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid #30363d;font-size:12px;color:#8b949e}
+.pagination-controls{display:flex;align-items:center;gap:8px}
+.pagination-btn{background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .15s ease}
+.pagination-btn:hover:not(:disabled){background:#30363d;color:#58a6ff;border-color:#58a6ff}
+.pagination-btn:disabled{opacity:0.35;cursor:not-allowed}
+.pagination-indicator{font-weight:600;color:#f0f6fc;font-size:12px}
+
 /* Prompt Editor Form */
 .prompt-form-group{margin-bottom:12px}
 .prompt-form-label{display:block;font-size:12px;font-weight:600;color:#8b949e;margin-bottom:4px}
@@ -638,6 +646,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         <button id="new-prompt-btn" class="modal-btn" style="white-space:nowrap;padding:7px 12px;font-size:12px">+ Novo</button>
                     </div>
                     <div class="prompts-container" id="prompts-cards-container"></div>
+                    <div class="prompts-pagination" id="prompts-pagination" style="display:none">
+                        <div id="prompt-pagination-info">0 prompt(s)</div>
+                        <div class="pagination-controls">
+                            <button id="prompt-prev-page-btn" class="pagination-btn" title="Página anterior">&larr; Anterior</button>
+                            <span id="prompt-page-indicator" class="pagination-indicator">1 / 1</span>
+                            <button id="prompt-next-page-btn" class="pagination-btn" title="Página seguinte">Seguinte &rarr;</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-body" id="prompts-edit-view" style="display:none">
                     <div class="prompt-form-group">
@@ -1548,7 +1564,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
-        // Prompts Library Management
+        // Prompts Library Management (SQLite Backend + 5 items per page pagination)
         var promptsBtn = document.getElementById('prompts-btn');
         var promptsModal = document.getElementById('prompts-modal');
         var promptsCloseBtn = document.getElementById('prompts-close-btn');
@@ -1561,108 +1577,155 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var promptInputContent = document.getElementById('prompt-input-content');
         var cancelPromptBtn = document.getElementById('cancel-prompt-btn');
         var savePromptBtn = document.getElementById('save-prompt-btn');
-
-        var DEFAULT_PROMPTS = [
-            { id: 'p1', title: '⚡ Refatorar Código', content: 'Por favor refatora o seguinte código para torná-lo mais limpo, modular, eficiente e legível:\n\n' },
-            { id: 'p2', title: '🧪 Gerar Testes Unitários', content: 'Cria testes unitários abrangentes cobrindo casos normais e extremos para a seguinte implementação:\n\n' },
-            { id: 'p3', title: '🐛 Explicar & Corrigir Bug', content: 'Analisa o seguinte erro/comportamento inesperado e explica a causa raiz com a respetiva correção detalhada:\n\n' },
-            { id: 'p4', title: '🛡️ Auditoria de Segurança', content: 'Revê este código identificando possíveis vulnerabilidades de segurança, injeções, validações em falta e boas práticas:\n\n' }
-        ];
+        var promptsPagination = document.getElementById('prompts-pagination');
+        var promptPaginationInfo = document.getElementById('prompt-pagination-info');
+        var promptPageIndicator = document.getElementById('prompt-page-indicator');
+        var promptPrevPageBtn = document.getElementById('prompt-prev-page-btn');
+        var promptNextPageBtn = document.getElementById('prompt-next-page-btn');
 
         var editingPromptId = null;
+        var promptCurrentPage = 1;
+        var promptTotalPages = 1;
+        var promptSearchQuery = '';
+        var PROMPT_PAGE_LIMIT = 5;
+        var promptSearchDebounceTimer = null;
 
-        function loadPrompts() {
-            try {
-                var saved = localStorage.getItem('opencode_saved_prompts');
-                if (saved) {
-                    var parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-                }
-            } catch(e) {}
-            return DEFAULT_PROMPTS;
-        }
+        async function fetchPromptsFromServer(page, search) {
+            promptCurrentPage = page || 1;
+            promptSearchQuery = (search !== undefined ? search : (promptSearchInput ? promptSearchInput.value : ''));
 
-        function savePromptsToStorage(promptsList) {
-            try {
-                localStorage.setItem('opencode_saved_prompts', JSON.stringify(promptsList));
-            } catch(e) {}
-        }
-
-        function renderPrompts(filterText) {
-            var prompts = loadPrompts();
-            var q = (filterText || '').toLowerCase().trim();
-            var filtered = prompts.filter(function(p) {
-                if (!q) return true;
-                return (p.title && p.title.toLowerCase().indexOf(q) > -1) ||
-                       (p.content && p.content.toLowerCase().indexOf(q) > -1);
-            });
-
-            if (!promptsCardsContainer) return;
-            promptsCardsContainer.innerHTML = '';
-
-            if (filtered.length === 0) {
-                promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#8b949e;font-size:13px">Nenhum prompt encontrado.</div>';
-                return;
+            if (promptsCardsContainer) {
+                promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#8b949e;font-size:13px">A carregar prompts da base de dados...</div>';
             }
 
-            filtered.forEach(function(p) {
-                var card = document.createElement('div');
-                card.className = 'prompt-card';
+            try {
+                var url = '/api/prompts?page=' + promptCurrentPage + '&limit=' + PROMPT_PAGE_LIMIT;
+                if (promptSearchQuery && promptSearchQuery.trim()) {
+                    url += '&search=' + encodeURIComponent(promptSearchQuery.trim());
+                }
 
-                var header = document.createElement('div');
-                header.className = 'prompt-card-header';
-                var title = document.createElement('div');
-                title.className = 'prompt-card-title';
-                title.textContent = p.title || 'Sem Título';
-                header.appendChild(title);
+                var resp = await fetch(url);
+                var data = await resp.json();
 
-                var body = document.createElement('div');
-                body.className = 'prompt-card-body';
-                body.textContent = p.content || '';
+                if (!resp.ok) {
+                    throw new Error(data.message || data.error || 'Erro ao carregar prompts.');
+                }
 
-                var actions = document.createElement('div');
-                actions.className = 'prompt-card-actions';
+                var prompts = data.prompts || [];
+                var total = data.total || 0;
+                promptTotalPages = data.totalPages || 1;
+                promptCurrentPage = data.page || 1;
 
-                var editBtn = document.createElement('button');
-                editBtn.className = 'prompt-card-btn';
-                editBtn.textContent = '✏️ Editar';
-                editBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    openEditPrompt(p);
+                if (!promptsCardsContainer) return;
+                promptsCardsContainer.innerHTML = '';
+
+                if (prompts.length === 0) {
+                    promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#8b949e;font-size:13px">' + 
+                        (promptSearchQuery ? 'Nenhum prompt encontrado para a pesquisa.' : 'Nenhum prompt guardado na base de dados.') + '</div>';
+                    if (promptsPagination) promptsPagination.style.display = 'none';
+                    return;
+                }
+
+                prompts.forEach(function(p) {
+                    var card = document.createElement('div');
+                    card.className = 'prompt-card';
+
+                    var header = document.createElement('div');
+                    header.className = 'prompt-card-header';
+                    var title = document.createElement('div');
+                    title.className = 'prompt-card-title';
+                    title.textContent = p.title || 'Sem Título';
+                    header.appendChild(title);
+
+                    var body = document.createElement('div');
+                    body.className = 'prompt-card-body';
+                    body.textContent = p.content || '';
+
+                    var actions = document.createElement('div');
+                    actions.className = 'prompt-card-actions';
+
+                    var editBtn = document.createElement('button');
+                    editBtn.className = 'prompt-card-btn';
+                    editBtn.textContent = '✏️ Editar';
+                    editBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        openEditPrompt(p);
+                    });
+
+                    var deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'prompt-card-btn delete-btn';
+                    deleteBtn.textContent = '🗑️ Apagar';
+                    deleteBtn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        if (confirm('Tens a certeza que queres apagar o prompt "' + (p.title || '') + '"?')) {
+                            try {
+                                var delResp = await fetch('/api/prompts/delete', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id: p.id })
+                                });
+                                if (delResp.ok) {
+                                    if (prompts.length === 1 && promptCurrentPage > 1) {
+                                        promptCurrentPage--;
+                                    }
+                                    fetchPromptsFromServer(promptCurrentPage, promptSearchQuery);
+                                } else {
+                                    alert('Não foi possível apagar o prompt.');
+                                }
+                            } catch(err) {
+                                console.error('Delete prompt error:', err);
+                                alert('Erro de ligação ao apagar prompt.');
+                            }
+                        }
+                    });
+
+                    var useBtn = document.createElement('button');
+                    useBtn.className = 'prompt-card-btn use-btn';
+                    useBtn.textContent = '⚡ Usar Prompt';
+                    useBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (promptsModal) promptsModal.classList.remove('active');
+                        window.sendTextToTerminal(p.content, false);
+                        showPreview('✓ Prompt Inserido', p.title, false, false);
+                        hidePreview(2500);
+                    });
+
+                    actions.appendChild(editBtn);
+                    actions.appendChild(deleteBtn);
+                    actions.appendChild(useBtn);
+
+                    card.appendChild(header);
+                    card.appendChild(body);
+                    card.appendChild(actions);
+                    promptsCardsContainer.appendChild(card);
                 });
 
-                var deleteBtn = document.createElement('button');
-                deleteBtn.className = 'prompt-card-btn delete-btn';
-                deleteBtn.textContent = '🗑️ Apagar';
-                deleteBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    if (confirm('Tens a certeza que queres apagar o prompt "' + (p.title || '') + '"?')) {
-                        var current = loadPrompts().filter(function(item) { return item.id !== p.id; });
-                        savePromptsToStorage(current);
-                        renderPrompts(promptSearchInput ? promptSearchInput.value : '');
-                    }
-                });
+                // Update pagination bar
+                if (promptsPagination) {
+                    promptsPagination.style.display = 'flex';
+                }
+                if (promptPaginationInfo) {
+                    var startIdx = ((promptCurrentPage - 1) * PROMPT_PAGE_LIMIT) + 1;
+                    var endIdx = Math.min(total, promptCurrentPage * PROMPT_PAGE_LIMIT);
+                    promptPaginationInfo.textContent = 'A mostrar ' + startIdx + '-' + endIdx + ' de ' + total + ' prompt(s)';
+                }
+                if (promptPageIndicator) {
+                    promptPageIndicator.textContent = 'Página ' + promptCurrentPage + ' de ' + promptTotalPages;
+                }
+                if (promptPrevPageBtn) {
+                    promptPrevPageBtn.disabled = (promptCurrentPage <= 1);
+                }
+                if (promptNextPageBtn) {
+                    promptNextPageBtn.disabled = (promptCurrentPage >= promptTotalPages);
+                }
 
-                var useBtn = document.createElement('button');
-                useBtn.className = 'prompt-card-btn use-btn';
-                useBtn.textContent = '⚡ Usar Prompt';
-                useBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    if (promptsModal) promptsModal.classList.remove('active');
-                    window.sendTextToTerminal(p.content, false);
-                    showPreview('✓ Prompt Inserido', p.title, false, false);
-                    hidePreview(2500);
-                });
-
-                actions.appendChild(editBtn);
-                actions.appendChild(deleteBtn);
-                actions.appendChild(useBtn);
-
-                card.appendChild(header);
-                card.appendChild(body);
-                card.appendChild(actions);
-                promptsCardsContainer.appendChild(card);
-            });
+            } catch(err) {
+                console.error('Fetch prompts error:', err);
+                if (promptsCardsContainer) {
+                    promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#ff7b72;font-size:13px">Erro ao aceder à base de dados SQLite: ' + (err.message || 'Falha de comunicação.') + '</div>';
+                }
+                if (promptsPagination) promptsPagination.style.display = 'none';
+            }
         }
 
         function openNewPrompt() {
@@ -1687,10 +1750,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
             editingPromptId = null;
             if (promptsEditView) promptsEditView.style.display = 'none';
             if (promptsListView) promptsListView.style.display = 'block';
-            renderPrompts(promptSearchInput ? promptSearchInput.value : '');
         }
 
-        function savePromptForm() {
+        async function savePromptForm() {
             var title = promptInputTitle ? promptInputTitle.value.trim() : '';
             var content = promptInputContent ? promptInputContent.value.trim() : '';
             if (!title) {
@@ -1703,20 +1765,39 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 if (promptInputContent) promptInputContent.focus();
                 return;
             }
-            var prompts = loadPrompts();
-            if (editingPromptId) {
-                var idx = prompts.findIndex(function(x) { return x.id === editingPromptId; });
-                if (idx >= 0) {
-                    prompts[idx].title = title;
-                    prompts[idx].content = content;
-                } else {
-                    prompts.push({ id: editingPromptId, title: title, content: content });
-                }
-            } else {
-                prompts.unshift({ id: 'p_' + Date.now(), title: title, content: content });
+
+            if (savePromptBtn) {
+                savePromptBtn.disabled = true;
+                savePromptBtn.textContent = 'A guardar...';
             }
-            savePromptsToStorage(prompts);
-            cancelPromptEdit();
+
+            try {
+                var resp = await fetch('/api/prompts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: editingPromptId || undefined,
+                        title: title,
+                        content: content
+                    })
+                });
+
+                var data = await resp.json();
+                if (resp.ok && data.success) {
+                    cancelPromptEdit();
+                    fetchPromptsFromServer(editingPromptId ? promptCurrentPage : 1, promptSearchQuery);
+                } else {
+                    alert('Erro ao guardar prompt: ' + (data.message || data.error || 'Erro desconhecido.'));
+                }
+            } catch(err) {
+                console.error('Save prompt error:', err);
+                alert('Erro de comunicação com o servidor.');
+            } finally {
+                if (savePromptBtn) {
+                    savePromptBtn.disabled = false;
+                    savePromptBtn.textContent = 'Salvar Prompt';
+                }
+            }
         }
 
         if (promptsBtn) {
@@ -1726,9 +1807,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     cancelPromptEdit();
                     if (promptSearchInput) {
                         promptSearchInput.value = '';
-                        renderPrompts('');
-                        promptSearchInput.focus();
                     }
+                    fetchPromptsFromServer(1, '');
                 }
             });
         }
@@ -1742,7 +1822,25 @@ window.sendTextToTerminal = function(text, autoEnter) {
         if (savePromptBtn) savePromptBtn.addEventListener('click', savePromptForm);
         if (promptSearchInput) {
             promptSearchInput.addEventListener('input', function(e) {
-                renderPrompts(e.target.value);
+                clearTimeout(promptSearchDebounceTimer);
+                var val = e.target.value;
+                promptSearchDebounceTimer = setTimeout(function() {
+                    fetchPromptsFromServer(1, val);
+                }, 280);
+            });
+        }
+        if (promptPrevPageBtn) {
+            promptPrevPageBtn.addEventListener('click', function() {
+                if (promptCurrentPage > 1) {
+                    fetchPromptsFromServer(promptCurrentPage - 1, promptSearchQuery);
+                }
+            });
+        }
+        if (promptNextPageBtn) {
+            promptNextPageBtn.addEventListener('click', function() {
+                if (promptCurrentPage < promptTotalPages) {
+                    fetchPromptsFromServer(promptCurrentPage + 1, promptSearchQuery);
+                }
             });
         }
 
