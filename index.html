@@ -83,6 +83,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
     function setupVoiceHandlers() {
         var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var forceLocalEngine = (/Firefox/i.test(navigator.userAgent)); // Firefox defaults to local Whisper engine (avoids network error on abandoned Mozilla speech servers)
         var rec = null;
         var isRecording = false;
         var langIdx = 0;
@@ -92,12 +93,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var autoEnter = false;
         var previewTimer = null;
 
-        // Firefox & Non-WebSpeech MediaRecorder fallback variables
+        // VAD & MediaRecorder variables
         var mediaStream = null;
         var mediaRecorder = null;
         var audioChunks = [];
         var whisperPipeline = null;
         var animFrameId = null;
+        var speechDetected = false;
+        var silenceTimer = null;
 
         var micBtn = document.getElementById('mic-btn');
         var langBtn = document.getElementById('lang-btn');
@@ -128,7 +131,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        // Exact 16kHz linear resampler function (essential for accurate Whisper transcription on Firefox 44.1k/48k audio)
+        // Resample audio to 16kHz for Whisper
         function resampleTo16k(audioData, origSampleRate) {
             if (!origSampleRate || origSampleRate === 16000) return audioData;
             var ratio = origSampleRate / 16000;
@@ -144,8 +147,161 @@ window.sendTextToTerminal = function(text, autoEnter) {
             return result;
         }
 
-        // Engine 1: Native Streaming Speech Recognition (Chrome, Edge, Safari, iOS, or Firefox with webspeech enabled)
-        if (SpeechRec) {
+        // Preload Whisper AI in background
+        setTimeout(async function() {
+            try {
+                var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+                transformers.env.allowLocalModels = false;
+                whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
+                console.log('Whisper AI preloaded in background.');
+            } catch(e) {
+                console.log('Whisper will load on demand:', e);
+            }
+        }, 800);
+
+        // Smart Hands-Free Local Audio Engine with Auto-Silence Detection (VAD)
+        async function startLocalRecording() {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioChunks = [];
+                speechDetected = false;
+                if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+
+                mediaRecorder = new MediaRecorder(mediaStream);
+
+                var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                var liveCtx = new AudioCtx();
+                var source = liveCtx.createMediaStreamSource(mediaStream);
+                var analyser = liveCtx.createAnalyser();
+                analyser.fftSize = 64;
+                source.connect(analyser);
+                var dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                function checkSilenceAndWave() {
+                    if (!isRecording) return;
+                    analyser.getByteFrequencyData(dataArray);
+                    var sum = 0;
+                    for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                    var avg = sum / dataArray.length;
+
+                    // Wave visualizer
+                    var count = Math.min(8, Math.max(1, Math.round(avg / 10)));
+                    var bars = '';
+                    for (var b = 0; b < count; b++) bars += '█';
+                    for (var s = count; s < 8; s++) bars += '░';
+                    if (previewWave) previewWave.textContent = '🔊 ' + bars;
+
+                    // Voice Activity Detection (Auto finish when silence detected)
+                    if (avg > 7) {
+                        speechDetected = true;
+                        if (silenceTimer) {
+                            clearTimeout(silenceTimer);
+                            silenceTimer = null;
+                        }
+                        if (previewStatus) previewStatus.textContent = '🎙️ A escutar voz (' + labels[langIdx] + ')...';
+                    } else if (speechDetected) {
+                        // Silence started after speech
+                        if (!silenceTimer) {
+                            if (previewStatus) previewStatus.textContent = '⏳ Silêncio... A finalizar...';
+                            silenceTimer = setTimeout(function() {
+                                if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
+                                    mediaRecorder.stop();
+                                }
+                            }, 1300); // 1.3 seconds silence threshold
+                        }
+                    }
+
+                    animFrameId = requestAnimationFrame(checkSilenceAndWave);
+                }
+
+                mediaRecorder.ondataavailable = function(e) {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = async function() {
+                    isRecording = false;
+                    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+                    cancelAnimationFrame(animFrameId);
+                    if (micBtn) {
+                        micBtn.classList.remove('recording');
+                        micBtn.title = 'Reconhecimento de Voz (Microfone) ou digite /voice';
+                    }
+                    try { liveCtx.close(); } catch(e) {}
+                    if (mediaStream) {
+                        mediaStream.getTracks().forEach(function(t) { t.stop(); });
+                    }
+                    if (audioChunks.length === 0) return;
+
+                    showPreview('⏳ A transcrever com Whisper AI...', 'A converter a sua fala em texto...', false, false);
+
+                    try {
+                        var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
+                        var arrayBuffer = await audioBlob.arrayBuffer();
+                        var decodeCtx = new AudioCtx();
+                        var audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+                        var rawData = audioBuffer.getChannelData(0);
+                        var origRate = audioBuffer.sampleRate;
+                        try { decodeCtx.close(); } catch(e) {}
+
+                        var audio16k = resampleTo16k(rawData, origRate);
+
+                        if (!whisperPipeline) {
+                            showPreview('⏳ A carregar IA de voz...', 'A descarregar modelo leve...', false, false);
+                            var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+                            transformers.env.allowLocalModels = false;
+                            whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
+                        }
+
+                        showPreview('⏳ A transcrever...', 'Quase pronto...', false, false);
+                        var out = await whisperPipeline(audio16k, {
+                            language: whisperLangs[langIdx],
+                            task: 'transcribe'
+                        });
+
+                        var text = (out && out.text ? out.text.trim() : '');
+                        if (text) {
+                            var sent = window.sendTextToTerminal(text, autoEnter);
+                            if (sent) {
+                                showPreview('✓ Inserido no prompt:', text, false, false);
+                            } else {
+                                showPreview('⚠️ Terminal desconectado', 'Aguarde a conexão.', true, false);
+                            }
+                            hidePreview(2500);
+                        } else {
+                            showPreview('⚠️ Nenhum som detetado', 'Fale mais perto do microfone.', true, false);
+                            hidePreview(2000);
+                        }
+                    } catch(err) {
+                        console.error('Whisper processing error:', err);
+                        showPreview('⚠️ Erro de Transcrição', (err.message || 'Falha ao processar áudio.'), true, false);
+                        hidePreview(3500);
+                    }
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                if (micBtn) {
+                    micBtn.classList.add('recording');
+                    micBtn.title = 'A escutar... Fale normalmente (para sozinho ao terminar)';
+                }
+                showPreview('🎙️ A escutar (' + labels[langIdx] + ')...', 'Fale normalmente. Para automaticamente após silêncio.', false, true);
+                checkSilenceAndWave();
+
+            } catch(err) {
+                console.error('Local recorder error:', err);
+                isRecording = false;
+                if (micBtn) micBtn.classList.remove('recording');
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    showPreview('⚠️ Permissão Negada', 'Autorize o acesso ao microfone no navegador.', true, false);
+                } else {
+                    showPreview('⚠️ Erro de Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
+                }
+                hidePreview(3500);
+            }
+        }
+
+        // Setup Engine Dispatcher
+        if (SpeechRec && !forceLocalEngine) {
             rec = new SpeechRec();
             rec.continuous = false;
             rec.interimResults = true;
@@ -176,20 +332,27 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     if (sent) {
                         showPreview('✓ Inserido no prompt:', recognized, false, false);
                     } else {
-                        showPreview('⚠️ Terminal não conectado', 'Aguarde a conexão com o terminal.', true, false);
+                        showPreview('⚠️ Terminal não conectado', 'Aguarde conexão com terminal.', true, false);
                     }
                     hidePreview(2500);
                 }
             };
 
             rec.onerror = function(event) {
-                console.error('Speech error:', event.error);
-                isRecording = false;
-                if (micBtn) {
-                    micBtn.classList.remove('recording');
+                console.warn('SpeechRecognition error:', event.error);
+                // If browser cloud speech fails with network error (e.g. Firefox about:config or disconnected cloud), automatically switch to local engine
+                if (event.error === 'network' || event.error === 'service-not-allowed') {
+                    console.log('Switching to smart local audio engine...');
+                    forceLocalEngine = true;
+                    isRecording = false;
+                    if (micBtn) micBtn.classList.remove('recording');
+                    startLocalRecording();
+                    return;
                 }
+                isRecording = false;
+                if (micBtn) micBtn.classList.remove('recording');
                 if (event.error === 'not-allowed') {
-                    showPreview('⚠️ Permissão Negada', 'Autorize o acesso ao microfone no navegador.', true, false);
+                    showPreview('⚠️ Permissão Negada', 'Autorize o microfone no navegador.', true, false);
                 } else if (event.error !== 'no-speech') {
                     showPreview('⚠️ Erro de Áudio', event.error, true, false);
                 } else {
@@ -207,6 +370,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
             };
 
             window.triggerVoiceRecognition = function() {
+                if (forceLocalEngine) {
+                    if (isRecording) {
+                        if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+                    } else {
+                        startLocalRecording();
+                    }
+                    return;
+                }
                 if (isRecording) {
                     rec.stop();
                 } else {
@@ -215,158 +386,25 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         rec.start();
                     } catch(err) {
                         console.error('Voice start error:', err);
+                        forceLocalEngine = true;
+                        startLocalRecording();
                     }
                 }
             };
-
-            if (micBtn) {
-                micBtn.addEventListener('click', window.triggerVoiceRecognition);
-            }
-        } 
-        // Engine 2: Accurate Resampled Whisper Engine with Voice Level Meter (Firefox fallback)
-        else {
-            // Background pre-load Whisper model so first click is instantaneous
-            setTimeout(async function() {
-                try {
-                    var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-                    transformers.env.allowLocalModels = false;
-                    whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
-                    console.log('Whisper AI preloaded successfully in background.');
-                } catch(e) {
-                    console.log('Whisper will load on demand:', e);
-                }
-            }, 1000);
-
-            async function startMediaRecord() {
-                try {
-                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    audioChunks = [];
-                    mediaRecorder = new MediaRecorder(mediaStream);
-
-                    // Setup real-time visualizer wave
-                    var AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    var liveCtx = new AudioCtx();
-                    var source = liveCtx.createMediaStreamSource(mediaStream);
-                    var analyser = liveCtx.createAnalyser();
-                    analyser.fftSize = 32;
-                    source.connect(analyser);
-                    var dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-                    function updateWave() {
-                        if (!isRecording) return;
-                        analyser.getByteFrequencyData(dataArray);
-                        var avg = 0;
-                        for (var i = 0; i < dataArray.length; i++) avg += dataArray[i];
-                        avg = avg / dataArray.length;
-                        var bars = '';
-                        var count = Math.min(8, Math.max(1, Math.round(avg / 15)));
-                        for (var b = 0; b < count; b++) bars += '█';
-                        for (var s = count; s < 8; s++) bars += '░';
-                        if (previewWave) previewWave.textContent = '🔊 ' + bars;
-                        animFrameId = requestAnimationFrame(updateWave);
-                    }
-
-                    mediaRecorder.ondataavailable = function(e) {
-                        if (e.data.size > 0) audioChunks.push(e.data);
-                    };
-
-                    mediaRecorder.onstop = async function() {
-                        cancelAnimationFrame(animFrameId);
-                        try { liveCtx.close(); } catch(e) {}
-                        if (mediaStream) {
-                            mediaStream.getTracks().forEach(function(t) { t.stop(); });
-                        }
-                        if (audioChunks.length === 0) return;
-
-                        showPreview('⏳ A transcrever com Whisper AI...', 'A processar áudio...', false, false);
-
-                        try {
-                            var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
-                            var arrayBuffer = await audioBlob.arrayBuffer();
-                            var decodeCtx = new AudioCtx();
-                            var audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
-                            var rawData = audioBuffer.getChannelData(0);
-                            var origRate = audioBuffer.sampleRate;
-                            try { decodeCtx.close(); } catch(e) {}
-
-                            // Resample from 44.1k/48k down to 16k
-                            var audio16k = resampleTo16k(rawData, origRate);
-
-                            if (!whisperPipeline) {
-                                showPreview('⏳ A carregar IA de voz...', 'A descarregar modelo leve (apenas na 1ª vez)...', false, false);
-                                var transformers = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-                                transformers.env.allowLocalModels = false;
-                                whisperPipeline = await transformers.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
-                            }
-
-                            showPreview('⏳ A transcrever...', 'A converter fala em texto...', false, false);
-                            var out = await whisperPipeline(audio16k, {
-                                language: whisperLangs[langIdx],
-                                task: 'transcribe'
-                            });
-
-                            var text = (out && out.text ? out.text.trim() : '');
-                            if (text) {
-                                var sent = window.sendTextToTerminal(text, autoEnter);
-                                if (sent) {
-                                    showPreview('✓ Inserido no prompt:', text, false, false);
-                                } else {
-                                    showPreview('⚠️ Terminal desconectado', 'Aguarde a conexão com o terminal.', true, false);
-                                }
-                                hidePreview(2500);
-                            } else {
-                                showPreview('⚠️ Nenhum som detetado', 'Fale mais perto do microfone.', true, false);
-                                hidePreview(2000);
-                            }
-                        } catch(err) {
-                            console.error('Whisper processing error:', err);
-                            showPreview('⚠️ Erro de Transcrição', (err.message || 'Falha ao processar áudio.'), true, false);
-                            hidePreview(3500);
-                        }
-                    };
-
-                    mediaRecorder.start();
-                    isRecording = true;
-                    if (micBtn) {
-                        micBtn.classList.add('recording');
-                        micBtn.title = 'A gravar... Clique novamente para parar e transcrever';
-                    }
-                    showPreview('🎙️ A gravar voz (' + labels[langIdx] + ')...', 'Fale e clique no microfone para transcrever.', false, true);
-                    updateWave();
-
-                } catch(err) {
-                    console.error('MediaRecorder start error:', err);
-                    isRecording = false;
-                    if (micBtn) micBtn.classList.remove('recording');
-                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                        showPreview('⚠️ Permissão Negada', 'Autorize o acesso ao microfone no Firefox.', true, false);
-                    } else {
-                        showPreview('⚠️ Erro de Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
-                    }
-                    hidePreview(3500);
-                }
-            }
-
+        } else {
             window.triggerVoiceRecognition = function() {
                 if (isRecording) {
-                    isRecording = false;
-                    if (micBtn) {
-                        micBtn.classList.remove('recording');
-                        micBtn.title = 'Reconhecimento de Voz (Microfone) ou digite /voice';
-                    }
-                    if (mediaRecorder && mediaRecorder.state === 'recording') {
-                        mediaRecorder.stop();
-                    }
+                    if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
                 } else {
-                    startMediaRecord();
+                    startLocalRecording();
                 }
             };
+        }
 
-            if (micBtn) {
-                micBtn.style.opacity = '1.0';
-                micBtn.title = 'Reconhecimento de Voz (Microfone) ou digite /voice';
-                micBtn.addEventListener('click', window.triggerVoiceRecognition);
-            }
+        if (micBtn) {
+            micBtn.style.opacity = '1.0';
+            micBtn.title = 'Reconhecimento de Voz (Microfone) ou digite /voice';
+            micBtn.addEventListener('click', window.triggerVoiceRecognition);
         }
 
         if (langBtn) {
