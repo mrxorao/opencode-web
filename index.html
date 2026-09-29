@@ -268,7 +268,6 @@ document.addEventListener('copy', function(e) {
 
     if (text && text.length > 0) {
         if (e.clipboardData) {
-            e.clipboardData.clearData();
             e.clipboardData.setData('text/plain', text);
             e.preventDefault();
             if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
@@ -278,39 +277,20 @@ document.addEventListener('copy', function(e) {
     }
 }, true);
 
-// Helper: Universal synchronous and asynchronous copy to system clipboard
-function fallbackSyncCopy(str) {
+// Helper: Synchronous fallback copy using temporary textarea
+function execCommandDirect(str) {
     if (!str) return false;
     _currentPendingCopyText = str;
     var success = false;
-
-    // 1. Try using xterm's native helper textarea if present
-    var helper = document.querySelector('.xterm-helper-textarea');
-    if (helper) {
-        try {
-            var origValue = helper.value;
-            helper.value = str;
-            helper.focus({ preventScroll: true });
-            helper.select();
-            helper.setSelectionRange(0, str.length);
-            success = document.execCommand('copy');
-            helper.value = origValue;
-            if (success) {
-                setTimeout(function() { _currentPendingCopyText = ''; }, 100);
-                return true;
-            }
-        } catch(e) {}
-    }
-
-    // 2. Fallback: Temporary textarea appended to DOM
     try {
         var textArea = document.createElement('textarea');
         textArea.value = str;
+        textArea.setAttribute('readonly', '');
         textArea.style.position = 'fixed';
         textArea.style.top = '0';
         textArea.style.left = '0';
-        textArea.style.width = '100px';
-        textArea.style.height = '100px';
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
         textArea.style.padding = '0';
         textArea.style.border = 'none';
         textArea.style.outline = 'none';
@@ -332,13 +312,14 @@ function fallbackSyncCopy(str) {
             try { prevActive.focus({ preventScroll: true }); } catch(e) {}
         }
     } catch(err) {
-        console.warn('[copy] fallbackSyncCopy error:', err);
+        console.warn('[copy] execCommandDirect error:', err);
     }
     setTimeout(function() { _currentPendingCopyText = ''; }, 100);
     return success;
 }
-window.fallbackSyncCopy = fallbackSyncCopy;
+window.execCommandDirect = execCommandDirect;
 
+// Primary universal copy to clipboard function
 function copyToClipboard(text) {
     if (text === undefined || text === null || text === '') {
         return Promise.resolve(false);
@@ -346,21 +327,22 @@ function copyToClipboard(text) {
     var str = String(text);
     _currentPendingCopyText = str;
 
-    // 1. Execute synchronous copy immediately within current user gesture stack
-    var syncOk = fallbackSyncCopy(str);
-
-    // 2. Also invoke modern navigator.clipboard API in parallel
+    // 1. Primary: Modern Async Clipboard API (Directly writes to Windows OS Clipboard)
     if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         return navigator.clipboard.writeText(str).then(function() {
             _currentPendingCopyText = '';
+            if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+            }
             return true;
         }).catch(function(err) {
-            console.warn('[copy] navigator.clipboard.writeText failed:', err);
-            return syncOk;
+            console.warn('[copy] navigator.clipboard.writeText failed, using execCommand:', err);
+            return execCommandDirect(str);
         });
     }
 
-    return Promise.resolve(syncOk);
+    // 2. Fallback: execCommandDirect
+    return Promise.resolve(execCommandDirect(str));
 }
 window.copyToClipboard = copyToClipboard;
 
@@ -2378,10 +2360,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 }
 
                 if (selectedText && selectedText.length > 0) {
-                    fallbackSyncCopy(selectedText);
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(selectedText).catch(function() {});
-                    }
+                    copyToClipboard(selectedText);
                     showPreview('Copiado', (selectedText.length > 50 ? selectedText.substring(0, 50) + '...' : selectedText), false, false);
                     hidePreview(1500);
                 }
@@ -2472,10 +2451,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         if (termInstance.hasSelection && termInstance.hasSelection()) {
                             var text = termInstance.getSelection();
                             if (text && text.length > 0) {
-                                fallbackSyncCopy(text);
-                                if (navigator.clipboard && navigator.clipboard.writeText) {
-                                    navigator.clipboard.writeText(text).catch(function() {});
-                                }
+                                copyToClipboard(text);
                                 if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
                                     window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 300);
                                 }
@@ -2495,10 +2471,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     if (inst && typeof inst.getSelection === 'function' && inst.hasSelection()) {
                         var selText = inst.getSelection();
                         if (selText && selText.length > 0) {
-                            fallbackSyncCopy(selText);
-                            if (navigator.clipboard && navigator.clipboard.writeText) {
-                                navigator.clipboard.writeText(selText).catch(function() {});
-                            }
+                            copyToClipboard(selText);
                         }
                     }
                 }, false);
