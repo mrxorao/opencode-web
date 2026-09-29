@@ -1869,13 +1869,40 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     conversationPollTimer = null;
                 }
                 stopSpeaking();
-                if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
-                    mediaRecorder.stop();
+                isRecording = false;
+                if (typeof cancelAnimationFrame === 'function' && animFrameId) {
+                    cancelAnimationFrame(animFrameId);
+                    animFrameId = null;
+                }
+                if (mediaRecorder) {
+                    audioChunks = [];
+                    mediaRecorder.onstop = null;
+                    mediaRecorder.ondataavailable = null;
+                    if (mediaRecorder.state !== 'inactive') {
+                        try { mediaRecorder.stop(); } catch(e) {}
+                    }
+                }
+                if (liveCtx) {
+                    try { liveCtx.close(); } catch(e) {}
+                    liveCtx = null;
+                }
+                if (mediaStream) {
+                    try {
+                        mediaStream.getTracks().forEach(function(t) { t.stop(); });
+                    } catch(e) {}
+                    mediaStream = null;
+                }
+                if (micBtn) {
+                    micBtn.classList.remove('recording');
+                }
+                if (voiceToolbar) {
+                    voiceToolbar.classList.remove('recording', 'active', 'speaking');
                 }
                 updateTalkButton();
                 playConversationStopSound();
                 showPreview('Modo Conversa Desativado', 'Pode usar o microfone para ditado normal.', false, false);
                 hidePreview(2500);
+                restoreTerminalFocus();
             } else {
                 isConversationMode = true;
                 stopSpeaking();
@@ -1929,23 +1956,38 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
             stopSpeaking();
 
-            if (isRecording) {
-                isRecording = false;
-                if (typeof cancelAnimationFrame === 'function' && animFrameId) {
-                    cancelAnimationFrame(animFrameId);
-                }
-                if (mediaRecorder && mediaRecorder.state === 'recording') {
-                    audioChunks = [];
-                    mediaRecorder.onstop = null;
+            isRecording = false;
+            if (typeof cancelAnimationFrame === 'function' && animFrameId) {
+                cancelAnimationFrame(animFrameId);
+                animFrameId = null;
+            }
+            if (mediaRecorder) {
+                audioChunks = [];
+                mediaRecorder.onstop = null;
+                mediaRecorder.ondataavailable = null;
+                if (mediaRecorder.state !== 'inactive') {
                     try { mediaRecorder.stop(); } catch(e) {}
                 }
-                if (liveCtx) {
-                    try { liveCtx.close(); } catch(e) {}
-                }
-                if (mediaStream) {
+            }
+            if (liveCtx) {
+                try { liveCtx.close(); } catch(e) {}
+                liveCtx = null;
+            }
+            if (mediaStream) {
+                try {
                     mediaStream.getTracks().forEach(function(t) { t.stop(); });
-                }
-                if (micBtn) micBtn.classList.remove('recording');
+                } catch(e) {}
+                mediaStream = null;
+            }
+
+            // Immediately reset microphone button visual state back to green
+            if (micBtn) {
+                micBtn.classList.remove('recording');
+            }
+
+            // Reset toolbar classes
+            if (voiceToolbar) {
+                voiceToolbar.classList.remove('recording', 'active', 'speaking');
             }
 
             updateTalkButton();
@@ -1964,7 +2006,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 hidePreview(0);
             }
 
-            window.focusTerminal();
+            restoreTerminalFocus();
         }
         window.cancelVoiceAndConversation = cancelVoiceAndConversation;
 
@@ -2416,15 +2458,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         });
 
-        // Global Keyboard Shortcuts Listener
+        // Global Keyboard Shortcuts Listener (Capture phase to guarantee Escape is always caught)
         window.addEventListener('keydown', function(e) {
             // Escape (ESQ): Deactivate voice dictation, conversation mode, and close modals
             if (e.key === 'Escape' || e.key === 'Esc' || e.code === 'Escape') {
-                if (typeof window.cancelVoiceAndConversation === 'function') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.cancelVoiceAndConversation(true);
-                    return;
+                if (isConversationMode || isRecording || isSpeaking) {
+                    if (typeof window.cancelVoiceAndConversation === 'function') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.cancelVoiceAndConversation(true);
+                        return;
+                    }
                 }
             }
 
@@ -2547,7 +2591,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     dropOverlay.classList.remove('active');
                 }
             }
-        });
+        }, true);
 
         window.addEventListener('drop', function(e) {
             dragCounter = 0;
@@ -2574,9 +2618,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
             if (termInstance.__copyHooked) return;
             termInstance.__copyHooked = true;
 
-            // 3. Intercept Ctrl+C in xterm via attachCustomKeyEventHandler
+            // 3. Intercept Escape and Ctrl+C in xterm via attachCustomKeyEventHandler
             if (typeof termInstance.attachCustomKeyEventHandler === 'function') {
                 termInstance.attachCustomKeyEventHandler(function(ev) {
+                    if ((ev.key === 'Escape' || ev.key === 'Esc' || ev.code === 'Escape') && ev.type === 'keydown') {
+                        if (isConversationMode || isRecording || isSpeaking) {
+                            if (typeof window.cancelVoiceAndConversation === 'function') {
+                                window.cancelVoiceAndConversation(true);
+                                return false; // Prevent sending \x1b into OpenCode TUI when cancelling voice
+                            }
+                        }
+                    }
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'c' || ev.key === 'C') && ev.type === 'keydown') {
                         if (termInstance.hasSelection && termInstance.hasSelection()) {
                             var text = termInstance.getSelection();
