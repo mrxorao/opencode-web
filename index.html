@@ -77,14 +77,14 @@ body.toolbar-dragging #corner-zone-container{display:block}
 #upload-btn{background:#30363d;color:#e6edf3}
 #upload-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 #upload-btn.uploading{background:#1f6feb!important;color:#fff!important;animation:mic-pulse 1s infinite ease-in-out;box-shadow:0 0 14px rgba(31,111,235,0.8)}
-#prompts-btn, #shortcuts-btn{background:#30363d;color:#e6edf3}
-#prompts-btn:hover, #shortcuts-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
+#prompts-btn, #shortcuts-btn, #font-size-btn, #refresh-btn{background:#30363d;color:#e6edf3}
+#prompts-btn:hover, #shortcuts-btn:hover, #font-size-btn:hover, #refresh-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
+#refresh-btn.rotating svg{animation:refresh-spin .6s cubic-bezier(0.4,0,0.2,1)}
+@keyframes refresh-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
 /* Modals System (Clean Human-Crafted Anti-AI UI) */
 #firefox-modal, #mic-modal, #shortcuts-modal, #upload-choice-modal, #prompts-modal, #font-size-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,15,0.74);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
 #firefox-modal.active, #mic-modal.active, #shortcuts-modal.active, #upload-choice-modal.active, #prompts-modal.active, #font-size-modal.active{display:flex}
-#font-size-btn{background:#30363d;color:#e6edf3}
-#font-size-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 .font-preset-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#cbd5e1;padding:8px 0;border-radius:8px;font-size:12px;font-weight:600;font-family:ui-monospace,monospace;cursor:pointer;transition:all .15s ease;text-align:center}
 .font-preset-btn:hover{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.18);transform:translateY(-1px)}
 .font-preset-btn.active{background:#2563eb;color:#fff;border-color:#3b82f6;box-shadow:0 0 10px rgba(37,99,235,0.4)}
@@ -746,6 +746,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         <path d="M15.5 15h5"></path>
                     </svg>
                 </button>
+                <button id="refresh-btn" class="voice-btn" title="Recarregar Terminal (Atualizar Página)" aria-label="Refresh Terminal">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
                 <button id="shortcuts-btn" class="voice-btn desktop-only" title="Atalhos de Teclado" aria-label="Keyboard Shortcuts">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
@@ -973,6 +979,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     <div class="shortcut-row">
                         <div class="shortcut-desc">Aumentar / Diminuir Tamanho da Letra</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">+</span> / <span class="shortcut-key">-</span></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <div class="shortcut-desc">Recarregar Terminal / Página</div>
+                        <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">R</span> / <span class="shortcut-key">F5</span></div>
                     </div>
                     <div class="shortcut-row">
                         <div class="shortcut-desc">Copiar texto selecionado</div>
@@ -2298,6 +2308,22 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 setTerminalFontSize(savedSz, false);
             }
         }, 300);
+
+        // Refresh Button Handling
+        var refreshBtn = document.getElementById('refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                refreshBtn.classList.add('rotating');
+                if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                    try {
+                        window.__ttyd_xterm.overlayAddon.showOverlay('A recarregar...', 400);
+                    } catch(e) {}
+                }
+                setTimeout(function() {
+                    window.location.reload();
+                }, 150);
+            });
+        }
 
         // Keyboard Shortcuts Modal Handling
         var shortcutsBtn = document.getElementById('shortcuts-btn');
