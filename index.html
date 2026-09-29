@@ -84,6 +84,16 @@ body.toolbar-dragging #corner-zone-container{display:block}
 #ff-help-btn.ff-btn-icon:hover{background:#d06014;border-color:#f0883e;color:#fff}
 #install-pwa-btn{background:#1f6feb;color:#fff;border-color:rgba(88,166,255,0.4)}
 #install-pwa-btn:hover{background:#388bfd;box-shadow:0 0 12px rgba(56,139,253,0.7)}
+
+/* Global File Drag & Drop Overlay */
+#file-drop-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,17,23,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:100005;display:none;align-items:center;justify-content:center;pointer-events:none;transition:opacity .2s ease;opacity:0}
+#file-drop-overlay.active{display:flex;opacity:1}
+.file-drop-box{border:2.5px dashed #58a6ff;border-radius:20px;background:rgba(22,27,34,0.85);padding:36px 48px;text-align:center;color:#f0f6fc;box-shadow:0 0 35px rgba(88,166,255,0.3);transform:scale(1);animation:drop-box-pulse 1.5s infinite ease-in-out;max-width:85vw;box-sizing:border-box}
+@keyframes drop-box-pulse{0%{transform:scale(1);border-color:rgba(88,166,255,0.7)}50%{transform:scale(1.03);border-color:#58a6ff;box-shadow:0 0 45px rgba(88,166,255,0.5)}100%{transform:scale(1);border-color:rgba(88,166,255,0.7)}}
+.file-drop-icon{margin-bottom:12px;animation:float-icon 2s infinite ease-in-out;color:#58a6ff;display:flex;justify-content:center}
+@keyframes float-icon{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+.file-drop-title{font-size:20px;font-weight:700;color:#58a6ff;margin-bottom:6px;letter-spacing:0.5px}
+.file-drop-desc{font-size:14px;color:#8b949e}
 </style>
 <script type="text/javascript">
 // 1. Dynamic Virtual Keyboard & Viewport Sync for Mobile
@@ -477,11 +487,26 @@ window.sendTextToTerminal = function(text, autoEnter) {
             </div>
         `;
 
+        var dropOverlay = document.createElement('div');
+        dropOverlay.id = 'file-drop-overlay';
+        dropOverlay.innerHTML = `
+            <div class="file-drop-box">
+                <div class="file-drop-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                </div>
+                <div class="file-drop-title">Solte os ficheiros aqui</div>
+                <div class="file-drop-desc">Os anexos serão associados à sua conversa</div>
+            </div>
+        `;
+
         document.body.appendChild(cornerContainer);
         document.body.appendChild(toolbar);
         document.body.appendChild(preview);
         document.body.appendChild(ffModal);
         document.body.appendChild(micModal);
+        document.body.appendChild(dropOverlay);
 
         initCornerDragAndDrop(toolbar, preview);
         setupVoiceHandlers();
@@ -1297,16 +1322,54 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
-        // Window drag & drop file upload support
+        // Window drag & drop file upload support with visual overlay
+        var dropOverlay = document.getElementById('file-drop-overlay');
+        var dragCounter = 0;
+
+        function isDragWithFiles(e) {
+            if (!e.dataTransfer || !e.dataTransfer.types) return false;
+            for (var i = 0; i < e.dataTransfer.types.length; i++) {
+                if (e.dataTransfer.types[i] === 'Files') return true;
+            }
+            return false;
+        }
+
+        window.addEventListener('dragenter', function(e) {
+            if (!isDragWithFiles(e)) return;
+            e.preventDefault();
+            dragCounter++;
+            if (dropOverlay) {
+                dropOverlay.classList.add('active');
+            }
+        });
+
         window.addEventListener('dragover', function(e) {
-            if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).indexOf('Files') > -1) {
-                e.preventDefault();
-                e.stopPropagation();
+            if (!isDragWithFiles(e)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = 'copy';
+            }
+        });
+
+        window.addEventListener('dragleave', function(e) {
+            if (!isDragWithFiles(e)) return;
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                if (dropOverlay) {
+                    dropOverlay.classList.remove('active');
+                }
             }
         });
 
         window.addEventListener('drop', function(e) {
-            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            dragCounter = 0;
+            if (dropOverlay) {
+                dropOverlay.classList.remove('active');
+            }
+            if (isDragWithFiles(e) && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 e.preventDefault();
                 e.stopPropagation();
                 uploadFiles(e.dataTransfer.files);
