@@ -81,8 +81,13 @@ body.toolbar-dragging #corner-zone-container{display:block}
 #prompts-btn:hover, #shortcuts-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 
 /* Modals System (Clean Human-Crafted Anti-AI UI) */
-#firefox-modal, #mic-modal, #shortcuts-modal, #upload-choice-modal, #prompts-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,15,0.74);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
-#firefox-modal.active, #mic-modal.active, #shortcuts-modal.active, #upload-choice-modal.active, #prompts-modal.active{display:flex}
+#firefox-modal, #mic-modal, #shortcuts-modal, #upload-choice-modal, #prompts-modal, #font-size-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,15,0.74);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+#firefox-modal.active, #mic-modal.active, #shortcuts-modal.active, #upload-choice-modal.active, #prompts-modal.active, #font-size-modal.active{display:flex}
+#font-size-btn{background:#30363d;color:#e6edf3}
+#font-size-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
+.font-preset-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#cbd5e1;padding:8px 0;border-radius:8px;font-size:12px;font-weight:600;font-family:ui-monospace,monospace;cursor:pointer;transition:all .15s ease;text-align:center}
+.font-preset-btn:hover{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.18);transform:translateY(-1px)}
+.font-preset-btn.active{background:#2563eb;color:#fff;border-color:#3b82f6;box-shadow:0 0 10px rgba(37,99,235,0.4)}
 .modal-card{background:#11141b;border:1px solid rgba(255,255,255,0.08);border-radius:14px;max-width:480px;width:100%;padding:22px 24px;color:#e2e8f0;box-shadow:0 24px 50px -12px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.03);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06)}
 .modal-title{font-size:14.5px;font-weight:600;color:#f8fafc;display:flex;align-items:center;gap:8px;letter-spacing:-0.015em}
@@ -733,6 +738,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         <line x1="9" y1="11" x2="13" y2="11"></line>
                     </svg>
                 </button>
+                <button id="font-size-btn" class="voice-btn" title="Tamanho da Letra (Aumentar / Diminuir)" aria-label="Font Size">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19V5h3v14"></path>
+                        <path d="M2 7h7"></path>
+                        <path d="M14 19l4-10 4 10"></path>
+                        <path d="M15.5 15h5"></path>
+                    </svg>
+                </button>
                 <button id="shortcuts-btn" class="voice-btn desktop-only" title="Atalhos de Teclado" aria-label="Keyboard Shortcuts">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
@@ -870,6 +883,57 @@ window.sendTextToTerminal = function(text, autoEnter) {
             </div>
         `;
 
+        var fontSizeModal = document.createElement('div');
+        fontSizeModal.id = 'font-size-modal';
+        fontSizeModal.innerHTML = `
+            <div class="modal-card" style="max-width:380px">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19V5h3v14"></path>
+                            <path d="M2 7h7"></path>
+                            <path d="M14 19l4-10 4 10"></path>
+                            <path d="M15.5 15h5"></path>
+                        </svg>
+                        <span>Tamanho da Letra</span>
+                    </div>
+                    <button id="font-size-close-btn" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:10px 0 6px 0;">
+                    <!-- Stepper Controller -->
+                    <div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:18px;">
+                        <button id="font-dec-btn" class="modal-btn modal-btn-sec" style="width:44px;height:44px;font-size:22px;font-weight:bold;padding:0;display:flex;align-items:center;justify-content:center;border-radius:10px;" title="Diminuir tamanho (Ctrl + -)">−</button>
+                        <div style="text-align:center;min-width:76px;">
+                            <div id="font-size-display" style="font-size:24px;font-weight:700;color:#f8fafc;font-family:ui-monospace,monospace;line-height:1.1;">14px</div>
+                            <div style="font-size:11px;color:#64748b;margin-top:3px;">Tamanho atual</div>
+                        </div>
+                        <button id="font-inc-btn" class="modal-btn modal-btn-sec" style="width:44px;height:44px;font-size:22px;font-weight:bold;padding:0;display:flex;align-items:center;justify-content:center;border-radius:10px;" title="Aumentar tamanho (Ctrl + +)">+</button>
+                    </div>
+                    
+                    <!-- Quick preset chips -->
+                    <div style="font-size:11.5px;color:#94a3b8;margin-bottom:8px;font-weight:500;">Predefinições Rápidas:</div>
+                    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:7px;margin-bottom:14px;">
+                        <button class="font-preset-btn" data-size="11">11px</button>
+                        <button class="font-preset-btn" data-size="12">12px</button>
+                        <button class="font-preset-btn" data-size="13">13px</button>
+                        <button class="font-preset-btn" data-size="14">14px</button>
+                        <button class="font-preset-btn" data-size="16">16px</button>
+                        <button class="font-preset-btn" data-size="18">18px</button>
+                        <button class="font-preset-btn" data-size="20">20px</button>
+                        <button class="font-preset-btn" data-size="24">24px</button>
+                    </div>
+                    
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
+                        <span style="font-size:11.5px;color:#64748b;">Atalhos: <kbd style="background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;color:#cbd5e1;">Ctrl + +</kbd> / <kbd style="background:rgba(255,255,255,0.08);padding:2px 5px;border-radius:4px;color:#cbd5e1;">Ctrl + -</kbd></span>
+                        <button id="font-reset-btn" style="background:none;border:none;color:#58a6ff;font-size:12px;cursor:pointer;text-decoration:underline;">Repor (14px)</button>
+                    </div>
+                </div>
+                <div class="modal-footer" style="margin-top:10px;padding-top:10px;">
+                    <button id="font-size-ok-btn" class="modal-btn">Concluído</button>
+                </div>
+            </div>
+        `;
+
         var shortcutsModal = document.createElement('div');
         shortcutsModal.id = 'shortcuts-modal';
         shortcutsModal.innerHTML = `
@@ -905,6 +969,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     <div class="shortcut-row">
                         <div class="shortcut-desc">Ligar / Desligar Modo Conversa</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">L</span></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <div class="shortcut-desc">Aumentar / Diminuir Tamanho da Letra</div>
+                        <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">+</span> / <span class="shortcut-key">-</span></div>
                     </div>
                     <div class="shortcut-row">
                         <div class="shortcut-desc">Copiar texto selecionado</div>
@@ -1011,6 +1079,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         document.body.appendChild(ffModal);
         document.body.appendChild(micModal);
         document.body.appendChild(uploadChoiceModal);
+        document.body.appendChild(fontSizeModal);
         document.body.appendChild(shortcutsModal);
         document.body.appendChild(promptsModal);
         document.body.appendChild(dropOverlay);
@@ -1989,7 +2058,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             updateTalkButton();
 
             // Close any open modals
-            [ffModal, micModal, shortcutsModal, uploadChoiceModal, promptsModal].forEach(function(m) {
+            [ffModal, micModal, shortcutsModal, uploadChoiceModal, promptsModal, fontSizeModal].forEach(function(m) {
                 if (m && m.classList.contains('active')) {
                     m.classList.remove('active');
                 }
@@ -2119,6 +2188,116 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 if (fileUploadInput) fileUploadInput.click();
             });
         }
+
+        // Font Size Modal & Real-time Adjustment Handling
+        var fontSizeBtn = document.getElementById('font-size-btn');
+        var fontSizeModal = document.getElementById('font-size-modal');
+        var fontSizeCloseBtn = document.getElementById('font-size-close-btn');
+        var fontSizeOkBtn = document.getElementById('font-size-ok-btn');
+        var fontDecBtn = document.getElementById('font-dec-btn');
+        var fontIncBtn = document.getElementById('font-inc-btn');
+        var fontResetBtn = document.getElementById('font-reset-btn');
+
+        function getCurrentTerminalFontSize() {
+            var inst = window.term || (window.__ttyd_xterm && window.__ttyd_xterm.terminal);
+            if (inst && inst.options && inst.options.fontSize) {
+                return parseInt(inst.options.fontSize, 10) || 14;
+            }
+            var saved = localStorage.getItem('terminal_font_size');
+            if (saved) return parseInt(saved, 10) || 14;
+            return 14;
+        }
+
+        function updateFontSizeModalUI(size) {
+            var display = document.getElementById('font-size-display');
+            if (display) display.textContent = size + 'px';
+            document.querySelectorAll('.font-preset-btn').forEach(function(btn) {
+                if (parseInt(btn.getAttribute('data-size'), 10) === size) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function setTerminalFontSize(size, showToast) {
+            var newSize = Math.max(9, Math.min(36, parseInt(size, 10) || 14));
+            var inst = window.term || (window.__ttyd_xterm && window.__ttyd_xterm.terminal);
+            if (inst && inst.options) {
+                inst.options.fontSize = newSize;
+                try {
+                    if (inst.fit) inst.fit();
+                    if (window.__ttyd_xterm && window.__ttyd_xterm.fitAddon) {
+                        window.__ttyd_xterm.fitAddon.fit();
+                    }
+                } catch(e) {}
+            }
+
+            try {
+                localStorage.setItem('terminal_font_size', String(newSize));
+                var url = new URL(window.location.href);
+                url.searchParams.set('fontSize', String(newSize));
+                window.history.replaceState(null, '', url.pathname + url.search);
+            } catch(e) {}
+
+            window.dispatchEvent(new Event('resize'));
+            updateFontSizeModalUI(newSize);
+
+            if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                window.__ttyd_xterm.overlayAddon.showOverlay(newSize + 'px', 250);
+            }
+        }
+        window.setTerminalFontSize = setTerminalFontSize;
+        window.getCurrentTerminalFontSize = getCurrentTerminalFontSize;
+
+        if (fontSizeBtn) {
+            fontSizeBtn.addEventListener('click', function() {
+                updateFontSizeModalUI(getCurrentTerminalFontSize());
+                if (fontSizeModal) fontSizeModal.classList.add('active');
+            });
+        }
+        if (fontSizeCloseBtn) {
+            fontSizeCloseBtn.addEventListener('click', function() {
+                if (fontSizeModal) fontSizeModal.classList.remove('active');
+                restoreTerminalFocus();
+            });
+        }
+        if (fontSizeOkBtn) {
+            fontSizeOkBtn.addEventListener('click', function() {
+                if (fontSizeModal) fontSizeModal.classList.remove('active');
+                restoreTerminalFocus();
+            });
+        }
+        if (fontDecBtn) {
+            fontDecBtn.addEventListener('click', function() {
+                setTerminalFontSize(getCurrentTerminalFontSize() - 1, true);
+            });
+        }
+        if (fontIncBtn) {
+            fontIncBtn.addEventListener('click', function() {
+                setTerminalFontSize(getCurrentTerminalFontSize() + 1, true);
+            });
+        }
+        if (fontResetBtn) {
+            fontResetBtn.addEventListener('click', function() {
+                setTerminalFontSize(14, true);
+            });
+        }
+
+        document.querySelectorAll('.font-preset-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var sz = parseInt(btn.getAttribute('data-size'), 10);
+                if (sz) setTerminalFontSize(sz, true);
+            });
+        });
+
+        // Apply saved font size on terminal load
+        setTimeout(function() {
+            var savedSz = localStorage.getItem('terminal_font_size');
+            if (savedSz) {
+                setTerminalFontSize(savedSz, false);
+            }
+        }, 300);
 
         // Keyboard Shortcuts Modal Handling
         var shortcutsBtn = document.getElementById('shortcuts-btn');
@@ -2443,7 +2622,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         }
 
         // Close modals on clicking backdrop
-        [ffModal, micModal, shortcutsModal, uploadChoiceModal, promptsModal].forEach(function(m) {
+        [ffModal, micModal, shortcutsModal, uploadChoiceModal, promptsModal, fontSizeModal].forEach(function(m) {
             if (m) {
                 m.addEventListener('click', function(e) {
                     if (e.target === m) {
@@ -2624,6 +2803,18 @@ window.sendTextToTerminal = function(text, autoEnter) {
                                 return false; // Prevent sending \x1b into OpenCode TUI when cancelling voice
                             }
                         }
+                    }
+                    if ((ev.ctrlKey || ev.metaKey) && (ev.key === '=' || ev.key === '+' || ev.code === 'Equal' || ev.code === 'NumpadAdd') && ev.type === 'keydown') {
+                        setTerminalFontSize(getCurrentTerminalFontSize() + 1, true);
+                        return false;
+                    }
+                    if ((ev.ctrlKey || ev.metaKey) && (ev.key === '-' || ev.key === '_' || ev.code === 'Minus' || ev.code === 'NumpadSubtract') && ev.type === 'keydown') {
+                        setTerminalFontSize(getCurrentTerminalFontSize() - 1, true);
+                        return false;
+                    }
+                    if ((ev.ctrlKey || ev.metaKey) && (ev.key === '0' || ev.code === 'Digit0' || ev.code === 'Numpad0') && ev.type === 'keydown') {
+                        setTerminalFontSize(14, true);
+                        return false;
                     }
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'c' || ev.key === 'C') && ev.type === 'keydown') {
                         if (termInstance.hasSelection && termInstance.hasSelection()) {
