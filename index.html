@@ -1240,7 +1240,7 @@ function showCopiedOverlay(text) {
         _lastOverlayText = text || '';
 
         if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-            window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+            window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copied", 200);
         }
     } catch(e) {}
 }
@@ -1945,14 +1945,14 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                     </svg>
                 </button>
-                <button id="upload-btn" class="voice-btn" title="Anexar Ficheiro / Foto" aria-label="Upload Attachment">
+                <button id="upload-btn" class="voice-btn" title="Attach File / Photo" aria-label="Upload Attachment">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                     </svg>
                 </button>
                 <input type="file" id="file-upload-input" multiple style="display:none">
                 <input type="file" id="camera-upload-input" accept="image/*" capture="environment" style="display:none">
-                <button id="prompts-btn" class="voice-btn" title="Biblioteca de Prompts" aria-label="Prompt Library">
+                <button id="prompts-btn" class="voice-btn" title="Prompt Library" aria-label="Prompt Library">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
@@ -1960,20 +1960,20 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         <line x1="9" y1="11" x2="13" y2="11"></line>
                     </svg>
                 </button>
-                <button id="refresh-btn" class="voice-btn" title="Recarregar Terminal / Página" aria-label="Refresh">
+                <button id="refresh-btn" class="voice-btn" title="Reload Terminal / Page" aria-label="Refresh">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 4 23 10 17 10"></polyline>
                         <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                     </svg>
                 </button>
-                <button id="settings-btn" class="voice-btn" title="Definições (Tamanho da letra, Orientação, Atalhos, Refresh)" aria-label="Settings">
+                <button id="settings-btn" class="voice-btn" title="Settings (Font Size, Theme, Shortcuts, TTS Voice)" aria-label="Settings">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                 </button>
             </div>
-            <button id="collapse-btn" class="collapse-btn" title="Minimizar barra" aria-label="Minimizar barra">
+            <button id="collapse-btn" class="collapse-btn" title="Minimize toolbar" aria-label="Minimize toolbar">
                 <svg width="12" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
@@ -1983,7 +1983,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         var preview = document.createElement('div');
         preview.id = 'transcript-preview';
         preview.innerHTML = `
-            <div class="transcript-status" id="transcript-status">A escutar...</div>
+            <div class="transcript-status" id="transcript-status">Listening...</div>
             <div id="transcript-wave" class="audio-wave" style="display:none"></div>
             <div id="transcript-text"></div>
         `;
@@ -1995,27 +1995,27 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 <div class="modal-header">
                     <div class="modal-title">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                        Configuração de Voz no Firefox
+                        Voice Configuration in Firefox
                     </div>
-                    <button id="ff-close-btn" class="modal-close" title="Fechar">
+                    <button id="ff-close-btn" class="modal-close" title="Close">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p>Se o reconhecimento de voz não iniciar no Firefox, certifica-te de ativar as seguintes opções em <span class="modal-code">about:config</span>:</p>
+                    <p>If voice recognition does not start in Firefox, make sure to enable the following settings in <span class="modal-code">about:config</span>:</p>
                     <ol class="modal-steps">
-                        <li>Acede a <span class="modal-code">about:config</span> na barra de endereço e prime <b>Enter</b>.</li>
-                        <li>Pesquisa por <span class="modal-code">media.webspeech.recognition.enable</span> e define como <b>true</b>.</li>
-                        <li>Pesquisa por <span class="modal-code">media.webspeech.recognition.force_enable</span> e define como <b>true</b>.</li>
+                        <li>Navigate to <span class="modal-code">about:config</span> in the address bar and press <b>Enter</b>.</li>
+                        <li>Search for <span class="modal-code">media.webspeech.recognition.enable</span> and set it to <b>true</b>.</li>
+                        <li>Search for <span class="modal-code">media.webspeech.recognition.force_enable</span> and set it to <b>true</b>.</li>
                     </ol>
-                    <div class="modal-note">Permite o acesso ao microfone quando solicitado pelo navegador.</div>
+                    <div class="modal-note">Allow microphone access when prompted by the browser.</div>
                 </div>
                 <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center">
                     <label style="font-size:12px;color:#8b949e;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
                         <input type="checkbox" id="ff-dont-show-checkbox" checked style="cursor:pointer;accent-color:#38bdf8">
-                        Não voltar a mostrar
+                        Do not show again
                     </label>
-                    <button id="ff-ok-btn" class="modal-btn">Continuar</button>
+                    <button id="ff-ok-btn" class="modal-btn">Continue</button>
                 </div>
             </div>
         `;
@@ -2027,35 +2027,35 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 <div class="modal-header">
                     <div class="modal-title">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                        Permissão de Microfone no Telemóvel
+                        Mobile Microphone Permission
                     </div>
-                    <button id="mic-close-btn" class="modal-close" title="Fechar">
+                    <button id="mic-close-btn" class="modal-close" title="Close">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p>Por razões de segurança, os navegadores móveis bloqueiam o acesso ao microfone em ligações HTTP não seguras na rede local.</p>
+                    <p>For security reasons, mobile browsers block microphone access on insecure HTTP connections over the local network.</p>
                     
                     <div class="modal-note">
-                        <b style="color:#f8fafc">Opção 1: Ativar HTTPS (Recomendado)</b>
+                        <b style="color:#f8fafc">Option 1: Enable HTTPS (Recommended)</b>
                         <p style="margin:6px 0 0 0">
-                            1. Define <span class="modal-code">ENABLE_HTTPS=true</span> no teu ficheiro <span class="modal-code">.env</span> e reinicia o container.<br>
-                            2. Acede através de: <b style="color:#38bdf8;display:inline-block;margin-top:4px">https://${location.hostname}:7681</b>
+                            1. Set <span class="modal-code">ENABLE_HTTPS=true</span> in your <span class="modal-code">.env</span> file and restart the container.<br>
+                            2. Access via: <b style="color:#38bdf8;display:inline-block;margin-top:4px">https://${location.hostname}:7681</b>
                         </p>
                     </div>
 
                     <div class="modal-note" style="border-left-color:#f59e0b">
-                        <b style="color:#f8fafc">Opção 2: Chrome / Edge no Android (Sem HTTPS)</b>
+                        <b style="color:#f8fafc">Option 2: Chrome / Edge on Android (Without HTTPS)</b>
                         <ol class="modal-steps" style="margin-top:6px">
-                            <li>Abre num novo separador: <br><span class="modal-code">chrome://flags/#unsafely-treat-insecure-origin-as-secure</span></li>
-                            <li>Ativa e adiciona o URL: <br><span class="modal-code">${location.origin}</span></li>
-                            <li>Toca em <b>Relaunch</b> para reiniciar o navegador.</li>
+                            <li>Open in a new tab: <br><span class="modal-code">chrome://flags/#unsafely-treat-insecure-origin-as-secure</span></li>
+                            <li>Enable and add the URL: <br><span class="modal-code">${location.origin}</span></li>
+                            <li>Tap <b>Relaunch</b> to restart the browser.</li>
                         </ol>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="mic-copy-url-btn" class="modal-btn modal-btn-sec">Copiar URL HTTPS</button>
-                    <button id="mic-ok-btn" class="modal-btn">Compreendido</button>
+                    <button id="mic-copy-url-btn" class="modal-btn modal-btn-sec">Copy HTTPS URL</button>
+                    <button id="mic-ok-btn" class="modal-btn">Understood</button>
                 </div>
             </div>
         `;
@@ -2067,9 +2067,9 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 <div class="modal-header">
                     <div class="modal-title">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                        Anexar Ficheiro ou Imagem
+                        Attach File or Image
                     </div>
-                    <button id="upload-choice-close-btn" class="modal-close" title="Fechar">
+                    <button id="upload-choice-close-btn" class="modal-close" title="Close">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
@@ -2079,7 +2079,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                             <circle cx="12" cy="13" r="4"></circle>
                         </svg>
-                        <span>Tirar Foto / Câmara</span>
+                        <span>Take Photo / Camera</span>
                     </button>
                     <button id="choice-files-btn" class="upload-choice-btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2089,7 +2089,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                             <line x1="16" y1="17" x2="8" y2="17"></line>
                             <polyline points="10 9 9 9 8 9"></polyline>
                         </svg>
-                        <span>Escolher Ficheiros / Galeria</span>
+                        <span>Choose Files / Gallery</span>
                     </button>
                 </div>
             </div>
@@ -2105,24 +2105,24 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
-                        <span>Definições</span>
+                        <span>Settings</span>
                     </div>
-                    <button id="settings-close-btn" class="modal-close" title="Fechar">&times;</button>
+                    <button id="settings-close-btn" class="modal-close" title="Close">&times;</button>
                 </div>
                 <div class="modal-body" style="padding:4px 0;display:flex;flex-direction:column;gap:14px;">
-                    <!-- 1. Tamanho da Letra -->
+                    <!-- 1. Font Size -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5h3v14"></path><path d="M2 7h7"></path><path d="M14 19l4-10 4 10"></path><path d="M15.5 15h5"></path></svg>
-                            <span>Tamanho da Letra</span>
+                            <span>Font Size</span>
                         </div>
                         <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin:10px 0 12px 0;">
-                            <button id="font-dec-btn" class="modal-btn modal-btn-sec" style="width:38px;height:38px;font-size:18px;font-weight:bold;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px;" title="Diminuir tamanho (Ctrl + -)">−</button>
+                            <button id="font-dec-btn" class="modal-btn modal-btn-sec" style="width:38px;height:38px;font-size:18px;font-weight:bold;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px;" title="Decrease font size (Ctrl + -)">−</button>
                             <div style="text-align:center;min-width:68px;">
                                 <div id="font-size-display" style="font-size:22px;font-weight:700;color:#f8fafc;font-family:ui-monospace,monospace;line-height:1.1;">14px</div>
-                                <div style="font-size:10.5px;color:#64748b;margin-top:2px;">Tamanho atual</div>
+                                <div style="font-size:10.5px;color:#64748b;margin-top:2px;">Current size</div>
                             </div>
-                            <button id="font-inc-btn" class="modal-btn modal-btn-sec" style="width:38px;height:38px;font-size:18px;font-weight:bold;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px;" title="Aumentar tamanho (Ctrl + +)">+</button>
+                            <button id="font-inc-btn" class="modal-btn modal-btn-sec" style="width:38px;height:38px;font-size:18px;font-weight:bold;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px;" title="Increase font size (Ctrl + +)">+</button>
                         </div>
                         <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;margin-bottom:8px;">
                             <button class="font-preset-btn" data-size="11">11px</button>
@@ -2135,80 +2135,80 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                             <button class="font-preset-btn" data-size="24">24px</button>
                         </div>
                         <div style="display:flex;justify-content:flex-end;">
-                            <button id="font-reset-btn" style="background:none;border:none;color:#58a6ff;font-size:11.5px;cursor:pointer;text-decoration:underline;">Repor predefinição (14px)</button>
+                            <button id="font-reset-btn" style="background:none;border:none;color:#58a6ff;font-size:11.5px;cursor:pointer;text-decoration:underline;">Reset default (14px)</button>
                         </div>
                     </div>
 
-                    <!-- 2. Cor do Menu Flutuante -->
+                    <!-- 2. Floating Menu Theme -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                            <span>Cor do Menu Flutuante</span>
+                            <span>Floating Menu Theme</span>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-                            <button id="theme-light-btn" class="settings-option-btn active" title="Menu na cor Branca (Padrão)">
+                            <button id="theme-light-btn" class="settings-option-btn active" title="White / Light Theme (Default)">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                                <span>Branco (Padrão)</span>
+                                <span>Light (Default)</span>
                             </button>
-                            <button id="theme-dark-btn" class="settings-option-btn" title="Menu na cor Escura">
+                            <button id="theme-dark-btn" class="settings-option-btn" title="Dark Theme">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                                <span>Escuro</span>
+                                <span>Dark</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- 3. Voz da IA (Leitor TTS) -->
+                    <!-- 3. AI Voice (TTS Engine) -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                            <span>Voz da IA (Leitor TTS)</span>
+                            <span>AI Voice (TTS Reader)</span>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-                            <button id="tts-browser-btn" class="settings-option-btn active" title="Leitor Nativo do Navegador (Web Speech API - Padrão)">
+                            <button id="tts-browser-btn" class="settings-option-btn active" title="Browser Native Voice (Web Speech API - Default)">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                                <span>Browser (Padrão)</span>
+                                <span>Browser (Default)</span>
                             </button>
-                            <button id="tts-microsoft-btn" class="settings-option-btn" title="Voz Neural Microsoft (Edge TTS)">
+                            <button id="tts-microsoft-btn" class="settings-option-btn" title="Microsoft Neural Voice (Edge TTS)">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg>
                                 <span>Microsoft Neural</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- 3. Modo Debugger / Notificações -->
+                    <!-- 4. Debugger Mode / Notifications -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
-                            <span>Modo Debugger (Notificações)</span>
+                            <span>Debugger Mode (Notifications)</span>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-                            <button id="debug-off-btn" class="settings-option-btn active" title="Desativar notificações informativas ao clicar no microfone ou conversa">
+                            <button id="debug-off-btn" class="settings-option-btn active" title="Disable floating toast notifications on click">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-                                <span>Desativado (Padrão)</span>
+                                <span>Disabled (Default)</span>
                             </button>
-                            <button id="debug-on-btn" class="settings-option-btn" title="Ativar balões e avisos de estado ao clicar no microfone ou conversa">
+                            <button id="debug-on-btn" class="settings-option-btn" title="Enable floating toast notifications on click">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M4.93 4.93l2.83 2.83"></path><path d="M16.24 16.24l2.83 2.83"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M4.93 19.07l2.83-2.83"></path><path d="M16.24 7.76l2.83-2.83"></path></svg>
-                                <span>Ativado</span>
+                                <span>Enabled</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- 4. Atalhos de Teclado -->
+                    <!-- 5. Keyboard Shortcuts -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6.01" y2="8"></line><line x1="10" y1="8" x2="10.01" y2="8"></line><line x1="14" y1="8" x2="14.01" y2="8"></line><line x1="18" y1="8" x2="18.01" y2="8"></line><line x1="8" y1="12" x2="8.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="16" y1="12" x2="16.01" y2="12"></line><line x1="6" y1="16" x2="18" y2="16"></line></svg>
-                            <span>Atalhos do Sistema</span>
+                            <span>System Shortcuts</span>
                         </div>
                         <div style="margin-top:8px;">
-                            <button id="settings-shortcuts-action-btn" class="settings-action-btn" style="width:100%" title="Ver Atalhos de Teclado">
+                            <button id="settings-shortcuts-action-btn" class="settings-action-btn" style="width:100%" title="View Keyboard Shortcuts">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6.01" y2="8"></line><line x1="10" y1="8" x2="10.01" y2="8"></line><line x1="14" y1="8" x2="14.01" y2="8"></line><line x1="18" y1="8" x2="18.01" y2="8"></line><line x1="8" y1="12" x2="8.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="16" y1="12" x2="16.01" y2="12"></line><line x1="6" y1="16" x2="18" y2="16"></line></svg>
-                                <span>Ver Atalhos de Teclado</span>
+                                <span>View Keyboard Shortcuts</span>
                             </button>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer" style="margin-top:10px;padding-top:10px;">
-                    <button id="settings-ok-btn" class="modal-btn">Concluído</button>
+                    <button id="settings-ok-btn" class="modal-btn">Done</button>
                 </div>
             </div>
         `;
@@ -2230,52 +2230,52 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                             <line x1="16" y1="12" x2="16.01" y2="12"></line>
                             <line x1="6" y1="16" x2="18" y2="16"></line>
                         </svg>
-                        Atalhos de Teclado
+                        Keyboard Shortcuts
                     </div>
-                    <button id="shortcuts-close-btn" class="modal-close" title="Fechar">
+                    <button id="shortcuts-close-btn" class="modal-close" title="Close">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="shortcut-row">
-                        <div class="shortcut-desc">Cancelar Microfone / Conversa / Fechar Janelas</div>
+                        <div class="shortcut-desc">Cancel Microphone / Conversation / Close Modals</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Esc</span></div>
                     </div>
                     <div class="shortcut-row">
-                        <div class="shortcut-desc">Ativar / Parar Ditado por Voz</div>
+                        <div class="shortcut-desc">Start / Stop Voice Dictation</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">K</span></div>
                     </div>
                     <div class="shortcut-row">
-                        <div class="shortcut-desc">Ligar / Desligar Modo Conversa</div>
+                        <div class="shortcut-desc">Toggle Conversation Mode</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">L</span></div>
                     </div>
                     <div class="shortcut-row">
-                        <div class="shortcut-desc">Aumentar / Diminuir Tamanho da Letra</div>
+                        <div class="shortcut-desc">Increase / Decrease Font Size</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">+</span> / <span class="shortcut-key">-</span></div>
                     </div>
                     <div class="shortcut-row">
-                        <div class="shortcut-desc">Recarregar Terminal / Página</div>
+                        <div class="shortcut-desc">Reload Terminal / Page</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">R</span> / <span class="shortcut-key">F5</span></div>
                     </div>
                     <div class="shortcut-row">
-                        <div class="shortcut-desc">Copiar texto selecionado</div>
+                        <div class="shortcut-desc">Copy selected text</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">C</span></div>
                     </div>
                     <div class="shortcut-row">
-                        <div class="shortcut-desc">Colar texto no Terminal</div>
+                        <div class="shortcut-desc">Paste text into Terminal</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">V</span></div>
                     </div>
                     <div class="shortcut-row">
-                        <div class="shortcut-desc">Interromper fala da IA no Modo Conversa</div>
-                        <div class="shortcut-keys"><span class="shortcut-key">Espaço</span> ou <span class="shortcut-key">Backspace</span></div>
+                        <div class="shortcut-desc">Interrupt AI speech in Conversation Mode</div>
+                        <div class="shortcut-keys"><span class="shortcut-key">Space</span> or <span class="shortcut-key">Backspace</span></div>
                     </div>
                     <div class="shortcut-row">
-                        <div class="shortcut-desc">Anexar ficheiros / fotos ao terminal</div>
-                        <div class="shortcut-keys"><span class="shortcut-key">Arrastar & Largar</span></div>
+                        <div class="shortcut-desc">Attach files / photos to terminal</div>
+                        <div class="shortcut-keys"><span class="shortcut-key">Drag & Drop</span></div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button id="shortcuts-ok-btn" class="modal-btn">Fechar</button>
+                    <button id="shortcuts-ok-btn" class="modal-btn">Close</button>
                 </div>
             </div>
         `;
@@ -2287,8 +2287,8 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             <div class="quick-prompts-bubbles-track" id="quick-prompts-grid">
                 <div class="quick-prompt-bubble" style="opacity:0.7"><span>...</span></div>
             </div>
-            <button id="quick-prompts-all-btn" class="quick-prompt-bubble quick-action-bubble secondary" title="Abrir biblioteca completa de prompts">
-                <span>📚 Biblioteca</span>
+            <button id="quick-prompts-all-btn" class="quick-prompt-bubble quick-action-bubble secondary" title="Open full prompt library">
+                <span>📚 Library</span>
             </button>
         `;
 
@@ -2302,41 +2302,41 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                         </svg>
-                        Biblioteca de Prompts
+                        Prompt Library
                     </div>
-                    <button id="prompts-close-btn" class="modal-close" title="Fechar">
+                    <button id="prompts-close-btn" class="modal-close" title="Close">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
                 <div class="modal-body" id="prompts-list-view">
                     <div class="prompt-tabs">
-                        <button class="prompt-tab-btn active" data-tab="all">Todos</button>
-                        <button class="prompt-tab-btn" data-tab="quick">⚡ Rápidos (Bolhas)</button>
-                        <button class="prompt-tab-btn" data-tab="standard">📝 Detalhados</button>
+                        <button class="prompt-tab-btn active" data-tab="all">All</button>
+                        <button class="prompt-tab-btn" data-tab="quick">⚡ Quick (Bubbles)</button>
+                        <button class="prompt-tab-btn" data-tab="standard">📝 Detailed</button>
                     </div>
                     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
                         <div class="prompt-search-wrapper">
                             <div class="prompt-search-icon">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                             </div>
-                            <input type="text" id="prompt-search-input" placeholder="Pesquisar por título ou conteúdo..." class="prompt-search-box">
+                            <input type="text" id="prompt-search-input" placeholder="Search by title or content..." class="prompt-search-box">
                         </div>
                         <button id="new-prompt-btn" class="modal-btn" style="white-space:nowrap;padding:7px 12px;font-size:12px">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            Novo
+                            + New
                         </button>
                     </div>
                     <div class="prompts-container" id="prompts-cards-container"></div>
                     <div class="prompts-pagination" id="prompts-pagination" style="display:none">
                         <div id="prompt-pagination-info">0 prompts</div>
                         <div class="pagination-controls">
-                            <button id="prompt-prev-page-btn" class="pagination-btn" title="Página anterior">
+                            <button id="prompt-prev-page-btn" class="pagination-btn" title="Previous page">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                Anterior
+                                Previous
                             </button>
                             <span id="prompt-page-indicator" class="pagination-indicator">1 / 1</span>
-                            <button id="prompt-next-page-btn" class="pagination-btn" title="Página seguinte">
-                                Seguinte
+                            <button id="prompt-next-page-btn" class="pagination-btn" title="Next page">
+                                Next
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </button>
                         </div>
@@ -2344,29 +2344,29 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 </div>
                 <div class="modal-body" id="prompts-edit-view" style="display:none">
                     <div class="prompt-form-group">
-                        <label class="prompt-form-label" for="prompt-input-title">Título / Nome do Comando</label>
-                        <input type="text" id="prompt-input-title" class="prompt-form-input" placeholder="Ex: /new ou Refatorar Código...">
+                        <label class="prompt-form-label" for="prompt-input-title">Title / Command Name</label>
+                        <input type="text" id="prompt-input-title" class="prompt-form-input" placeholder="e.g. /new or Refactor Code...">
                     </div>
                     <div class="prompt-form-group">
-                        <label class="prompt-form-label" for="prompt-input-content">Conteúdo do Prompt</label>
-                        <textarea id="prompt-input-content" class="prompt-form-textarea" placeholder="Escreve o comando ou o texto do prompt..."></textarea>
+                        <label class="prompt-form-label" for="prompt-input-content">Prompt Content</label>
+                        <textarea id="prompt-input-content" class="prompt-form-textarea" placeholder="Write the command or prompt text..."></textarea>
                         <div style="font-size:11.5px;color:#94a3b8;margin-top:6px;line-height:1.5;background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.05);">
-                            💡 <b>Comandos de automação suportados:</b> <code class="modal-code">{sleep:5}</code> (aguarda 5s), <code class="modal-code">{enter}</code> (tecla Enter), <code class="modal-code">{tab}</code> (Tab), <code class="modal-code">{ctrl+c}</code>, <code class="modal-code">{esc}</code>
+                            💡 <b>Supported automation commands:</b> <code class="modal-code">{sleep:5}</code> (waits 5s), <code class="modal-code">{enter}</code> (Enter key), <code class="modal-code">{tab}</code> (Tab), <code class="modal-code">{ctrl+c}</code>, <code class="modal-code">{esc}</code>
                         </div>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;background:rgba(0,0,0,0.2);padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
                         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;color:#f8fafc;">
                             <input type="checkbox" id="prompt-input-is-quick" style="cursor:pointer;accent-color:#38bdf8;width:15px;height:15px;">
-                            <span>⚡ <strong>Prompt Rápido</strong> (Aparece como bolha no menu rápido de 1 clique)</span>
+                            <span>⚡ <strong>Quick Prompt</strong> (Appears as 1-click bubble in quick menu)</span>
                         </label>
                         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#94a3b8;margin-left:23px;">
                             <input type="checkbox" id="prompt-input-auto-enter" style="cursor:pointer;accent-color:#38bdf8;width:14px;height:14px;">
-                            <span>Executar automaticamente ao clicar (Enviar Enter no terminal)</span>
+                            <span>Execute automatically on click (Send Enter to terminal)</span>
                         </label>
                     </div>
                     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
-                        <button id="cancel-prompt-btn" class="modal-btn modal-btn-sec">Cancelar</button>
-                        <button id="save-prompt-btn" class="modal-btn">Guardar Prompt</button>
+                        <button id="cancel-prompt-btn" class="modal-btn modal-btn-sec">Cancel</button>
+                        <button id="save-prompt-btn" class="modal-btn">Save Prompt</button>
                     </div>
                 </div>
             </div>
@@ -2381,8 +2381,8 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                     </svg>
                 </div>
-                <div class="file-drop-title">Solte os ficheiros aqui</div>
-                <div class="file-drop-desc">Os anexos serão associados à sua conversa</div>
+                <div class="file-drop-title">Drop files here</div>
+                <div class="file-drop-desc">Attachments will be linked to your session</div>
             </div>
         `;
 
@@ -2443,11 +2443,11 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             if (!voiceToolbar) return;
             var isCollapsed = voiceToolbar.classList.contains('collapsed');
             if (collapseBtn) {
-                collapseBtn.title = isCollapsed ? 'Expandir barra' : 'Minimizar barra';
-                collapseBtn.setAttribute('aria-label', isCollapsed ? 'Expandir barra' : 'Minimizar barra');
+                collapseBtn.title = isCollapsed ? 'Expand toolbar' : 'Collapse toolbar';
+                collapseBtn.setAttribute('aria-label', isCollapsed ? 'Expand toolbar' : 'Collapse toolbar');
             }
             if (dragHandle) {
-                dragHandle.title = 'Arrastar para mover';
+                dragHandle.title = 'Drag to move';
             }
             if (isCollapsed) {
                 if (isConversationMode) {
@@ -2475,15 +2475,15 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             if (!isVoiceEnabled) {
                 micBtn.classList.add('disabled');
                 micBtn.classList.remove('recording');
-                micBtn.title = 'Microfone desativado: ' + (voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no .env');
+                micBtn.title = 'Microphone disabled: ' + (voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY and VOICE_GROQ_MODEL in .env');
             } else {
                 micBtn.classList.remove('disabled');
                 if (isRecording) {
                     micBtn.classList.add('recording');
-                    micBtn.title = isConversationMode ? 'A gravar... Clique para enviar agora' : 'A gravar áudio... Clique para processar e enviar';
+                    micBtn.title = isConversationMode ? 'Recording... Click to send now' : 'Recording audio... Click to process and send';
                 } else {
                     micBtn.classList.remove('recording');
-                    micBtn.title = isConversationMode ? 'Modo Conversa (Clique para falar)' : 'Ditado por Voz (Clique para falar prompt)';
+                    micBtn.title = isConversationMode ? 'Conversation Mode (Click to speak)' : 'Voice Dictation (Click to speak prompt)';
                 }
             }
         }
@@ -2492,24 +2492,24 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             if (!talkBtn) return;
             if (!isVoiceEnabled) {
                 talkBtn.className = 'voice-btn disabled';
-                talkBtn.title = 'Conversa desativada: ' + (voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no .env');
+                talkBtn.title = 'Conversation disabled: ' + (voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY and VOICE_GROQ_MODEL in .env');
                 updateCollapseState();
                 return;
             }
             if (isConversationMode) {
                 if (isSpeaking) {
                     talkBtn.className = 'voice-btn active speaking';
-                    talkBtn.title = 'A IA está a falar... Clique para interromper e falar';
+                    talkBtn.title = 'AI is speaking... Click to interrupt and talk';
                 } else if (isRecording) {
                     talkBtn.className = 'voice-btn active';
-                    talkBtn.title = 'A ouvir a sua voz... Clique para desligar modo conversa';
+                    talkBtn.title = 'Listening to your voice... Click to turn off conversation';
                 } else {
                     talkBtn.className = 'voice-btn active';
-                    talkBtn.title = 'Modo Conversa Ativo (Clique para desligar)';
+                    talkBtn.title = 'Conversation Mode Active (Click to turn off)';
                 }
             } else {
                 talkBtn.className = 'voice-btn';
-                talkBtn.title = 'Iniciar Modo Conversa (Diálogo contínuo por voz)';
+                talkBtn.title = 'Start Conversation Mode (Continuous voice dialogue)';
             }
             updateCollapseState();
         }
@@ -2643,17 +2643,17 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
         if (previewBox && !previewBox.__copyClickHooked) {
             previewBox.__copyClickHooked = true;
-            previewBox.title = 'Clique para copiar texto para a área de transferência';
+            previewBox.title = 'Click to copy text to clipboard';
             previewBox.addEventListener('click', function(e) {
                 var textToCopy = previewText ? previewText.textContent : '';
                 if (textToCopy && textToCopy.trim()) {
                     copyToClipboard(textToCopy.trim(), { noRefresh: true }).then(function(ok) {
                         if (ok) {
                             var origStatus = previewStatus ? previewStatus.textContent : '';
-                            if (previewStatus) previewStatus.textContent = '✓ Copiado para a área de transferência!';
+                            if (previewStatus) previewStatus.textContent = '✓ Copied to clipboard!';
                             setTimeout(function() {
-                                if (previewStatus && previewStatus.textContent === '✓ Copiado para a área de transferência!') {
-                                    previewStatus.textContent = origStatus || 'Transcrição';
+                                if (previewStatus && previewStatus.textContent === '✓ Copied to clipboard!') {
+                                    previewStatus.textContent = origStatus || 'Transcription';
                                 }
                             }, 1800);
                         }
@@ -2707,10 +2707,10 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 var targetHttpsUrl = 'https://' + location.hostname + ':7681';
                 copyToClipboard(targetHttpsUrl, { noRefresh: true }).then(function(ok) {
                     if (ok) {
-                        micCopyUrlBtn.textContent = '✓ Copiado!';
-                        setTimeout(function() { micCopyUrlBtn.textContent = 'Copiar URL HTTPS'; }, 2000);
+                        micCopyUrlBtn.textContent = '✓ Copied!';
+                        setTimeout(function() { micCopyUrlBtn.textContent = 'Copy HTTPS URL'; }, 2000);
                     } else {
-                        prompt('Copiar URL HTTPS:', targetHttpsUrl);
+                        prompt('Copy HTTPS URL:', targetHttpsUrl);
                     }
                 });
             });
@@ -2741,7 +2741,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     return isValid;
                 }
             } catch(e) {}
-            updateVoiceButtonsState(false, 'Servidor de voz indisponível');
+            updateVoiceButtonsState(false, 'Voice server unavailable');
             return false;
         }
 
@@ -3114,7 +3114,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     isSpeaking = false;
                     updateTalkButton();
                     if (isConversationMode) {
-                        showPreview('A sua vez...', 'Pode falar para responder...', false, true);
+                        showPreview('Your turn...', 'You can speak to answer...', false, true);
                         setTimeout(function() {
                             if (isConversationMode && !isRecording && !isSpeaking) {
                                 startGroqVoiceRecording();
@@ -3197,7 +3197,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         isSpeaking = false;
                         updateTalkButton();
                         if (isConversationMode) {
-                            showPreview('A sua vez...', 'Pode falar para responder...', false, true);
+                            showPreview('Your turn...', 'You can speak to answer...', false, true);
                             setTimeout(function() {
                                 if (isConversationMode && !isRecording && !isSpeaking) {
                                     startGroqVoiceRecording();
@@ -3240,7 +3240,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
             var currentProvider = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser';
 
-            showPreview('A Falar (' + (configuredLang || 'PT') + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
+            showPreview('Speaking (' + (configuredLang || 'EN') + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
             hidePreview(4000);
 
             if (currentProvider === 'browser') {
@@ -3464,10 +3464,10 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                             speechDetected = true;
                             lastVoiceTime = now;
                             if (previewStatus) {
-                                previewStatus.textContent = isConversationMode ? 'Modo Conversa: A ouvir...' : 'A gravar áudio...';
+                                previewStatus.textContent = isConversationMode ? 'Conversation Mode: Listening...' : 'Recording audio...';
                             }
                             if (previewText) {
-                                previewText.textContent = 'Voz detetada...';
+                                previewText.textContent = 'Voice detected...';
                             }
                         }
                     } else {
@@ -3478,11 +3478,11 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         var silenceDuration = now - lastVoiceTime;
                         if (silenceDuration >= 1000) {
                             if (previewStatus) {
-                                previewStatus.textContent = 'Silêncio detetado';
+                                previewStatus.textContent = 'Silence detected';
                             }
                             if (previewText) {
                                 var remaining = Math.max(0, ((3800 - silenceDuration) / 1000)).toFixed(1);
-                                previewText.textContent = 'A finalizar em ' + remaining + 's...';
+                                previewText.textContent = 'Finalizing in ' + remaining + 's...';
                             }
                         }
                         // Stop automatically after ~3800ms (3.8s) of silence after speaking
@@ -3543,7 +3543,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                     // If no voice was ever detected (timed out)
                     if (!speechDetected && (Date.now() - recordStartTime >= 9500)) {
-                        showPreview('Nenhuma voz detetada', 'Fale mais perto do microfone.', true, false);
+                        showPreview('No speech detected', 'Speak closer to the microphone.', true, false);
                         hidePreview(3000);
                         if (isConversationMode) {
                             setTimeout(function() {
@@ -3555,7 +3555,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         return;
                     }
 
-                    showPreview('A transcrever...', 'A processar com IA...', false, false);
+                    showPreview('Transcribing...', 'Processing with AI...', false, false);
 
                     try {
                         var audioBlob = new Blob(audioChunks, { type: audioChunks[0].type || 'audio/webm' });
@@ -3581,10 +3581,10 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                             // In conversation mode: always auto-enter and trigger AI response wait
                             var autoSend = isConversationMode;
                             window.sendTextToTerminal(text, autoSend);
-                            showPreview(text, isConversationMode ? 'Enviado para a IA...' : 'Inserido no terminal.', false, false);
+                            showPreview(text, isConversationMode ? 'Sent to AI...' : 'Inserted into terminal.', false, false);
                             if (!isConversationMode) hidePreview(2500);
                         } else if (resp.ok && !text) {
-                            showPreview('Nenhuma fala reconhecida', 'Fale mais perto do microfone.', true, false);
+                            showPreview('No speech recognized', 'Speak closer to the microphone.', true, false);
                             hidePreview(3000);
                             if (isConversationMode) {
                                 setTimeout(function() {
@@ -3594,17 +3594,17 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                                 }, 1000);
                             }
                         } else if (data.isGroqValid === false || data.error === 'INVALID_GROQ_KEY' || data.error === 'INVALID_GROQ_MODEL' || data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
-                            updateVoiceButtonsState(false, data.message || 'Chave ou modelo Groq inválido.');
-                            showPreview('Voz Desativada', data.message || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
+                            updateVoiceButtonsState(false, data.message || 'Invalid Groq API key or model.');
+                            showPreview('Voice Disabled', data.message || 'Configure VOICE_GROQ_API_KEY and VOICE_GROQ_MODEL in .env', true, false);
                             hidePreview(5000);
                             if (isConversationMode) toggleConversationMode();
                         } else {
-                            showPreview('Erro na Transcrição', (data.message || data.error || 'Nenhuma fala reconhecida.'), true, false);
+                            showPreview('Transcription Error', (data.message || data.error || 'No speech recognized.'), true, false);
                             hidePreview(3500);
                         }
                     } catch(err) {
                         console.error('Groq transcription fetch error:', err);
-                        showPreview('Erro de Ligação', 'Não foi possível ligar ao servidor de transcrição.', true, false);
+                        showPreview('Connection Error', 'Could not connect to transcription server.', true, false);
                         hidePreview(3500);
                     }
                 };
@@ -3619,8 +3619,8 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 if (voiceToolbar) voiceToolbar.classList.add('recording');
                 updateTalkButton();
                 showPreview(
-                    isConversationMode ? 'Modo Conversa: Pode falar...' : 'A gravar áudio...',
-                    'A transcrição inicia automaticamente ao terminar de falar.',
+                    isConversationMode ? 'Conversation Mode: You can speak...' : 'Recording audio...',
+                    'Transcription starts automatically when you stop speaking.',
                     false,
                     true
                 );
@@ -3640,13 +3640,13 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 var isInsecure = !isHttps && !isLocal && (err.name === 'InsecureOriginError' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia);
 
                 if (isInsecure) {
-                    showPreview('Microfone Bloqueado (HTTP)', 'Dispositivos móveis requerem HTTPS ou configuração do navegador.', true, false);
+                    showPreview('Microphone Blocked (HTTP)', 'Mobile devices require HTTPS or browser configuration.', true, false);
                     showMicPermissionModal();
                 } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    showPreview('Permissão Recusada', 'Por favor autorize o acesso ao microfone nas definições do navegador.', true, false);
+                    showPreview('Permission Denied', 'Please allow microphone access in browser settings.', true, false);
                     if (isFirefox) showFirefoxModal();
                 } else {
-                    showPreview('Erro no Microfone', err.message || 'Não foi possível aceder ao microfone.', true, false);
+                    showPreview('Microphone Error', err.message || 'Could not access microphone.', true, false);
                 }
                 hidePreview(4500);
                 if (isConversationMode) toggleConversationMode();
@@ -3657,7 +3657,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
         function toggleConversationMode() {
             if (!isConversationMode && !isVoiceEnabled) {
-                showPreview('Conversa Desativada', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
+                showPreview('Conversation Disabled', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY and VOICE_GROQ_MODEL in .env', true, false);
                 hidePreview(5000);
                 return;
             }
@@ -3675,7 +3675,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 }
                 updateTalkButton();
                 playConversationStopSound();
-                showPreview('Modo Conversa Desativado', 'Pode usar o microfone para ditado normal.', false, false);
+                showPreview('Conversation Mode Deactivated', 'You can use the microphone for normal dictation.', false, false);
                 hidePreview(2500);
                 restoreTerminalFocus();
                 syncInitialMessageId();
@@ -3687,7 +3687,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 syncInitialMessageId();
                 updateTalkButton();
                 playConversationStartSound();
-                showPreview('Modo Conversa Ativado', 'Fale para o microfone. A IA responderá e voltará a ouvir.', false, false);
+                showPreview('Conversation Mode Activated', 'Speak into the microphone. AI will respond and listen again.', false, false);
                 
                 if (conversationPollTimer) clearInterval(conversationPollTimer);
                 conversationPollTimer = setInterval(checkForNewAiResponse, 1000);
@@ -3708,16 +3708,16 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             }
 
             if (!isVoiceEnabled) {
-                showPreview('Conversa Desativada', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
+                showPreview('Conversation Disabled', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY and VOICE_GROQ_MODEL in .env', true, false);
                 hidePreview(5000);
                 return;
             }
 
-            // Se estiver em modo conversa e a IA estiver a falar (áudio a reproduzir):
-            // Não desliga a conversa! Interrompe o áudio da IA e passa logo para o modo de ouvir a voz do utilizador.
+            // If in conversation mode and AI is speaking (audio playback active):
+            // Do not turn off conversation! Interrupt AI audio and immediately switch to listening to the user's voice.
             if (isConversationMode && isSpeaking) {
                 stopSpeaking();
-                showPreview('Interrompido', 'Pode falar agora...', false, true);
+                showPreview('Interrupted', 'You can speak now...', false, true);
                 if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
                     showFirefoxModal('talk');
                     return;
@@ -3726,20 +3726,20 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 return;
             }
 
-            // Caso contrário, ativa ou desativa o modo conversa
+            // Otherwise, toggle conversation mode on/off
             toggleConversationMode();
         }
         window.triggerConversationMode = handleTalkButtonClick;
 
         window.triggerVoiceRecognition = function() {
             if (!isVoiceEnabled) {
-                showPreview('Microfone Desativado', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
+                showPreview('Microphone Disabled', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY and VOICE_GROQ_MODEL in .env', true, false);
                 hidePreview(5000);
                 return;
             }
 
-            // Se a IA estiver a falar e o utilizador clicar no microfone:
-            // Interrompe a leitura de imediato e começa a ouvir o utilizador
+            // If AI is speaking and user clicks microphone:
+            // Interrupt TTS immediately and start listening to user
             if (isSpeaking) {
                 stopSpeaking();
                 if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
@@ -3750,8 +3750,8 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 return;
             }
 
-            // Se o microfone estiver a gravar:
-            // Para a gravação imediatamente e processa/envia a mensagem para o terminal (sem desligar a conversa)
+            // If microphone is currently recording:
+            // Stop recording immediately and process/send message to terminal (without turning off conversation)
             if (isRecording || (mediaRecorder && mediaRecorder.state === 'recording')) {
                 if (mediaRecorder && mediaRecorder.state === 'recording') {
                     try {
@@ -3769,7 +3769,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 return;
             }
 
-            // Se não estiver a gravar: inicia a gravação de voz
+            // If not recording: start voice recording
             if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
                 showFirefoxModal(isConversationMode ? 'talk' : 'mic');
                 return;
@@ -3812,7 +3812,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             });
 
             if (wasActive && showFeedback !== false) {
-                showPreview('Cancelado (ESC)', 'Microfone e modo conversa desativados.', false, false);
+                showPreview('Cancelled (ESC)', 'Microphone and conversation mode deactivated.', false, false);
                 hidePreview(2000);
             } else if (!wasActive) {
                 hidePreview(0);
@@ -3838,7 +3838,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             }
 
             if (uploadBtn) uploadBtn.classList.add('uploading');
-            showPreview('A enviar anexo(s)...', 'A processar ' + files.length + ' ficheiro(s)...', false, false);
+            showPreview('Uploading attachment(s)...', 'Processing ' + files.length + ' file(s)...', false, false);
 
             try {
                 var resp = await fetch('/api/upload', {
@@ -3851,7 +3851,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     window.sendTextToTerminal(references + ' ', false);
 
                     var names = data.files.map(function(f) { return f.name; }).join(', ');
-                    showPreview('Anexo(s) adicionado(s)', names + ' associado(s) ao terminal.', false, false);
+                    showPreview('Attachment(s) added', names + ' attached to terminal.', false, false);
                     hidePreview(3500);
 
                     // If in conversation mode, prompt user to speak prompt
@@ -3863,12 +3863,12 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         }, 600);
                     }
                 } else {
-                    showPreview('Erro no Upload', data.message || data.error || 'Falha ao processar ficheiros.', true, false);
+                    showPreview('Upload Error', data.message || data.error || 'Failed to process files.', true, false);
                     hidePreview(4000);
                 }
             } catch(err) {
                 console.error('Upload fetch error:', err);
-                showPreview('Erro no Envio', 'Não foi possível ligar ao servidor de upload.', true, false);
+                showPreview('Upload Error', 'Could not connect to upload server.', true, false);
                 hidePreview(4000);
             } finally {
                 if (uploadBtn) uploadBtn.classList.remove('uploading');
@@ -4033,7 +4033,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
             if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
                 try {
-                    window.__ttyd_xterm.overlayAddon.showOverlay(isDark ? 'Tema: Escuro' : 'Tema: Branco', 350);
+                    window.__ttyd_xterm.overlayAddon.showOverlay(isDark ? 'Theme: Dark' : 'Theme: Light', 350);
                 } catch(e) {}
             }
         }
@@ -4079,7 +4079,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
             if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
                 try {
-                    window.__ttyd_xterm.overlayAddon.showOverlay(selected === 'microsoft' ? 'Voz: Microsoft Neural' : 'Voz: Browser (Padrão)', 350);
+                    window.__ttyd_xterm.overlayAddon.showOverlay(selected === 'microsoft' ? 'Voice: Microsoft Neural' : 'Voice: Browser (Default)', 350);
                 } catch(e) {}
             }
         }
@@ -4117,7 +4117,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             updateDebugModalUI(isEnabled);
             if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
                 try {
-                    window.__ttyd_xterm.overlayAddon.showOverlay(isEnabled ? 'Debugger: Ativado' : 'Debugger: Desativado', 350);
+                    window.__ttyd_xterm.overlayAddon.showOverlay(isEnabled ? 'Debugger: Enabled' : 'Debugger: Disabled', 350);
                 } catch(e) {}
             }
         }
@@ -4203,7 +4203,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             if (btn) btn.classList.add('rotating');
             if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
                 try {
-                    window.__ttyd_xterm.overlayAddon.showOverlay('A recarregar...', 400);
+                    window.__ttyd_xterm.overlayAddon.showOverlay('Reloading...', 400);
                 } catch(e) {}
             }
             setTimeout(function() {
@@ -4310,7 +4310,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
         async function fetchQuickPrompts() {
             if (!quickPromptsGrid) return;
-            quickPromptsGrid.innerHTML = '<button class="quick-prompt-bubble" style="opacity:0.75;cursor:default;"><span>A carregar...</span></button>';
+            quickPromptsGrid.innerHTML = '<button class="quick-prompt-bubble" style="opacity:0.75;cursor:default;"><span>Loading...</span></button>';
 
             try {
                 var resp = await fetch('/api/prompts/quick');
@@ -4319,7 +4319,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                 quickPromptsGrid.innerHTML = '';
                 if (list.length === 0) {
-                    quickPromptsGrid.innerHTML = '<button class="quick-prompt-bubble" style="opacity:0.65;cursor:default;border-style:dashed;"><span>Sem comandos</span></button>';
+                    quickPromptsGrid.innerHTML = '<button class="quick-prompt-bubble" style="opacity:0.65;cursor:default;border-style:dashed;"><span>No commands</span></button>';
                     return;
                 }
 
@@ -4335,7 +4335,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         if (quickPromptsPopover) quickPromptsPopover.classList.remove('active');
                         var autoEnter = Boolean(p.auto_enter);
                         window.sendTextToTerminal(p.content, autoEnter, autoEnter ? 1000 : 0);
-                        showPreview('⚡ ' + (p.title || p.content), autoEnter ? 'A executar em 1s...' : 'Inserido no terminal.', false, false);
+                        showPreview('⚡ ' + (p.title || p.content), autoEnter ? 'Executing in 1s...' : 'Inserted into terminal.', false, false);
                         hidePreview(2500);
                         window.focusTerminal();
                     });
@@ -4344,7 +4344,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 });
             } catch(err) {
                 console.error('Error loading quick prompts:', err);
-                quickPromptsGrid.innerHTML = '<button class="quick-prompt-bubble" style="color:#f87171;cursor:default;"><span>Erro ao carregar</span></button>';
+                quickPromptsGrid.innerHTML = '<button class="quick-prompt-bubble" style="color:#f87171;cursor:default;"><span>Error loading</span></button>';
             }
         }
 
@@ -4354,7 +4354,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             var activeTab = tabType || promptCurrentTab || 'all';
 
             if (promptsCardsContainer) {
-                promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#8b949e;font-size:13px">A carregar prompts da base de dados...</div>';
+                promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#8b949e;font-size:13px">Loading prompts from database...</div>';
             }
 
             try {
@@ -4372,7 +4372,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 var data = await resp.json();
 
                 if (!resp.ok) {
-                    throw new Error(data.message || data.error || 'Erro ao carregar prompts.');
+                    throw new Error(data.message || data.error || 'Error loading prompts.');
                 }
 
                 var prompts = data.prompts || [];
@@ -4385,7 +4385,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                 if (prompts.length === 0) {
                     promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#8b949e;font-size:13px">' + 
-                        (promptSearchQuery ? 'Nenhum prompt encontrado para a pesquisa.' : 'Nenhum prompt guardado nesta categoria.') + '</div>';
+                        (promptSearchQuery ? 'No prompts found for search.' : 'No prompts saved in this category.') + '</div>';
                     if (promptsPagination) promptsPagination.style.display = 'none';
                     return;
                 }
@@ -4404,13 +4404,13 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                     var title = document.createElement('div');
                     title.className = 'prompt-card-title';
-                    title.textContent = p.title || 'Sem Título';
+                    title.textContent = p.title || 'Untitled';
                     titleWrap.appendChild(title);
 
                     if (p.is_quick) {
                         var qBadge = document.createElement('span');
                         qBadge.className = 'prompt-quick-badge';
-                        qBadge.innerHTML = '⚡ Rápido' + (p.auto_enter ? ' ↵' : '');
+                        qBadge.innerHTML = '⚡ Quick' + (p.auto_enter ? ' ↵' : '');
                         titleWrap.appendChild(qBadge);
                     }
 
@@ -4425,7 +4425,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                     var editBtn = document.createElement('button');
                     editBtn.className = 'prompt-card-btn';
-                    editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg><span>Editar</span>';
+                    editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg><span>Edit</span>';
                     editBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         openEditPrompt(p);
@@ -4433,10 +4433,10 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                     var deleteBtn = document.createElement('button');
                     deleteBtn.className = 'prompt-card-btn delete-btn';
-                    deleteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span>Apagar</span>';
+                    deleteBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span>Delete</span>';
                     deleteBtn.addEventListener('click', async function(e) {
                         e.stopPropagation();
-                        if (confirm('Tens a certeza que queres apagar o prompt "' + (p.title || '') + '"?')) {
+                        if (confirm('Are you sure you want to delete the prompt "' + (p.title || '') + '"?')) {
                             try {
                                 var delResp = await fetch('/api/prompts/delete', {
                                     method: 'POST',
@@ -4450,26 +4450,26 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                                     fetchPromptsFromServer(promptCurrentPage, promptSearchQuery, promptCurrentTab);
                                     fetchQuickPrompts();
                                 } else {
-                                    alert('Não foi possível apagar o prompt.');
+                                    alert('Could not delete prompt.');
                                 }
                             } catch(err) {
                                 console.error('Delete prompt error:', err);
-                                alert('Erro de ligação ao apagar prompt.');
+                                alert('Connection error while deleting prompt.');
                             }
                         }
                     });
 
                     var copyBtn = document.createElement('button');
                     copyBtn.className = 'prompt-card-btn';
-                    copyBtn.title = 'Copiar conteúdo para a área de transferência';
-                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copiar</span>';
+                    copyBtn.title = 'Copy content to clipboard';
+                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>';
                     copyBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         copyToClipboard(p.content || '', { noRefresh: true }).then(function(ok) {
                             if (ok) {
-                                copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span style="color:#34d399">Copiado!</span>';
+                                copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span style="color:#34d399">Copied!</span>';
                                 setTimeout(function() {
-                                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copiar</span>';
+                                    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>';
                                 }, 1800);
                             }
                         });
@@ -4477,20 +4477,20 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                     var useBtn = document.createElement('button');
                     useBtn.className = 'prompt-card-btn use-btn';
-                    useBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span>Usar</span>';
+                    useBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span>Use</span>';
                     useBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         if (promptsModal) promptsModal.classList.remove('active');
                         var autoEnter = Boolean(p.auto_enter);
                         window.sendTextToTerminal(p.content, autoEnter, autoEnter ? 1000 : 0);
-                        showPreview('Prompt Inserido', p.title, false, false);
+                        showPreview('Prompt Inserted', p.title, false, false);
                         hidePreview(2500);
                         window.focusTerminal();
                     });
 
                     var moveUpBtn = document.createElement('button');
                     moveUpBtn.className = 'prompt-card-btn order-btn';
-                    moveUpBtn.title = 'Mover para Cima (Prioridade)';
+                    moveUpBtn.title = 'Move Up (Priority)';
                     moveUpBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>';
                     moveUpBtn.addEventListener('click', async function(e) {
                         e.stopPropagation();
@@ -4499,7 +4499,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                     var moveDownBtn = document.createElement('button');
                     moveDownBtn.className = 'prompt-card-btn order-btn';
-                    moveDownBtn.title = 'Mover para Baixo';
+                    moveDownBtn.title = 'Move Down';
                     moveDownBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
                     moveDownBtn.addEventListener('click', async function(e) {
                         e.stopPropagation();
@@ -4525,10 +4525,10 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 if (promptPaginationInfo) {
                     var startIdx = ((promptCurrentPage - 1) * PROMPT_PAGE_LIMIT) + 1;
                     var endIdx = Math.min(total, promptCurrentPage * PROMPT_PAGE_LIMIT);
-                    promptPaginationInfo.textContent = 'A mostrar ' + startIdx + '-' + endIdx + ' de ' + total + ' prompt(s)';
+                    promptPaginationInfo.textContent = 'Showing ' + startIdx + '-' + endIdx + ' of ' + total + ' prompt(s)';
                 }
                 if (promptPageIndicator) {
-                    promptPageIndicator.textContent = 'Página ' + promptCurrentPage + ' de ' + promptTotalPages;
+                    promptPageIndicator.textContent = 'Page ' + promptCurrentPage + ' of ' + promptTotalPages;
                 }
                 if (promptPrevPageBtn) {
                     promptPrevPageBtn.disabled = (promptCurrentPage <= 1);
@@ -4540,7 +4540,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             } catch(err) {
                 console.error('Fetch prompts error:', err);
                 if (promptsCardsContainer) {
-                    promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#ff7b72;font-size:13px">Erro ao aceder à base de dados SQLite: ' + (err.message || 'Falha de comunicação.') + '</div>';
+                    promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#ff7b72;font-size:13px">Error accessing SQLite database: ' + (err.message || 'Communication failure.') + '</div>';
                 }
                 if (promptsPagination) promptsPagination.style.display = 'none';
             }
@@ -4597,19 +4597,19 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             var auto_enter = promptInputAutoEnter ? (promptInputAutoEnter.checked ? 1 : 0) : 0;
 
             if (!title) {
-                alert('Por favor introduz um título para o prompt.');
+                alert('Please enter a title for the prompt.');
                 if (promptInputTitle) promptInputTitle.focus();
                 return;
             }
             if (!content) {
-                alert('Por favor introduz o conteúdo do prompt.');
+                alert('Please enter the prompt content.');
                 if (promptInputContent) promptInputContent.focus();
                 return;
             }
 
             if (savePromptBtn) {
                 savePromptBtn.disabled = true;
-                savePromptBtn.textContent = 'A guardar...';
+                savePromptBtn.textContent = 'Saving...';
             }
 
             try {
@@ -4631,15 +4631,15 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     fetchPromptsFromServer(editingPromptId ? promptCurrentPage : 1, promptSearchQuery, promptCurrentTab);
                     fetchQuickPrompts();
                 } else {
-                    alert('Erro ao guardar prompt: ' + (data.message || data.error || 'Erro desconhecido.'));
+                    alert('Error saving prompt: ' + (data.message || data.error || 'Unknown error.'));
                 }
             } catch(err) {
                 console.error('Save prompt error:', err);
-                alert('Erro de comunicação com o servidor.');
+                alert('Communication error with server.');
             } finally {
                 if (savePromptBtn) {
                     savePromptBtn.disabled = false;
-                    savePromptBtn.textContent = 'Guardar Prompt';
+                    savePromptBtn.textContent = 'Save Prompt';
                 }
             }
         }
@@ -4804,7 +4804,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 if (!isInputFocused) {
                     e.preventDefault();
                     stopSpeaking();
-                    showPreview('Fala Interrompida', 'Pode falar ou escrever...', false, false);
+                    showPreview('Speech Interrupted', 'You can speak or type...', false, false);
                     hidePreview(2000);
                     if (isConversationMode && !isRecording) {
                         setTimeout(function() {
@@ -4847,7 +4847,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                 if (selectedText && selectedText.length > 0) {
                     copyToClipboard(selectedText);
-                    showPreview('Copiado', (selectedText.length > 50 ? selectedText.substring(0, 50) + '...' : selectedText), false, false);
+                    showPreview('Copied', (selectedText.length > 50 ? selectedText.substring(0, 50) + '...' : selectedText), false, false);
                     hidePreview(1500);
                 }
             }

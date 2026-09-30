@@ -161,7 +161,7 @@ async function checkGroqStatus(forceRecheck = false) {
             checkedAt: Date.now(),
             isValid: false,
             error: 'MISSING_GROQ_KEY',
-            errorMessage: 'Chave VOICE_GROQ_API_KEY não configurada no ficheiro .env'
+            errorMessage: 'VOICE_GROQ_API_KEY is not configured in .env file'
         };
         return groqValidationCache;
     }
@@ -184,7 +184,7 @@ async function checkGroqStatus(forceRecheck = false) {
                 checkedAt: Date.now(),
                 isValid: false,
                 error: 'INVALID_GROQ_KEY',
-                errorMessage: errData.error?.message || 'Chave VOICE_GROQ_API_KEY inválida ou não autorizada no Groq.'
+                errorMessage: errData.error?.message || 'Invalid or unauthorized VOICE_GROQ_API_KEY in Groq API.'
             };
             return groqValidationCache;
         }
@@ -195,7 +195,7 @@ async function checkGroqStatus(forceRecheck = false) {
                 checkedAt: Date.now(),
                 isValid: false,
                 error: 'INVALID_GROQ_MODEL',
-                errorMessage: errData.error?.message || `O modelo de voz '${VOICE_GROQ_MODEL}' não existe na API da Groq.`
+                errorMessage: errData.error?.message || `Voice model '${VOICE_GROQ_MODEL}' does not exist in Groq API.`
             };
             return groqValidationCache;
         }
@@ -211,7 +211,7 @@ async function checkGroqStatus(forceRecheck = false) {
             checkedAt: Date.now(),
             isValid: false,
             error: 'GROQ_NETWORK_ERROR',
-            errorMessage: `Erro de ligação à API da Groq: ${err.message}`
+            errorMessage: `Connection error to Groq API: ${err.message}`
         };
     }
     return groqValidationCache;
@@ -222,7 +222,7 @@ async function handleTranscribe(req, res) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             error: 'GROQ_API_KEY_NOT_CONFIGURED',
-            message: 'Chave VOICE_GROQ_API_KEY não configurada no ficheiro .env',
+            message: 'VOICE_GROQ_API_KEY is not configured in .env file',
             isGroqValid: false
         }));
         return;
@@ -259,15 +259,15 @@ async function handleTranscribe(req, res) {
                 let errCode = 'GROQ_TRANSCRIPTION_ERROR';
                 if (groqResp.status === 401 || groqResp.status === 403) {
                     errCode = 'INVALID_GROQ_KEY';
-                    groqValidationCache = { checkedAt: Date.now(), isValid: false, error: errCode, errorMessage: data.error?.message || 'Chave VOICE_GROQ_API_KEY inválida.' };
+                    groqValidationCache = { checkedAt: Date.now(), isValid: false, error: errCode, errorMessage: data.error?.message || 'Invalid VOICE_GROQ_API_KEY.' };
                 } else if (groqResp.status === 400 || groqResp.status === 404) {
                     errCode = 'INVALID_GROQ_MODEL';
-                    groqValidationCache = { checkedAt: Date.now(), isValid: false, error: errCode, errorMessage: data.error?.message || `Modelo '${VOICE_GROQ_MODEL}' não existe na Groq.` };
+                    groqValidationCache = { checkedAt: Date.now(), isValid: false, error: errCode, errorMessage: data.error?.message || `Model '${VOICE_GROQ_MODEL}' does not exist in Groq.` };
                 }
                 res.writeHead(groqResp.status, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ 
                     error: errCode,
-                    message: data.error?.message || 'Erro de transcrição na API da Groq',
+                    message: data.error?.message || 'Transcription error in Groq API',
                     isGroqValid: false
                 }));
                 return;
@@ -410,7 +410,7 @@ async function processTTS(rawText, langCode, requestedVoice, res) {
     let text = (rawText || '').trim();
     if (!text) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'EMPTY_TEXT', message: 'Texto para sintetizar não fornecido.' }));
+        res.end(JSON.stringify({ error: 'EMPTY_TEXT', message: 'Text to synthesize not provided.' }));
         return;
     }
 
@@ -516,10 +516,10 @@ function getPromptsDb() {
                 { id: 'qp3', title: '/compact', content: '/compact', is_quick: 1, auto_enter: 1, sort_order: 3 },
                 { id: 'qp4', title: '/clear', content: '/clear', is_quick: 1, auto_enter: 1, sort_order: 4 },
                 // Full Library Prompts
-                { id: 'p1', title: '⚡ Refatorar Código', content: 'Por favor refatora o seguinte código para torná-lo mais limpo, modular, eficiente e legível:\n\n', is_quick: 0, auto_enter: 0, sort_order: 5 },
-                { id: 'p2', title: '🧪 Gerar Testes Unitários', content: 'Cria testes unitários abrangentes cobrindo casos normais e extremos para a seguinte implementação:\n\n', is_quick: 0, auto_enter: 0, sort_order: 6 },
-                { id: 'p3', title: '🐛 Explicar & Corrigir Bug', content: 'Analisa o seguinte erro/comportamento inesperado e explica a causa raiz com a respetiva correção detalhada:\n\n', is_quick: 0, auto_enter: 0, sort_order: 7 },
-                { id: 'p4', title: '🛡️ Auditoria de Segurança', content: 'Revê este código identificando possíveis vulnerabilidades de segurança, injeções, validações em falta e boas práticas:\n\n', is_quick: 0, auto_enter: 0, sort_order: 8 }
+                { id: 'p1', title: '⚡ Refactor Code', content: 'Please refactor the following code to make it cleaner, more modular, efficient and readable:\n\n', is_quick: 0, auto_enter: 0, sort_order: 5 },
+                { id: 'p2', title: '🧪 Generate Unit Tests', content: 'Create comprehensive unit tests covering standard and edge cases for the following implementation:\n\n', is_quick: 0, auto_enter: 0, sort_order: 6 },
+                { id: 'p3', title: '🐛 Explain & Fix Bug', content: 'Analyze the following error/unexpected behavior and explain the root cause with a detailed fix:\n\n', is_quick: 0, auto_enter: 0, sort_order: 7 },
+                { id: 'p4', title: '🛡️ Security Audit', content: 'Review this code identifying potential security vulnerabilities, injections, missing validations and best practices:\n\n', is_quick: 0, auto_enter: 0, sort_order: 8 }
             ];
             for (const item of seed) {
                 insertStmt.run(item.id, item.title, item.content, item.is_quick, item.auto_enter, item.sort_order, now, now);
@@ -1078,29 +1078,29 @@ server.on('upgrade', (req, socket, head) => {
 
 server.listen(PROXY_PORT, '0.0.0.0', async () => {
     const proto = isHttps ? 'https' : 'http';
-    const authStatus = TTYD_AUTH ? TTYD_AUTH : 'Desativada (Acesso direto sem login)';
-    let groqInfo = 'Não configurado (Ditado/Conversa desativados)';
+    const authStatus = TTYD_AUTH ? TTYD_AUTH : 'Disabled (Direct access without login)';
+    let groqInfo = 'Not configured (Voice dictation & Conversation disabled)';
 
     if (VOICE_GROQ_API_KEY) {
         const groqStatus = await checkGroqStatus();
         if (groqStatus.isValid) {
-            groqInfo = `Ativo & Válido (${VOICE_GROQ_MODEL})`;
+            groqInfo = `Active & Valid (${VOICE_GROQ_MODEL})`;
         } else {
-            groqInfo = `⚠️ Erro: ${groqStatus.errorMessage}`;
+            groqInfo = `⚠️ Error: ${groqStatus.errorMessage}`;
         }
     }
 
     console.log('');
     console.log('===================================================================');
-    console.log('🎉 OpenCode AI Web Terminal está pronto a ser usado!');
+    console.log('🎉 OpenCode AI Web Terminal is ready to use!');
     console.log('-------------------------------------------------------------------');
-    console.log(`🌐 Endpoint Web:      ${proto}://0.0.0.0:${PROXY_PORT} (${proto}://localhost:${PROXY_PORT})`);
-    console.log(`🔑 Autenticação:      ${authStatus}`);
-    console.log(`🎙️ Reconhecimento:    ${groqInfo}`);
-    console.log(`🔊 Motor TTS:         ${DEFAULT_TTS_PROVIDER} (com fallback bidirecional)`);
-    console.log(`🗣️ Idioma de Voz:     ${DEFAULT_VOICE_LANGUAGE}`);
-    console.log(`🔒 Modo HTTPS:        ${isHttps ? 'Ativado (SSL auto-gerado)' : 'Desativado (HTTP)'}`);
-    console.log(`📁 Diretório:         ${WORKSPACE_DIR}`);
+    console.log(`🌐 Web Endpoint:      ${proto}://0.0.0.0:${PROXY_PORT} (${proto}://localhost:${PROXY_PORT})`);
+    console.log(`🔑 Authentication:    ${authStatus}`);
+    console.log(`🎙️ Recognition:       ${groqInfo}`);
+    console.log(`🔊 TTS Engine:        ${DEFAULT_TTS_PROVIDER} (with bidirectional fallback)`);
+    console.log(`🗣️ Voice Language:    ${DEFAULT_VOICE_LANGUAGE}`);
+    console.log(`🔒 HTTPS Mode:        ${isHttps ? 'Enabled (Self-signed SSL)' : 'Disabled (HTTP)'}`);
+    console.log(`📁 Workspace:         ${WORKSPACE_DIR}`);
     console.log('===================================================================');
     console.log('');
 });
