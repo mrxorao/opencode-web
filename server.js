@@ -481,26 +481,61 @@ function getPromptsDb() {
                 id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
+                is_quick INTEGER DEFAULT 0,
+                auto_enter INTEGER DEFAULT 0,
                 time_created INTEGER NOT NULL,
                 time_updated INTEGER NOT NULL
             );
         `);
 
+        // Run migrations for existing DBs if columns do not exist
+        try { db.exec('ALTER TABLE prompts ADD COLUMN is_quick INTEGER DEFAULT 0;'); } catch(e) {}
+        try { db.exec('ALTER TABLE prompts ADD COLUMN auto_enter INTEGER DEFAULT 0;'); } catch(e) {}
+
         const countRow = db.prepare('SELECT COUNT(*) as count FROM prompts').get();
         if (countRow && countRow.count === 0) {
             const insertStmt = db.prepare(`
-                INSERT INTO prompts (id, title, content, time_created, time_updated)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO prompts (id, title, content, is_quick, auto_enter, time_created, time_updated)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             `);
             const now = Date.now();
             const seed = [
-                { id: 'p1', title: '⚡ Refatorar Código', content: 'Por favor refatora o seguinte código para torná-lo mais limpo, modular, eficiente e legível:\n\n' },
-                { id: 'p2', title: '🧪 Gerar Testes Unitários', content: 'Cria testes unitários abrangentes cobrindo casos normais e extremos para a seguinte implementação:\n\n' },
-                { id: 'p3', title: '🐛 Explicar & Corrigir Bug', content: 'Analisa o seguinte erro/comportamento inesperado e explica a causa raiz com a respetiva correção detalhada:\n\n' },
-                { id: 'p4', title: '🛡️ Auditoria de Segurança', content: 'Revê este código identificando possíveis vulnerabilidades de segurança, injeções, validações em falta e boas práticas:\n\n' }
+                // Quick Command Bubbles
+                { id: 'qp1', title: '/new', content: '/new', is_quick: 1, auto_enter: 1 },
+                { id: 'qp2', title: '/models', content: '/models', is_quick: 1, auto_enter: 1 },
+                { id: 'qp3', title: '/compact', content: '/compact', is_quick: 1, auto_enter: 1 },
+                { id: 'qp4', title: '/clear', content: '/clear', is_quick: 1, auto_enter: 1 },
+                { id: 'qp5', title: 'git status', content: 'git status', is_quick: 1, auto_enter: 1 },
+                { id: 'qp6', title: 'git diff', content: 'git diff', is_quick: 1, auto_enter: 1 },
+                // Full Library Prompts
+                { id: 'p1', title: '⚡ Refatorar Código', content: 'Por favor refatora o seguinte código para torná-lo mais limpo, modular, eficiente e legível:\n\n', is_quick: 0, auto_enter: 0 },
+                { id: 'p2', title: '🧪 Gerar Testes Unitários', content: 'Cria testes unitários abrangentes cobrindo casos normais e extremos para a seguinte implementação:\n\n', is_quick: 0, auto_enter: 0 },
+                { id: 'p3', title: '🐛 Explicar & Corrigir Bug', content: 'Analisa o seguinte erro/comportamento inesperado e explica a causa raiz com a respetiva correção detalhada:\n\n', is_quick: 0, auto_enter: 0 },
+                { id: 'p4', title: '🛡️ Auditoria de Segurança', content: 'Revê este código identificando possíveis vulnerabilidades de segurança, injeções, validações em falta e boas práticas:\n\n', is_quick: 0, auto_enter: 0 }
             ];
             for (const item of seed) {
-                insertStmt.run(item.id, item.title, item.content, now, now);
+                insertStmt.run(item.id, item.title, item.content, item.is_quick, item.auto_enter, now, now);
+            }
+        } else {
+            // If DB exists but has 0 quick prompts, seed default quick prompts
+            const quickCountRow = db.prepare('SELECT COUNT(*) as count FROM prompts WHERE is_quick = 1').get();
+            if (quickCountRow && quickCountRow.count === 0) {
+                const insertStmt = db.prepare(`
+                    INSERT INTO prompts (id, title, content, is_quick, auto_enter, time_created, time_updated)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                `);
+                const now = Date.now();
+                const quickSeed = [
+                    { id: 'qp1', title: '/new', content: '/new', is_quick: 1, auto_enter: 1 },
+                    { id: 'qp2', title: '/models', content: '/models', is_quick: 1, auto_enter: 1 },
+                    { id: 'qp3', title: '/compact', content: '/compact', is_quick: 1, auto_enter: 1 },
+                    { id: 'qp4', title: '/clear', content: '/clear', is_quick: 1, auto_enter: 1 },
+                    { id: 'qp5', title: 'git status', content: 'git status', is_quick: 1, auto_enter: 1 },
+                    { id: 'qp6', title: 'git diff', content: 'git diff', is_quick: 1, auto_enter: 1 }
+                ];
+                for (const item of quickSeed) {
+                    try { insertStmt.run(item.id, item.title, item.content, item.is_quick, item.auto_enter, now, now); } catch(e) {}
+                }
             }
         }
 
@@ -533,6 +568,24 @@ function parseJsonBody(req) {
     });
 }
 
+function handleGetQuickPrompts(req, res) {
+    try {
+        const db = getPromptsDb();
+        if (!db) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'DB_UNAVAILABLE' }));
+            return;
+        }
+        const quickPrompts = db.prepare('SELECT id, title, content, is_quick, auto_enter, time_created, time_updated FROM prompts WHERE is_quick = 1 ORDER BY time_updated DESC, time_created DESC').all();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ quickPrompts }));
+    } catch(err) {
+        console.error('Error fetching quick prompts:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+    }
+}
+
 function handleGetPrompts(req, res, parsedUrl) {
     try {
         const db = getPromptsDb();
@@ -543,23 +596,34 @@ function handleGetPrompts(req, res, parsedUrl) {
         }
 
         const search = (parsedUrl.searchParams.get('search') || '').trim();
+        const type = parsedUrl.searchParams.get('type'); // 'quick', 'standard', or undefined
         const page = Math.max(1, parseInt(parsedUrl.searchParams.get('page'), 10) || 1);
-        const limit = Math.max(1, Math.min(50, parseInt(parsedUrl.searchParams.get('limit'), 10) || 5));
+        const limit = Math.max(1, Math.min(100, parseInt(parsedUrl.searchParams.get('limit'), 10) || 5));
         const offset = (page - 1) * limit;
 
-        let total = 0;
-        let prompts = [];
+        let whereClauses = [];
+        let params = [];
 
         if (search) {
+            whereClauses.push('(title LIKE ? OR content LIKE ?)');
             const pattern = `%${search}%`;
-            const countRow = db.prepare('SELECT COUNT(*) as count FROM prompts WHERE title LIKE ? OR content LIKE ?').get(pattern, pattern);
-            total = countRow ? countRow.count : 0;
-            prompts = db.prepare('SELECT id, title, content, time_created, time_updated FROM prompts WHERE title LIKE ? OR content LIKE ? ORDER BY time_updated DESC, time_created DESC LIMIT ? OFFSET ?').all(pattern, pattern, limit, offset);
-        } else {
-            const countRow = db.prepare('SELECT COUNT(*) as count FROM prompts').get();
-            total = countRow ? countRow.count : 0;
-            prompts = db.prepare('SELECT id, title, content, time_created, time_updated FROM prompts ORDER BY time_updated DESC, time_created DESC LIMIT ? OFFSET ?').all(limit, offset);
+            params.push(pattern, pattern);
         }
+
+        if (type === 'quick') {
+            whereClauses.push('is_quick = 1');
+        } else if (type === 'standard') {
+            whereClauses.push('is_quick = 0');
+        }
+
+        const whereSql = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
+
+        const countQuery = `SELECT COUNT(*) as count FROM prompts ${whereSql}`;
+        const countRow = db.prepare(countQuery).get(...params);
+        const total = countRow ? countRow.count : 0;
+
+        const selectQuery = `SELECT id, title, content, is_quick, auto_enter, time_created, time_updated FROM prompts ${whereSql} ORDER BY time_updated DESC, time_created DESC LIMIT ? OFFSET ?`;
+        const prompts = db.prepare(selectQuery).all(...params, limit, offset);
 
         const totalPages = Math.ceil(total / limit) || 1;
 
@@ -590,6 +654,8 @@ async function handleSavePrompt(req, res) {
         const body = await parseJsonBody(req);
         const title = (body.title || '').trim();
         const content = (body.content || '').trim();
+        const is_quick = body.is_quick ? 1 : 0;
+        const auto_enter = body.auto_enter ? 1 : 0;
         let id = (body.id || '').trim();
 
         if (!title || !content) {
@@ -602,9 +668,9 @@ async function handleSavePrompt(req, res) {
         if (id) {
             const existing = db.prepare('SELECT id, time_created FROM prompts WHERE id = ?').get(id);
             if (existing) {
-                db.prepare('UPDATE prompts SET title = ?, content = ?, time_updated = ? WHERE id = ?').run(title, content, now, id);
+                db.prepare('UPDATE prompts SET title = ?, content = ?, is_quick = ?, auto_enter = ?, time_updated = ? WHERE id = ?').run(title, content, is_quick, auto_enter, now, id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, prompt: { id, title, content, time_created: existing.time_created, time_updated: now } }));
+                res.end(JSON.stringify({ success: true, prompt: { id, title, content, is_quick, auto_enter, time_created: existing.time_created, time_updated: now } }));
                 return;
             }
         }
@@ -612,10 +678,10 @@ async function handleSavePrompt(req, res) {
         if (!id) {
             id = 'p_' + now + '_' + Math.random().toString(36).substring(2, 7);
         }
-        db.prepare('INSERT INTO prompts (id, title, content, time_created, time_updated) VALUES (?, ?, ?, ?, ?)').run(id, title, content, now, now);
+        db.prepare('INSERT INTO prompts (id, title, content, is_quick, auto_enter, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, title, content, is_quick, auto_enter, now, now);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, prompt: { id, title, content, time_created: now, time_updated: now } }));
+        res.end(JSON.stringify({ success: true, prompt: { id, title, content, is_quick, auto_enter, time_created: now, time_updated: now } }));
     } catch(err) {
         console.error('Error saving prompt to SQLite:', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -842,6 +908,11 @@ async function requestListener(req, res) {
     }
 
     // Handle SQLite Prompts API
+    if (pathname === '/api/prompts/quick' && req.method === 'GET') {
+        handleGetQuickPrompts(req, res);
+        return;
+    }
+
     if (pathname === '/api/prompts' && req.method === 'GET') {
         handleGetPrompts(req, res, parsedUrl);
         return;

@@ -673,6 +673,112 @@ body.theme-light .file-drop-desc{
 .prompt-form-textarea{width:100%;box-sizing:border-box;background:#090b10;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:#f8fafc;font-size:13px;outline:none;min-height:110px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;line-height:1.5;transition:all .15s ease}
 .prompt-form-textarea:focus{border-color:rgba(255,255,255,0.25);background:#0d1017;box-shadow:0 0 0 3px rgba(255,255,255,0.03)}
 
+/* Quick Prompts Popover (Floating Bubbles Menu) */
+#quick-prompts-popover{
+    position:fixed;
+    background:rgba(18,22,31,0.96);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:14px;
+    padding:10px 12px;
+    box-shadow:0 16px 36px -4px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.05);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    z-index:99999;
+    max-width:320px;
+    min-width:250px;
+    display:none;
+    flex-direction:column;
+    gap:8px;
+    animation:popover-appear .16s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    box-sizing:border-box;
+}
+#quick-prompts-popover.active{display:flex}
+@keyframes popover-appear{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}
+
+#quick-prompts-popover.popover-top-center{top:calc(env(safe-area-inset-top,6px) + 52px);left:50%;transform:translateX(-50%)}
+#quick-prompts-popover.popover-bottom-center{bottom:calc(env(safe-area-inset-bottom,6px) + 54px);left:50%;transform:translateX(-50%)}
+#quick-prompts-popover.popover-middle-left{top:50%;left:calc(env(safe-area-inset-left,6px) + 52px);transform:translateY(-50%)}
+#quick-prompts-popover.popover-middle-right{top:50%;right:calc(env(safe-area-inset-right,6px) + 52px);transform:translateY(-50%)}
+
+.quick-prompts-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.quick-prompts-title{font-size:12px;font-weight:600;color:#38bdf8;display:flex;align-items:center;gap:5px;letter-spacing:-0.01em}
+.quick-prompts-close{background:none;border:none;color:#64748b;cursor:pointer;padding:2px 4px;border-radius:4px;display:flex;align-items:center}
+.quick-prompts-close:hover{color:#f8fafc;background:rgba(255,255,255,0.08)}
+
+.quick-prompts-grid{display:flex;flex-wrap:wrap;gap:6px;max-height:180px;overflow-y:auto;padding:2px 0}
+.quick-prompt-bubble{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:5px 10px;
+    background:rgba(56,189,248,0.12);
+    border:1px solid rgba(56,189,248,0.25);
+    border-radius:18px;
+    color:#38bdf8;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .15s ease;
+    user-select:none;
+    box-sizing:border-box;
+}
+.quick-prompt-bubble:hover{
+    background:#0284c7;
+    color:#ffffff;
+    border-color:#38bdf8;
+    transform:translateY(-1px);
+    box-shadow:0 3px 10px rgba(2,132,199,0.35);
+}
+.quick-prompt-bubble:active{transform:scale(0.96)}
+
+.quick-prompts-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06);margin-top:2px}
+.quick-prompts-link-btn{background:none;border:none;color:#94a3b8;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border-radius:4px;transition:all .15s ease}
+.quick-prompts-link-btn:hover{color:#f8fafc;background:rgba(255,255,255,0.06)}
+.quick-prompts-link-btn.primary{color:#38bdf8;font-weight:500}
+.quick-prompts-link-btn.primary:hover{color:#7dd3fc;background:rgba(56,189,248,0.12)}
+
+/* Light Theme for Quick Prompts Popover */
+body.theme-light #quick-prompts-popover{
+    background:rgba(255,255,255,0.96);
+    border-color:rgba(0,0,0,0.12);
+    box-shadow:0 16px 36px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+}
+body.theme-light .quick-prompts-header{border-bottom-color:rgba(0,0,0,0.06)}
+body.theme-light .quick-prompts-title{color:#0284c7}
+body.theme-light .quick-prompts-close{color:#94a3b8}
+body.theme-light .quick-prompts-close:hover{color:#0f172a;background:rgba(0,0,0,0.05)}
+body.theme-light .quick-prompt-bubble{
+    background:#e0f2fe;
+    border-color:#bae6fd;
+    color:#0369a1;
+}
+body.theme-light .quick-prompt-bubble:hover{
+    background:#0284c7;
+    color:#ffffff;
+    border-color:#0284c7;
+    box-shadow:0 3px 10px rgba(2,132,199,0.25);
+}
+body.theme-light .quick-prompts-footer{border-top-color:rgba(0,0,0,0.06)}
+body.theme-light .quick-prompts-link-btn{color:#64748b}
+body.theme-light .quick-prompts-link-btn:hover{color:#0f172a;background:rgba(0,0,0,0.04)}
+body.theme-light .quick-prompts-link-btn.primary{color:#0284c7}
+body.theme-light .quick-prompts-link-btn.primary:hover{color:#0369a1;background:#e0f2fe}
+
+/* Prompt Type Tabs in Modal */
+.prompt-tabs{display:flex;gap:4px;margin-bottom:10px;background:rgba(0,0,0,0.2);padding:3px;border-radius:8px;border:1px solid rgba(255,255,255,0.05)}
+body.theme-light .prompt-tabs{background:#f1f5f9;border-color:rgba(0,0,0,0.06)}
+.prompt-tab-btn{flex:1;background:none;border:none;color:#94a3b8;padding:5px 8px;font-size:12px;font-weight:500;border-radius:6px;cursor:pointer;transition:all .15s ease;display:flex;align-items:center;justify-content:center;gap:4px}
+.prompt-tab-btn:hover{color:#f8fafc;background:rgba(255,255,255,0.04)}
+.prompt-tab-btn.active{background:#2563eb;color:#ffffff;font-weight:600}
+body.theme-light .prompt-tab-btn{color:#64748b}
+body.theme-light .prompt-tab-btn:hover{color:#0f172a;background:rgba(0,0,0,0.04)}
+body.theme-light .prompt-tab-btn.active{background:#0284c7;color:#ffffff}
+
+.prompt-quick-badge{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:#38bdf8;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);border-radius:12px;padding:1px 6px}
+body.theme-light .prompt-quick-badge{color:#0369a1;background:#e0f2fe;border-color:#bae6fd}
+
 /* Mobile Upload Choice Modal */
 .upload-choice-btn{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;background:#141720;border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#f8fafc;font-size:13.5px;font-weight:500;cursor:pointer;margin-bottom:8px;transition:all .15s ease;text-align:left}
 .upload-choice-btn:hover{background:#1a1e29;border-color:rgba(255,255,255,0.15);transform:translateY(-1px)}
@@ -802,7 +908,7 @@ window.focusTerminal = function() {
     function isInteractiveTarget(target) {
         if (!target) return false;
         // Do not intercept touch inside modals, floating toolbar, popups, or inputs
-        return Boolean(target.closest('#voice-toolbar, #transcript-preview, #corner-zone-container, .modal, .modal-card, .modal-content, .modal-body, button, input, textarea, select, label, a, .prompt-card, .prompt-card-btn'));
+        return Boolean(target.closest('#voice-toolbar, #transcript-preview, #corner-zone-container, #quick-prompts-popover, .quick-prompt-bubble, .modal, .modal-card, .modal-content, .modal-body, button, input, textarea, select, label, a, .prompt-card, .prompt-card-btn'));
     }
 
     function dispatchTerminalScroll(deltaY, clientX, clientY) {
@@ -1860,6 +1966,38 @@ window.sendTextToTerminal = function(text, autoEnter) {
             </div>
         `;
 
+        var quickPromptsPopover = document.createElement('div');
+        quickPromptsPopover.id = 'quick-prompts-popover';
+        quickPromptsPopover.innerHTML = `
+            <div class="quick-prompts-header">
+                <div class="quick-prompts-title">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span>Comandos Rápidos</span>
+                </div>
+                <button id="quick-prompts-close-btn" class="quick-prompts-close" title="Fechar">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="quick-prompts-grid" id="quick-prompts-grid">
+                <div style="color:#64748b;font-size:11.5px;padding:8px 4px;">A carregar comandos...</div>
+            </div>
+            <div class="quick-prompts-footer">
+                <button id="quick-prompts-add-btn" class="quick-prompts-link-btn primary" title="Criar novo comando rápido">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>+ Adicionar</span>
+                </button>
+                <button id="quick-prompts-all-btn" class="quick-prompts-link-btn" title="Abrir biblioteca completa de prompts">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    <span>Biblioteca 📚</span>
+                </button>
+            </div>
+        `;
+
         var promptsModal = document.createElement('div');
         promptsModal.id = 'prompts-modal';
         promptsModal.innerHTML = `
@@ -1877,6 +2015,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     </button>
                 </div>
                 <div class="modal-body" id="prompts-list-view">
+                    <div class="prompt-tabs">
+                        <button class="prompt-tab-btn active" data-tab="all">Todos</button>
+                        <button class="prompt-tab-btn" data-tab="quick">⚡ Rápidos (Bolhas)</button>
+                        <button class="prompt-tab-btn" data-tab="standard">📝 Detalhados</button>
+                    </div>
                     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
                         <div class="prompt-search-wrapper">
                             <div class="prompt-search-icon">
@@ -1907,12 +2050,22 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 </div>
                 <div class="modal-body" id="prompts-edit-view" style="display:none">
                     <div class="prompt-form-group">
-                        <label class="prompt-form-label" for="prompt-input-title">Título do Prompt</label>
-                        <input type="text" id="prompt-input-title" class="prompt-form-input" placeholder="Ex: Refatorar Código TypeScript...">
+                        <label class="prompt-form-label" for="prompt-input-title">Título / Nome do Comando</label>
+                        <input type="text" id="prompt-input-title" class="prompt-form-input" placeholder="Ex: /new ou Refatorar Código...">
                     </div>
                     <div class="prompt-form-group">
                         <label class="prompt-form-label" for="prompt-input-content">Conteúdo do Prompt</label>
-                        <textarea id="prompt-input-content" class="prompt-form-textarea" placeholder="Escreve o prompt que será enviado para o OpenCode..."></textarea>
+                        <textarea id="prompt-input-content" class="prompt-form-textarea" placeholder="Escreve o comando ou o texto do prompt..."></textarea>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;background:rgba(0,0,0,0.2);padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;color:#f8fafc;">
+                            <input type="checkbox" id="prompt-input-is-quick" style="cursor:pointer;accent-color:#38bdf8;width:15px;height:15px;">
+                            <span>⚡ <strong>Prompt Rápido</strong> (Aparece como bolha no menu rápido de 1 clique)</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#94a3b8;margin-left:23px;">
+                            <input type="checkbox" id="prompt-input-auto-enter" style="cursor:pointer;accent-color:#38bdf8;width:14px;height:14px;">
+                            <span>Executar automaticamente ao clicar (Enviar Enter no terminal)</span>
+                        </label>
                     </div>
                     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
                         <button id="cancel-prompt-btn" class="modal-btn modal-btn-sec">Cancelar</button>
@@ -1939,6 +2092,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         document.body.appendChild(cornerContainer);
         document.body.appendChild(toolbar);
         document.body.appendChild(preview);
+        document.body.appendChild(quickPromptsPopover);
         document.body.appendChild(ffModal);
         document.body.appendChild(micModal);
         document.body.appendChild(uploadChoiceModal);
@@ -3635,7 +3789,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
-        // Prompts Library Management (SQLite Backend + 5 items per page pagination)
+        // Quick Prompts Popover & Library Management (SQLite Backend)
+        var quickPromptsPopover = document.getElementById('quick-prompts-popover');
+        var quickPromptsGrid = document.getElementById('quick-prompts-grid');
+        var quickPromptsCloseBtn = document.getElementById('quick-prompts-close-btn');
+        var quickPromptsAddBtn = document.getElementById('quick-prompts-add-btn');
+        var quickPromptsAllBtn = document.getElementById('quick-prompts-all-btn');
+
         var promptsBtn = document.getElementById('prompts-btn');
         var promptsModal = document.getElementById('prompts-modal');
         var promptsCloseBtn = document.getElementById('prompts-close-btn');
@@ -3646,6 +3806,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var newPromptBtn = document.getElementById('new-prompt-btn');
         var promptInputTitle = document.getElementById('prompt-input-title');
         var promptInputContent = document.getElementById('prompt-input-content');
+        var promptInputIsQuick = document.getElementById('prompt-input-is-quick');
+        var promptInputAutoEnter = document.getElementById('prompt-input-auto-enter');
         var cancelPromptBtn = document.getElementById('cancel-prompt-btn');
         var savePromptBtn = document.getElementById('save-prompt-btn');
         var promptsPagination = document.getElementById('prompts-pagination');
@@ -3653,17 +3815,66 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var promptPageIndicator = document.getElementById('prompt-page-indicator');
         var promptPrevPageBtn = document.getElementById('prompt-prev-page-btn');
         var promptNextPageBtn = document.getElementById('prompt-next-page-btn');
+        var promptTabBtns = document.querySelectorAll('.prompt-tab-btn');
 
         var editingPromptId = null;
         var promptCurrentPage = 1;
         var promptTotalPages = 1;
         var promptSearchQuery = '';
+        var promptCurrentTab = 'all'; // 'all', 'quick', 'standard'
         var PROMPT_PAGE_LIMIT = 5;
         var promptSearchDebounceTimer = null;
 
-        async function fetchPromptsFromServer(page, search) {
+        function updateQuickPopoverPosition() {
+            if (!quickPromptsPopover) return;
+            quickPromptsPopover.classList.remove('popover-top-center', 'popover-bottom-center', 'popover-middle-left', 'popover-middle-right');
+            var corner = currentCorner || 'middle-right';
+            quickPromptsPopover.classList.add('popover-' + corner);
+        }
+
+        async function fetchQuickPrompts() {
+            if (!quickPromptsGrid) return;
+            quickPromptsGrid.innerHTML = '<div style="color:#64748b;font-size:11.5px;padding:6px 4px;">A carregar comandos...</div>';
+
+            try {
+                var resp = await fetch('/api/prompts/quick');
+                var data = await resp.json();
+                var list = data.quickPrompts || [];
+
+                quickPromptsGrid.innerHTML = '';
+                if (list.length === 0) {
+                    quickPromptsGrid.innerHTML = '<div style="color:#64748b;font-size:11.5px;padding:6px 2px;">Nenhum comando rápido configurado. Clica em + Adicionar.</div>';
+                    return;
+                }
+
+                list.forEach(function(p) {
+                    var bubble = document.createElement('button');
+                    bubble.className = 'quick-prompt-bubble';
+                    bubble.title = p.content ? (p.content.length > 60 ? p.content.substring(0, 60) + '...' : p.content) : p.title;
+                    bubble.innerHTML = '<span>' + (p.title || p.content) + '</span>';
+
+                    bubble.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (quickPromptsPopover) quickPromptsPopover.classList.remove('active');
+                        var autoEnter = Boolean(p.auto_enter);
+                        window.sendTextToTerminal(p.content, autoEnter);
+                        showPreview('⚡ Comando', p.title || p.content, false, false);
+                        hidePreview(2000);
+                        window.focusTerminal();
+                    });
+
+                    quickPromptsGrid.appendChild(bubble);
+                });
+            } catch(err) {
+                console.error('Error loading quick prompts:', err);
+                quickPromptsGrid.innerHTML = '<div style="color:#f87171;font-size:11px;padding:4px;">Erro ao carregar comandos.</div>';
+            }
+        }
+
+        async function fetchPromptsFromServer(page, search, tabType) {
             promptCurrentPage = page || 1;
             promptSearchQuery = (search !== undefined ? search : (promptSearchInput ? promptSearchInput.value : ''));
+            var activeTab = tabType || promptCurrentTab || 'all';
 
             if (promptsCardsContainer) {
                 promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#8b949e;font-size:13px">A carregar prompts da base de dados...</div>';
@@ -3673,6 +3884,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 var url = '/api/prompts?page=' + promptCurrentPage + '&limit=' + PROMPT_PAGE_LIMIT;
                 if (promptSearchQuery && promptSearchQuery.trim()) {
                     url += '&search=' + encodeURIComponent(promptSearchQuery.trim());
+                }
+                if (activeTab === 'quick') {
+                    url += '&type=quick';
+                } else if (activeTab === 'standard') {
+                    url += '&type=standard';
                 }
 
                 var resp = await fetch(url);
@@ -3692,7 +3908,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                 if (prompts.length === 0) {
                     promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#8b949e;font-size:13px">' + 
-                        (promptSearchQuery ? 'Nenhum prompt encontrado para a pesquisa.' : 'Nenhum prompt guardado na base de dados.') + '</div>';
+                        (promptSearchQuery ? 'Nenhum prompt encontrado para a pesquisa.' : 'Nenhum prompt guardado nesta categoria.') + '</div>';
                     if (promptsPagination) promptsPagination.style.display = 'none';
                     return;
                 }
@@ -3703,10 +3919,25 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                     var header = document.createElement('div');
                     header.className = 'prompt-card-header';
+                    
+                    var titleWrap = document.createElement('div');
+                    titleWrap.style.display = 'flex';
+                    titleWrap.style.alignItems = 'center';
+                    titleWrap.style.gap = '8px';
+
                     var title = document.createElement('div');
                     title.className = 'prompt-card-title';
                     title.textContent = p.title || 'Sem Título';
-                    header.appendChild(title);
+                    titleWrap.appendChild(title);
+
+                    if (p.is_quick) {
+                        var qBadge = document.createElement('span');
+                        qBadge.className = 'prompt-quick-badge';
+                        qBadge.innerHTML = '⚡ Rápido' + (p.auto_enter ? ' ↵' : '');
+                        titleWrap.appendChild(qBadge);
+                    }
+
+                    header.appendChild(titleWrap);
 
                     var body = document.createElement('div');
                     body.className = 'prompt-card-body';
@@ -3739,7 +3970,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
                                     if (prompts.length === 1 && promptCurrentPage > 1) {
                                         promptCurrentPage--;
                                     }
-                                    fetchPromptsFromServer(promptCurrentPage, promptSearchQuery);
+                                    fetchPromptsFromServer(promptCurrentPage, promptSearchQuery, promptCurrentTab);
+                                    fetchQuickPrompts();
                                 } else {
                                     alert('Não foi possível apagar o prompt.');
                                 }
@@ -3768,13 +4000,15 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
                     var useBtn = document.createElement('button');
                     useBtn.className = 'prompt-card-btn use-btn';
-                    useBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span>Usar Prompt</span>';
+                    useBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span>Usar</span>';
                     useBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         if (promptsModal) promptsModal.classList.remove('active');
-                        window.sendTextToTerminal(p.content, false);
+                        var autoEnter = Boolean(p.auto_enter);
+                        window.sendTextToTerminal(p.content, autoEnter);
                         showPreview('Prompt Inserido', p.title, false, false);
                         hidePreview(2500);
+                        window.focusTerminal();
                     });
 
                     actions.appendChild(copyBtn);
@@ -3788,7 +4022,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     promptsCardsContainer.appendChild(card);
                 });
 
-                // Update pagination bar
                 if (promptsPagination) {
                     promptsPagination.style.display = 'flex';
                 }
@@ -3816,10 +4049,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        function openNewPrompt() {
+        function openNewPrompt(isQuickDefault) {
             editingPromptId = null;
             if (promptInputTitle) promptInputTitle.value = '';
             if (promptInputContent) promptInputContent.value = '';
+            if (promptInputIsQuick) promptInputIsQuick.checked = Boolean(isQuickDefault);
+            if (promptInputAutoEnter) promptInputAutoEnter.checked = Boolean(isQuickDefault);
             if (promptsListView) promptsListView.style.display = 'none';
             if (promptsEditView) promptsEditView.style.display = 'block';
             if (promptInputTitle) promptInputTitle.focus();
@@ -3829,6 +4064,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
             editingPromptId = p.id;
             if (promptInputTitle) promptInputTitle.value = p.title || '';
             if (promptInputContent) promptInputContent.value = p.content || '';
+            if (promptInputIsQuick) promptInputIsQuick.checked = Boolean(p.is_quick);
+            if (promptInputAutoEnter) promptInputAutoEnter.checked = Boolean(p.auto_enter);
             if (promptsListView) promptsListView.style.display = 'none';
             if (promptsEditView) promptsEditView.style.display = 'block';
             if (promptInputContent) promptInputContent.focus();
@@ -3843,6 +4080,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
         async function savePromptForm() {
             var title = promptInputTitle ? promptInputTitle.value.trim() : '';
             var content = promptInputContent ? promptInputContent.value.trim() : '';
+            var is_quick = promptInputIsQuick ? (promptInputIsQuick.checked ? 1 : 0) : 0;
+            var auto_enter = promptInputAutoEnter ? (promptInputAutoEnter.checked ? 1 : 0) : 0;
+
             if (!title) {
                 alert('Por favor introduz um título para o prompt.');
                 if (promptInputTitle) promptInputTitle.focus();
@@ -3866,14 +4106,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     body: JSON.stringify({
                         id: editingPromptId || undefined,
                         title: title,
-                        content: content
+                        content: content,
+                        is_quick: is_quick,
+                        auto_enter: auto_enter
                     })
                 });
 
                 var data = await resp.json();
                 if (resp.ok && data.success) {
                     cancelPromptEdit();
-                    fetchPromptsFromServer(editingPromptId ? promptCurrentPage : 1, promptSearchQuery);
+                    fetchPromptsFromServer(editingPromptId ? promptCurrentPage : 1, promptSearchQuery, promptCurrentTab);
+                    fetchQuickPrompts();
                 } else {
                     alert('Erro ao guardar prompt: ' + (data.message || data.error || 'Erro desconhecido.'));
                 }
@@ -3883,30 +4126,84 @@ window.sendTextToTerminal = function(text, autoEnter) {
             } finally {
                 if (savePromptBtn) {
                     savePromptBtn.disabled = false;
-                    savePromptBtn.textContent = 'Salvar Prompt';
+                    savePromptBtn.textContent = 'Guardar Prompt';
                 }
             }
         }
 
+        // Quick Prompts Popover Trigger
         if (promptsBtn) {
-            promptsBtn.addEventListener('click', function() {
-                if (promptsModal) {
-                    promptsModal.classList.add('active');
-                    cancelPromptEdit();
-                    if (promptSearchInput) {
-                        promptSearchInput.value = '';
-                    }
-                    fetchPromptsFromServer(1, '');
+            promptsBtn.addEventListener('click', function(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                if (!quickPromptsPopover) return;
+                var isOpen = quickPromptsPopover.classList.contains('active');
+                if (isOpen) {
+                    quickPromptsPopover.classList.remove('active');
+                } else {
+                    updateQuickPopoverPosition();
+                    quickPromptsPopover.classList.add('active');
+                    fetchQuickPrompts();
                 }
             });
         }
+
+        if (quickPromptsCloseBtn) {
+            quickPromptsCloseBtn.addEventListener('click', function() {
+                if (quickPromptsPopover) quickPromptsPopover.classList.remove('active');
+            });
+        }
+
+        if (quickPromptsAllBtn) {
+            quickPromptsAllBtn.addEventListener('click', function() {
+                if (quickPromptsPopover) quickPromptsPopover.classList.remove('active');
+                if (promptsModal) {
+                    promptsModal.classList.add('active');
+                    cancelPromptEdit();
+                    if (promptSearchInput) promptSearchInput.value = '';
+                    fetchPromptsFromServer(1, '', promptCurrentTab);
+                }
+            });
+        }
+
+        if (quickPromptsAddBtn) {
+            quickPromptsAddBtn.addEventListener('click', function() {
+                if (quickPromptsPopover) quickPromptsPopover.classList.remove('active');
+                if (promptsModal) {
+                    promptsModal.classList.add('active');
+                    openNewPrompt(true);
+                }
+            });
+        }
+
+        // Close popover when clicking outside
+        document.addEventListener('click', function(e) {
+            if (quickPromptsPopover && quickPromptsPopover.classList.contains('active')) {
+                if (!quickPromptsPopover.contains(e.target) && !e.target.closest('#prompts-btn')) {
+                    quickPromptsPopover.classList.remove('active');
+                }
+            }
+        });
+
+        // Tab filters inside Prompts Modal
+        promptTabBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                promptTabBtns.forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                promptCurrentTab = btn.getAttribute('data-tab') || 'all';
+                fetchPromptsFromServer(1, promptSearchQuery, promptCurrentTab);
+            });
+        });
+
         if (promptsCloseBtn) {
             promptsCloseBtn.addEventListener('click', function() {
                 if (promptsModal) promptsModal.classList.remove('active');
                 window.focusTerminal();
             });
         }
-        if (newPromptBtn) newPromptBtn.addEventListener('click', openNewPrompt);
+        if (newPromptBtn) newPromptBtn.addEventListener('click', function() { openNewPrompt(false); });
         if (cancelPromptBtn) cancelPromptBtn.addEventListener('click', cancelPromptEdit);
         if (savePromptBtn) savePromptBtn.addEventListener('click', savePromptForm);
         if (promptSearchInput) {
@@ -3914,21 +4211,21 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 clearTimeout(promptSearchDebounceTimer);
                 var val = e.target.value;
                 promptSearchDebounceTimer = setTimeout(function() {
-                    fetchPromptsFromServer(1, val);
+                    fetchPromptsFromServer(1, val, promptCurrentTab);
                 }, 280);
             });
         }
         if (promptPrevPageBtn) {
             promptPrevPageBtn.addEventListener('click', function() {
                 if (promptCurrentPage > 1) {
-                    fetchPromptsFromServer(promptCurrentPage - 1, promptSearchQuery);
+                    fetchPromptsFromServer(promptCurrentPage - 1, promptSearchQuery, promptCurrentTab);
                 }
             });
         }
         if (promptNextPageBtn) {
             promptNextPageBtn.addEventListener('click', function() {
                 if (promptCurrentPage < promptTotalPages) {
-                    fetchPromptsFromServer(promptCurrentPage + 1, promptSearchQuery);
+                    fetchPromptsFromServer(promptCurrentPage + 1, promptSearchQuery, promptCurrentTab);
                 }
             });
         }
@@ -3946,12 +4243,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
         });
 
         function handleEscapeKey(e) {
+            var isPopoverOpen = quickPromptsPopover && quickPromptsPopover.classList.contains('active');
             var anyModalOpen = [ffModal, micModal, shortcutsModal, uploadChoiceModal, promptsModal, settingsModal].some(function(m) {
                 return m && m.classList.contains('active');
             });
             var isVoiceActive = isConversationMode || isRecording || isSpeaking || isStartingRecording || isWaitingForAiResponse;
 
-            if (isVoiceActive || anyModalOpen) {
+            if (isPopoverOpen) {
+                quickPromptsPopover.classList.remove('active');
+            }
+
+            if (isVoiceActive || anyModalOpen || isPopoverOpen) {
                 if (e && typeof e.preventDefault === 'function') {
                     try {
                         e.preventDefault();
