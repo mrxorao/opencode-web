@@ -1,6 +1,6 @@
 FROM node:22-bookworm-slim
 
-# Install system dependencies & Edge Neural TTS
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
@@ -8,11 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     procps \
     python3 \
-    python3-pip \
     nano \
     vim \
     tmux \
-    && pip3 install --no-cache-dir --break-system-packages edge-tts \
     && rm -rf /var/lib/apt/lists/*
 
 # Install standalone ttyd binary (web terminal)
