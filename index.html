@@ -279,8 +279,12 @@ body.theme-light #talk-btn.disabled:hover,
 .voice-btn:active{transform:scale(.92)}
 #mic-btn{background:#238636;color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(35,134,54,0.5)}
 #mic-btn:hover{background:#2ea043}
-#mic-btn.recording{background:#da3633!important;animation:mic-pulse 1.2s infinite ease-in-out;box-shadow:0 0 16px rgba(218,54,51,0.9)}
-@keyframes mic-pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:.85}100%{transform:scale(1);opacity:1}}
+#mic-btn.recording{background:#da3633!important;box-shadow:0 0 16px rgba(218,54,51,0.95);animation:mic-pulse 1.8s infinite ease-in-out}
+.mic-energy-bars{display:none;align-items:center;justify-content:center;gap:2px;height:18px;width:20px;pointer-events:none}
+.mic-energy-bars .mic-bar{width:2.5px;height:16px;background:#ffffff;border-radius:2px;transform-origin:center;transform:scaleY(0.2);transition:transform 0.04s ease-out;will-change:transform}
+#mic-btn.recording .mic-icon-svg{display:none!important}
+#mic-btn.recording .mic-energy-bars{display:flex!important}
+@keyframes mic-pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.92}100%{transform:scale(1);opacity:1}}
 #talk-btn{background:#30363d;color:#e6edf3}
 #talk-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 #talk-btn.active{background:#1f6feb!important;color:#fff!important;border-color:#58a6ff!important;box-shadow:0 0 14px rgba(31,111,235,0.8);animation:talk-pulse 1.8s infinite ease-in-out}
@@ -1597,12 +1601,18 @@ window.sendTextToTerminal = function(text, autoEnter) {
             </div>
             <div class="toolbar-actions" id="toolbar-actions">
                 <button id="mic-btn" class="voice-btn" title="Voice Dictation (Click to dictate prompt)" aria-label="Microphone">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="mic-icon-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                         <line x1="12" y1="19" x2="12" y2="23"></line>
                         <line x1="8" y1="23" x2="16" y2="23"></line>
                     </svg>
+                    <div class="mic-energy-bars" id="mic-energy-bars" aria-hidden="true">
+                        <span class="mic-bar" id="mic-bar-1"></span>
+                        <span class="mic-bar" id="mic-bar-2"></span>
+                        <span class="mic-bar" id="mic-bar-3"></span>
+                        <span class="mic-bar" id="mic-bar-4"></span>
+                    </div>
                 </button>
                 <button id="talk-btn" class="voice-btn" title="Conversation Mode (Continuous voice dialogue)" aria-label="Conversation Mode">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2178,6 +2188,17 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
+        function resetMicBars() {
+            var b1 = document.getElementById('mic-bar-1');
+            var b2 = document.getElementById('mic-bar-2');
+            var b3 = document.getElementById('mic-bar-3');
+            var b4 = document.getElementById('mic-bar-4');
+            if (b1) b1.style.transform = 'scaleY(0.2)';
+            if (b2) b2.style.transform = 'scaleY(0.2)';
+            if (b3) b3.style.transform = 'scaleY(0.2)';
+            if (b4) b4.style.transform = 'scaleY(0.2)';
+        }
+
         function stopAllAudioAndMic() {
             voiceSessionId++; // Invalidate any in-flight recording session / async awaits
             isRecording = false;
@@ -2225,6 +2246,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 } catch(e) {}
                 mediaStream = null;
             }
+
+            resetMicBars();
 
             // Immediately reset microphone button visual state back to green
             if (micBtn) {
@@ -2897,6 +2920,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 highpassFilter.connect(analyser);
 
                 var timeDomainBuffer = new Float32Array(analyser.fftSize);
+                var freqBuffer = new Uint8Array(analyser.frequencyBinCount);
+                var micBars = [
+                    document.getElementById('mic-bar-1'),
+                    document.getElementById('mic-bar-2'),
+                    document.getElementById('mic-bar-3'),
+                    document.getElementById('mic-bar-4')
+                ];
                 var recordStartTime = Date.now();
                 var lastVoiceTime = 0;
                 var speechDetected = false;
@@ -2946,6 +2976,25 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     for (var b = 0; b < count; b++) bars += '█';
                     for (var s = count; s < 8; s++) bars += '░';
                     if (previewWave) previewWave.textContent = bars || '░░░░░░░░';
+
+                    // Real-time Voice Energy Wave Graphic in Microphone Icon
+                    analyser.getByteFrequencyData(freqBuffer);
+                    var b1 = (freqBuffer[2] + freqBuffer[3] + freqBuffer[4] + freqBuffer[5]) / (4 * 255);
+                    var b2 = (freqBuffer[6] + freqBuffer[8] + freqBuffer[10] + freqBuffer[12]) / (4 * 255);
+                    var b3 = (freqBuffer[14] + freqBuffer[18] + freqBuffer[22] + freqBuffer[26]) / (4 * 255);
+                    var b4 = (freqBuffer[28] + freqBuffer[34] + freqBuffer[40] + freqBuffer[48]) / (4 * 255);
+
+                    var energyFactor = Math.min(1, Math.max(0, (currentVolume - noiseFloor) / 28));
+
+                    var scale1 = Math.min(1.0, Math.max(0.18, (b1 * 0.75 + energyFactor * 0.55)));
+                    var scale2 = Math.min(1.0, Math.max(0.22, (b2 * 0.95 + energyFactor * 0.75)));
+                    var scale3 = Math.min(1.0, Math.max(0.20, (b3 * 0.85 + energyFactor * 0.65)));
+                    var scale4 = Math.min(1.0, Math.max(0.18, (b4 * 0.70 + energyFactor * 0.45)));
+
+                    if (micBars[0]) micBars[0].style.transform = 'scaleY(' + scale1.toFixed(2) + ')';
+                    if (micBars[1]) micBars[1].style.transform = 'scaleY(' + scale2.toFixed(2) + ')';
+                    if (micBars[2]) micBars[2].style.transform = 'scaleY(' + scale3.toFixed(2) + ')';
+                    if (micBars[3]) micBars[3].style.transform = 'scaleY(' + scale4.toFixed(2) + ')';
 
                     var now = Date.now();
 
@@ -3006,6 +3055,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 mediaRecorder.onstop = async function() {
                     isRecording = false;
                     cancelAnimationFrame(animFrameId);
+                    resetMicBars();
                     if (micBtn) {
                         micBtn.classList.remove('recording');
                     }
@@ -3121,6 +3171,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 console.error('Microphone access error:', err);
                 isStartingRecording = false;
                 isRecording = false;
+                resetMicBars();
                 if (micBtn) micBtn.classList.remove('recording');
                 if (voiceToolbar) voiceToolbar.classList.remove('recording');
                 updateTalkButton();
