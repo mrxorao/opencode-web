@@ -2,6 +2,8 @@
 set -e
 
 export TERM=xterm-256color
+export UV_THREADPOOL_SIZE=8
+export NODE_OPTIONS="--max-old-space-size=2048 --no-warnings"
 
 # Check and update OpenCode AI to the latest version on container startup
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
@@ -17,6 +19,27 @@ echo "✓ OpenCode AI active version: $CURRENT_VERSION"
 mkdir -p /workspace/uploads
 rm -rf /workspace/uploads/* 2>/dev/null || true
 echo "🧹 Cleaned uploads folder on startup"
+
+# Setup default .opencodeignore and .gitignore to prevent heavy file indexing CPU spikes
+if [ ! -f /workspace/.opencodeignore ]; then
+    cat << 'EOF_IGNORE' > /workspace/.opencodeignore
+node_modules/
+.git/
+.next/
+dist/
+build/
+vendor/
+__pycache__/
+.venv/
+venv/
+uploads/
+*.log
+*.tmp
+*.sqlite
+*.sqlite3
+*.db
+EOF_IGNORE
+fi
 
 # Setup tmux configuration for persistent session management
 tmux kill-server 2>/dev/null || true
@@ -42,6 +65,8 @@ cat << 'EOF' > /start-opencode.sh
 export TERM=xterm-256color
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
+export UV_THREADPOOL_SIZE=8
+export NODE_OPTIONS="--max-old-space-size=2048 --no-warnings"
 cd /workspace
 
 # Unset Groq API key inside OpenCode session so it is only used by the voice transcription proxy
