@@ -1367,19 +1367,38 @@ function sanitizeVoiceInput(rawText) {
 window.sanitizeVoiceInput = sanitizeVoiceInput;
 
 // Helper: Send text directly into terminal via native ttyd instance
-window.sendTextToTerminal = function(text, autoEnter) {
+window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
     if (typeof text !== 'string') return false;
     text = text.trim();
     if (!text) return false;
     if (window.__ttyd_xterm && typeof window.__ttyd_xterm.sendData === 'function') {
-        var payload = (autoEnter ? (text + '\r') : text);
-        if (autoEnter && window.__onPromptSubmitted) {
-            window.__onPromptSubmitted(text);
+        if (autoEnter && enterDelayMs && enterDelayMs > 0) {
+            // Write the text immediately into terminal buffer so user sees what is being typed
+            window.__ttyd_xterm.sendData(text);
+            setTimeout(window.focusTerminal, 30);
+            setTimeout(window.focusTerminal, 150);
+
+            // Wait specified delay (e.g. 1000ms = 1s) and then submit with Enter
+            setTimeout(function() {
+                if (window.__ttyd_xterm && typeof window.__ttyd_xterm.sendData === 'function') {
+                    window.__ttyd_xterm.sendData('\r');
+                    if (window.__onPromptSubmitted) {
+                        window.__onPromptSubmitted(text);
+                    }
+                    setTimeout(window.focusTerminal, 30);
+                    setTimeout(window.focusTerminal, 150);
+                }
+            }, enterDelayMs);
+        } else {
+            var payload = (autoEnter ? (text + '\r') : text);
+            if (autoEnter && window.__onPromptSubmitted) {
+                window.__onPromptSubmitted(text);
+            }
+            window.__ttyd_xterm.sendData(payload);
+            setTimeout(window.focusTerminal, 30);
+            setTimeout(window.focusTerminal, 150);
+            setTimeout(window.focusTerminal, 350);
         }
-        window.__ttyd_xterm.sendData(payload);
-        setTimeout(window.focusTerminal, 30);
-        setTimeout(window.focusTerminal, 150);
-        setTimeout(window.focusTerminal, 350);
         return true;
     }
     console.warn('__ttyd_xterm not ready yet');
@@ -3872,9 +3891,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         e.stopPropagation();
                         if (quickPromptsPopover) quickPromptsPopover.classList.remove('active');
                         var autoEnter = Boolean(p.auto_enter);
-                        window.sendTextToTerminal(p.content, autoEnter);
-                        showPreview('⚡ Comando', p.title || p.content, false, false);
-                        hidePreview(2000);
+                        window.sendTextToTerminal(p.content, autoEnter, autoEnter ? 1000 : 0);
+                        showPreview('⚡ ' + (p.title || p.content), autoEnter ? 'A executar em 1s...' : 'Inserido no terminal.', false, false);
+                        hidePreview(2500);
                         window.focusTerminal();
                     });
 
@@ -4020,7 +4039,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         e.stopPropagation();
                         if (promptsModal) promptsModal.classList.remove('active');
                         var autoEnter = Boolean(p.auto_enter);
-                        window.sendTextToTerminal(p.content, autoEnter);
+                        window.sendTextToTerminal(p.content, autoEnter, autoEnter ? 1000 : 0);
                         showPreview('Prompt Inserido', p.title, false, false);
                         hidePreview(2500);
                         window.focusTerminal();
