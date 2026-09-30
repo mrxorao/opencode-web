@@ -68,11 +68,12 @@ docker run -d \
 ## 🎙️ Cloud Voice Recognition & Conversation Mode (STT / TTS)
 
 A built-in floating voice toolbar is available directly on the web interface (desktop and mobile/smartphone):
-- **🎙️ Microphone (Single Voice Dictation):** Click the microphone to dictate your prompt in real-time.
-- **💬 Conversation Mode (Interactive Dialogue Loop):** Continuous hands-free conversation — you speak, Groq Whisper transcribes and sends the prompt, OpenCode responds, TTS reads the AI answer and interactive options aloud, and the microphone automatically reopens for your next reply!
+- **🎙️ Microphone (Single Voice Dictation):** Click the microphone to dictate your prompt in real-time with Groq Cloud Whisper.
+- **🔊 Microsoft Edge Neural TTS (Free Studio Voices):** Ultra-realistic, high-definition neural text-to-speech powered 100% in the cloud by Microsoft (0% local CPU/GPU consumption). Supports PT-PT (`Raquel`, `Duarte`), PT-BR (`Francisca`, `Antonio`, `Thalita`), EN-US (`Aria`, `Guy`, `Jenny`, `Andrew`), and ES-ES (`Elvira`, `Alvaro`), with auto-fallback to native browser Web Speech API.
+- **💬 Conversation Mode (Interactive Dialogue Loop):** Continuous hands-free conversation — you speak, Groq Whisper transcribes and sends the prompt, OpenCode responds, Edge Neural TTS reads the AI answer and interactive options aloud, and the microphone automatically reopens for your next reply!
 - **🎯 Configurable Whisper Model:** Defaults to `VOICE_GROQ_MODEL=whisper-large-v3` (maximum precision), with support for `whisper-large-v3-turbo` (ultra-fast) in your `.env` file.
 - **🔒 Dedicated Voice Key:** `VOICE_GROQ_API_KEY` is used exclusively for speech-to-text without cluttering OpenCode AI models.
-- **⚙️ Configurable Language:** Set `VOICE_LANGUAGE=EN` (default), `PT`, or `BR` in your `.env` file.
+- **⚙️ Configurable Language & Voice:** Set `VOICE_LANGUAGE=EN` (default), `PT`, or `BR`, and optionally configure `VOICE_TTS_VOICE` in your `.env` file or directly in the UI Settings modal with an instant "Test Voice" button.
 - **📌 8-Zone Drag & Drop Snapping:** Drag the floating toolbar anywhere across the screen to automatically snap and dock to any of the 8 screen zones (Corners and Center edges: Top-Center, Bottom-Center, Middle-Left, Middle-Right, Top-Left, Top-Right, Bottom-Left, Bottom-Right), with your preference saved in local storage.
 - **📱 Mobile Responsive:** Floating toolbar designed specifically for touchscreen devices and mobile browsers (Chrome, Safari, Firefox, Edge).
 

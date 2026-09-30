@@ -1765,7 +1765,46 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         </div>
                     </div>
 
-                    <!-- 4. Atalhos de Teclado -->
+                    <!-- 5. Voz Neural do Modo Conversa (Edge TTS) -->
+                    <div class="settings-block">
+                        <div class="settings-block-title">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                            <span>Voz Neural do Modo Conversa (TTS)</span>
+                        </div>
+                        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+                            <select id="tts-voice-select" class="prompt-form-input" style="flex:1;padding:7px 10px;font-size:12.5px;background:#0d1117;color:#e6edf3;border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;">
+                                <option value="default">✨ Automático (Microsoft Edge Neural)</option>
+                                <optgroup label="Português (Portugal)">
+                                    <option value="pt-PT-RaquelNeural">🇵🇹 Raquel Neural (Feminina)</option>
+                                    <option value="pt-PT-DuarteNeural">🇵🇹 Duarte Neural (Masculino)</option>
+                                </optgroup>
+                                <optgroup label="Português (Brasil)">
+                                    <option value="pt-BR-FranciscaNeural">🇧🇷 Francisca Neural (Feminina)</option>
+                                    <option value="pt-BR-AntonioNeural">🇧🇷 Antonio Neural (Masculino)</option>
+                                    <option value="pt-BR-ThalitaMultilingualNeural">🇧🇷 Thalita Multilíngue</option>
+                                </optgroup>
+                                <optgroup label="Inglês (EUA)">
+                                    <option value="en-US-AriaNeural">🇺🇸 Aria Neural (Feminina)</option>
+                                    <option value="en-US-GuyNeural">🇺🇸 Guy Neural (Masculino)</option>
+                                    <option value="en-US-JennyNeural">🇺🇸 Jenny Neural (Feminina)</option>
+                                    <option value="en-US-AndrewMultilingualNeural">🇺🇸 Andrew Multilíngue</option>
+                                </optgroup>
+                                <optgroup label="Espanhol (Espanha)">
+                                    <option value="es-ES-ElviraNeural">🇪🇸 Elvira Neural (Feminina)</option>
+                                    <option value="es-ES-AlvaroNeural">🇪🇸 Alvaro Neural (Masculino)</option>
+                                </optgroup>
+                                <optgroup label="Navegador Local">
+                                    <option value="browser">🌐 Voz Local do Navegador (Web Speech)</option>
+                                </optgroup>
+                            </select>
+                            <button id="tts-test-voice-btn" class="modal-btn modal-btn-sec" style="padding:7px 12px;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:5px;" title="Ouvir demonstração da voz selecionada">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                <span>Testar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 6. Atalhos de Teclado -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6.01" y2="8"></line><line x1="10" y1="8" x2="10.01" y2="8"></line><line x1="14" y1="8" x2="14.01" y2="8"></line><line x1="18" y1="8" x2="18.01" y2="8"></line><line x1="8" y1="12" x2="8.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="16" y1="12" x2="16.01" y2="12"></line><line x1="6" y1="16" x2="18" y2="16"></line></svg>
@@ -2280,9 +2319,24 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 }
             } catch(e) {}
         }
-        syncInitialMessageId();
+        var currentTtsAudio = null;
+        var currentTtsAbortController = null;
+        var ttsSessionCounter = 0;
 
         function stopSpeaking() {
+            ttsSessionCounter++;
+            if (currentTtsAbortController) {
+                try { currentTtsAbortController.abort(); } catch(e) {}
+                currentTtsAbortController = null;
+            }
+            if (currentTtsAudio) {
+                try {
+                    currentTtsAudio.pause();
+                    currentTtsAudio.currentTime = 0;
+                    currentTtsAudio.src = '';
+                } catch(e) {}
+                currentTtsAudio = null;
+            }
             if (window.speechSynthesis) {
                 try { window.speechSynthesis.cancel(); } catch(e) {}
             }
@@ -2602,64 +2656,216 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        function speakAiMessage(rawText) {
+        async function speakAiMessage(rawText) {
             if (!isConversationMode) return;
-            if (!window.speechSynthesis) return;
             var text = cleanMarkdownForSpeech(rawText);
             if (!text || text.length < 2) return;
 
             stopSpeaking();
+            var thisGenId = ++ttsSessionCounter;
+            currentTtsAbortController = new AbortController();
+            var abortSignal = currentTtsAbortController.signal;
 
-            var voice = getBestVoiceForLang(configuredLang);
-            var sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
-            var validSentences = [];
-            for (var i = 0; i < sentences.length; i++) {
-                var s = sentences[i].trim();
-                if (s.length > 0) validSentences.push(s);
+            var selectedVoice = localStorage.getItem('opencode_tts_voice') || 'default';
+
+            // 1. Fallback: User explicitly selected local browser Web Speech API
+            if (selectedVoice === 'browser') {
+                if (!window.speechSynthesis) return;
+                var browserVoice = getBestVoiceForLang(configuredLang);
+                var sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
+                var validSentences = [];
+                for (var i = 0; i < sentences.length; i++) {
+                    var s = sentences[i].trim();
+                    if (s.length > 0) validSentences.push(s);
+                }
+                if (validSentences.length === 0) return;
+
+                showPreview('Áudio Local (' + configuredLang + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
+                hidePreview(4000);
+
+                isSpeaking = true;
+                updateTalkButton();
+
+                validSentences.forEach(function(sentence, idx) {
+                    var utterance = new SpeechSynthesisUtterance(sentence);
+                    if (browserVoice) utterance.voice = browserVoice;
+                    utterance.rate = 1.05;
+                    utterance.pitch = 1.0;
+
+                    if (idx === validSentences.length - 1) {
+                        utterance.onend = function() {
+                            if (thisGenId !== ttsSessionCounter) return;
+                            isSpeaking = false;
+                            updateTalkButton();
+                            if (isConversationMode) {
+                                showPreview('A sua vez...', 'Pode falar para responder...', false, true);
+                                setTimeout(function() {
+                                    if (isConversationMode && !isRecording && !isSpeaking && thisGenId === ttsSessionCounter) {
+                                        startGroqVoiceRecording();
+                                    }
+                                }, 450);
+                            }
+                        };
+                        utterance.onerror = function() {
+                            if (thisGenId !== ttsSessionCounter) return;
+                            isSpeaking = false;
+                            updateTalkButton();
+                            if (isConversationMode) {
+                                setTimeout(function() {
+                                    if (isConversationMode && !isRecording && !isSpeaking && thisGenId === ttsSessionCounter) {
+                                        startGroqVoiceRecording();
+                                    }
+                                }, 450);
+                            }
+                        };
+                    }
+                    window.speechSynthesis.speak(utterance);
+                });
+                return;
             }
-            if (validSentences.length === 0) return;
 
-            showPreview('Áudio (' + configuredLang + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
+            // 2. Microsoft Edge Neural Cloud TTS (High Definition Studio Voice)
+            showPreview('Voz Neural (' + (configuredLang || 'PT') + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
             hidePreview(4000);
 
             isSpeaking = true;
             updateTalkButton();
 
-            validSentences.forEach(function(sentence, idx) {
-                var utterance = new SpeechSynthesisUtterance(sentence);
-                if (voice) utterance.voice = voice;
-                utterance.rate = 1.05;
-                utterance.pitch = 1.0;
+            try {
+                // Split text into coherent sentence groups for low-latency playback
+                var rawMatches = text.match(/[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g) || [text];
+                var sentenceChunks = [];
+                var tempChunk = '';
 
-                if (idx === validSentences.length - 1) {
-                    utterance.onend = function() {
+                for (var m = 0; m < rawMatches.length; m++) {
+                    var chunk = rawMatches[m].trim();
+                    if (!chunk) continue;
+                    if (tempChunk.length + chunk.length < 180) {
+                        tempChunk += (tempChunk ? ' ' : '') + chunk;
+                    } else {
+                        if (tempChunk) sentenceChunks.push(tempChunk);
+                        tempChunk = chunk;
+                    }
+                }
+                if (tempChunk) sentenceChunks.push(tempChunk);
+                if (sentenceChunks.length === 0) sentenceChunks = [text];
+
+                async function fetchAudioBlob(textSnippet) {
+                    var resp = await fetch('/api/tts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            text: textSnippet,
+                            voice: selectedVoice === 'default' ? '' : selectedVoice,
+                            lang: configuredLang
+                        }),
+                        signal: abortSignal
+                    });
+                    if (!resp.ok) throw new Error('Edge TTS HTTP ' + resp.status);
+                    return await resp.blob();
+                }
+
+                // Prefetch first audio blob
+                var nextBlobPromise = fetchAudioBlob(sentenceChunks[0]);
+
+                for (var cIdx = 0; cIdx < sentenceChunks.length; cIdx++) {
+                    if (thisGenId !== ttsSessionCounter || !isConversationMode) {
+                        stopSpeaking();
+                        return;
+                    }
+
+                    var audioBlob = await nextBlobPromise;
+
+                    // Immediately start prefetching the next sentence in background
+                    if (cIdx + 1 < sentenceChunks.length) {
+                        nextBlobPromise = fetchAudioBlob(sentenceChunks[cIdx + 1]);
+                    }
+
+                    var audioUrl = URL.createObjectURL(audioBlob);
+
+                    await new Promise(function(resolve, reject) {
+                        if (thisGenId !== ttsSessionCounter || !isConversationMode) {
+                            URL.revokeObjectURL(audioUrl);
+                            resolve();
+                            return;
+                        }
+
+                        currentTtsAudio = new Audio(audioUrl);
+                        currentTtsAudio.onended = function() {
+                            URL.revokeObjectURL(audioUrl);
+                            currentTtsAudio = null;
+                            resolve();
+                        };
+                        currentTtsAudio.onerror = function(err) {
+                            URL.revokeObjectURL(audioUrl);
+                            currentTtsAudio = null;
+                            reject(err);
+                        };
+                        currentTtsAudio.play().catch(function() {
+                            URL.revokeObjectURL(audioUrl);
+                            currentTtsAudio = null;
+                            resolve();
+                        });
+                    });
+                }
+
+                if (thisGenId !== ttsSessionCounter) return;
+
+                isSpeaking = false;
+                updateTalkButton();
+
+                // Seamless switch to user's turn in Conversation Mode
+                if (isConversationMode) {
+                    showPreview('A sua vez...', 'Pode falar para responder...', false, true);
+                    setTimeout(function() {
+                        if (isConversationMode && !isRecording && !isSpeaking && thisGenId === ttsSessionCounter) {
+                            startGroqVoiceRecording();
+                        }
+                    }, 450);
+                }
+
+            } catch (err) {
+                if (thisGenId !== ttsSessionCounter) return;
+                console.warn('[tts] Fallback para sintetizador nativo devido a:', err);
+
+                // Auto-fallback to local speech synthesis
+                if (window.speechSynthesis) {
+                    var localVoice = getBestVoiceForLang(configuredLang);
+                    var fallbackUtt = new SpeechSynthesisUtterance(text);
+                    if (localVoice) fallbackUtt.voice = localVoice;
+                    fallbackUtt.rate = 1.05;
+                    fallbackUtt.pitch = 1.0;
+                    fallbackUtt.onend = function() {
+                        if (thisGenId !== ttsSessionCounter) return;
                         isSpeaking = false;
                         updateTalkButton();
-
-                        // In Conversation Mode: automatically re-activate microphone for user's turn!
                         if (isConversationMode) {
                             showPreview('A sua vez...', 'Pode falar para responder...', false, true);
                             setTimeout(function() {
-                                if (isConversationMode && !isRecording && !isSpeaking) {
+                                if (isConversationMode && !isRecording && !isSpeaking && thisGenId === ttsSessionCounter) {
                                     startGroqVoiceRecording();
                                 }
                             }, 450);
                         }
                     };
-                    utterance.onerror = function() {
+                    fallbackUtt.onerror = function() {
+                        if (thisGenId !== ttsSessionCounter) return;
                         isSpeaking = false;
                         updateTalkButton();
                         if (isConversationMode) {
                             setTimeout(function() {
-                                if (isConversationMode && !isRecording && !isSpeaking) {
+                                if (isConversationMode && !isRecording && !isSpeaking && thisGenId === ttsSessionCounter) {
                                     startGroqVoiceRecording();
                                 }
                             }, 450);
                         }
                     };
+                    window.speechSynthesis.speak(fallbackUtt);
+                } else {
+                    isSpeaking = false;
+                    updateTalkButton();
                 }
-                window.speechSynthesis.speak(utterance);
-            });
+            }
         }
 
         async function checkForNewAiResponse() {
@@ -3473,23 +3679,121 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
+        // TTS Voice Selection & Test in Settings Modal
+        var ttsVoiceSelect = document.getElementById('tts-voice-select');
+        var ttsTestVoiceBtn = document.getElementById('tts-test-voice-btn');
+        var ttsTestAudio = null;
+
+        if (ttsVoiceSelect) {
+            var savedTtsVoice = localStorage.getItem('opencode_tts_voice') || 'default';
+            ttsVoiceSelect.value = savedTtsVoice;
+            ttsVoiceSelect.addEventListener('change', function() {
+                localStorage.setItem('opencode_tts_voice', ttsVoiceSelect.value);
+            });
+        }
+
+        if (ttsTestVoiceBtn && ttsVoiceSelect) {
+            ttsTestVoiceBtn.addEventListener('click', async function() {
+                if (ttsTestAudio) {
+                    try { ttsTestAudio.pause(); ttsTestAudio.currentTime = 0; ttsTestAudio.src = ''; } catch(e) {}
+                    ttsTestAudio = null;
+                    ttsTestVoiceBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>Testar</span>';
+                    return;
+                }
+
+                var voice = ttsVoiceSelect.value;
+                var sampleText = 'Olá! Esta é uma demonstração da voz neural de alta qualidade do OpenCode Web.';
+                if (voice.startsWith('en-') || (voice === 'default' && configuredLang === 'EN')) {
+                    sampleText = 'Hello! This is a demonstration of OpenCode Web\'s high definition neural voice.';
+                } else if (voice.startsWith('es-') || (voice === 'default' && configuredLang === 'ES')) {
+                    sampleText = '¡Hola! Esta es una demostración de la voz neuronal de alta calidad de OpenCode Web.';
+                }
+
+                ttsTestVoiceBtn.innerHTML = '<span>A carregar...</span>';
+
+                if (voice === 'browser') {
+                    if (window.speechSynthesis) {
+                        try { window.speechSynthesis.cancel(); } catch(e) {}
+                        var utt = new SpeechSynthesisUtterance(sampleText);
+                        var v = getBestVoiceForLang(configuredLang);
+                        if (v) utt.voice = v;
+                        utt.onend = function() {
+                            ttsTestVoiceBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>Testar</span>';
+                        };
+                        utt.onerror = function() {
+                            ttsTestVoiceBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>Testar</span>';
+                        };
+                        window.speechSynthesis.speak(utt);
+                    } else {
+                        ttsTestVoiceBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>Testar</span>';
+                    }
+                    return;
+                }
+
+                try {
+                    var resp = await fetch('/api/tts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            text: sampleText,
+                            voice: voice === 'default' ? '' : voice,
+                            lang: configuredLang
+                        })
+                    });
+                    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                    var blob = await resp.blob();
+                    var audioUrl = URL.createObjectURL(blob);
+                    ttsTestAudio = new Audio(audioUrl);
+                    ttsTestVoiceBtn.innerHTML = '<span>A reproduzir...</span>';
+                    ttsTestAudio.onended = function() {
+                        URL.revokeObjectURL(audioUrl);
+                        ttsTestAudio = null;
+                        ttsTestVoiceBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>Testar</span>';
+                    };
+                    ttsTestAudio.onerror = function() {
+                        URL.revokeObjectURL(audioUrl);
+                        ttsTestAudio = null;
+                        ttsTestVoiceBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>Testar</span>';
+                    };
+                    ttsTestAudio.play();
+                } catch(e) {
+                    console.error('Erro ao testar voz:', e);
+                    ttsTestVoiceBtn.innerHTML = '<span>Erro</span>';
+                    setTimeout(function() {
+                        ttsTestVoiceBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>Testar</span>';
+                    }, 1800);
+                }
+            });
+        }
+
         if (settingsBtn) {
             settingsBtn.addEventListener('click', function() {
                 updateFontSizeModalUI(getCurrentTerminalFontSize());
                 updateOrientationModalUI();
                 updateThemeModalUI(localStorage.getItem('opencode_toolbar_theme') || 'light');
                 updateDebugModalUI(isDebugModeActive());
+                if (ttsVoiceSelect) {
+                    ttsVoiceSelect.value = localStorage.getItem('opencode_tts_voice') || 'default';
+                }
                 if (settingsModal) settingsModal.classList.add('active');
             });
         }
         if (settingsCloseBtn) {
             settingsCloseBtn.addEventListener('click', function() {
+                if (ttsTestAudio) {
+                    try { ttsTestAudio.pause(); ttsTestAudio.currentTime = 0; ttsTestAudio.src = ''; } catch(e) {}
+                    ttsTestAudio = null;
+                }
                 if (settingsModal) settingsModal.classList.remove('active');
                 restoreTerminalFocus();
             });
         }
         if (settingsOkBtn) {
             settingsOkBtn.addEventListener('click', function() {
+                if (ttsTestAudio) {
+                    try { ttsTestAudio.pause(); ttsTestAudio.currentTime = 0; ttsTestAudio.src = ''; } catch(e) {}
+                    ttsTestAudio = null;
+                }
                 if (settingsModal) settingsModal.classList.remove('active');
                 restoreTerminalFocus();
             });

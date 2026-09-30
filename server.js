@@ -2,12 +2,14 @@ const http = require('http');
 const net = require('net');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 const TTYD_PORT = 7680;
 const PROXY_PORT = 7681;
 const VOICE_GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
 const VOICE_GROQ_MODEL = (process.env.VOICE_GROQ_MODEL || 'whisper-large-v3').trim();
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
+const VOICE_TTS_VOICE = (process.env.VOICE_TTS_VOICE || '').trim();
 
 const DB_PATHS = [
     '/root/.local/share/opencode/opencode.db',
@@ -261,6 +263,117 @@ async function handleTranscribe(req, res) {
             res.end(JSON.stringify({ error: err.message, isGroqValid: false }));
         }
     });
+}
+
+const TTS_RECOMMENDED_VOICES = [
+    { id: 'pt-PT-RaquelNeural', name: 'Raquel (Portugal - Feminina)', lang: 'PT', gender: 'female', default: true },
+    { id: 'pt-PT-DuarteNeural', name: 'Duarte (Portugal - Masculino)', lang: 'PT', gender: 'male' },
+    { id: 'pt-BR-FranciscaNeural', name: 'Francisca (Brasil - Feminina)', lang: 'BR', gender: 'female', default: true },
+    { id: 'pt-BR-AntonioNeural', name: 'Antonio (Brasil - Masculino)', lang: 'BR', gender: 'male' },
+    { id: 'pt-BR-ThalitaMultilingualNeural', name: 'Thalita (Brasil - Multilíngue)', lang: 'BR', gender: 'female' },
+    { id: 'en-US-AriaNeural', name: 'Aria (EUA - Feminina)', lang: 'EN', gender: 'female', default: true },
+    { id: 'en-US-GuyNeural', name: 'Guy (EUA - Masculino)', lang: 'EN', gender: 'male' },
+    { id: 'en-US-JennyNeural', name: 'Jenny (EUA - Feminina)', lang: 'EN', gender: 'female' },
+    { id: 'en-US-AndrewMultilingualNeural', name: 'Andrew (EUA - Multilíngue)', lang: 'EN', gender: 'male' },
+    { id: 'es-ES-ElviraNeural', name: 'Elvira (Espanha - Feminina)', lang: 'ES', gender: 'female', default: true },
+    { id: 'es-ES-AlvaroNeural', name: 'Alvaro (Espanha - Masculino)', lang: 'ES', gender: 'male' }
+];
+
+function getDefaultVoiceForLang(lang) {
+    if (VOICE_TTS_VOICE) return VOICE_TTS_VOICE;
+    const l = (lang || DEFAULT_VOICE_LANGUAGE || 'PT').toUpperCase().trim();
+    if (l === 'PT') return 'pt-PT-RaquelNeural';
+    if (l === 'BR') return 'pt-BR-FranciscaNeural';
+    if (l === 'ES') return 'es-ES-ElviraNeural';
+    return 'en-US-AriaNeural';
+}
+
+function handleTtsVoices(req, res) {
+    res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=86400'
+    });
+    res.end(JSON.stringify(TTS_RECOMMENDED_VOICES));
+}
+
+function handleTts(req, res) {
+    const processTts = (text, voice, lang) => {
+        if (!text || !text.trim()) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'TEXT_REQUIRED', message: 'Nenhum texto fornecido para síntese de voz.' }));
+            return;
+        }
+
+        const selectedVoice = (voice && voice.trim()) ? voice.trim() : getDefaultVoiceForLang(lang);
+        const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+        const args = ['-m', 'edge_tts', '--text', text.trim(), '--voice', selectedVoice, '--write-media', '-'];
+
+        let py;
+        try {
+            py = spawn(pythonCmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+        } catch (err) {
+            console.error('[tts] Erro ao iniciar edge-tts:', err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'TTS_SPAWN_ERROR', message: err.message }));
+            return;
+        }
+
+        const audioChunks = [];
+        const errChunks = [];
+
+        py.stdout.on('data', chunk => audioChunks.push(chunk));
+        py.stderr.on('data', chunk => errChunks.push(chunk));
+
+        py.on('error', (err) => {
+            console.error('[tts] Falha no processo edge-tts:', err);
+            if (!res.headersSent) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'TTS_PROCESS_ERROR', message: err.message }));
+            }
+        });
+
+        py.on('close', (code) => {
+            if (code === 0 && audioChunks.length > 0) {
+                const audioBuffer = Buffer.concat(audioChunks);
+                res.writeHead(200, {
+                    'Content-Type': 'audio/mpeg',
+                    'Content-Length': audioBuffer.length,
+                    'Cache-Control': 'public, max-age=86400'
+                });
+                res.end(audioBuffer);
+            } else {
+                const errMsg = Buffer.concat(errChunks).toString('utf-8').trim();
+                console.error(`[tts] edge-tts terminou com código ${code}: ${errMsg}`);
+                if (!res.headersSent) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'TTS_SYNTHESIS_FAILED', message: errMsg || 'Falha ao sintetizar áudio.' }));
+                }
+            }
+        });
+    };
+
+    if (req.method === 'GET') {
+        const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const text = parsedUrl.searchParams.get('text') || '';
+        const voice = parsedUrl.searchParams.get('voice') || '';
+        const lang = parsedUrl.searchParams.get('lang') || DEFAULT_VOICE_LANGUAGE;
+        processTts(text, voice, lang);
+    } else if (req.method === 'POST') {
+        const chunks = [];
+        req.on('data', c => chunks.push(c));
+        req.on('end', () => {
+            try {
+                const body = JSON.parse(Buffer.concat(chunks).toString('utf-8'));
+                processTts(body.text, body.voice, body.lang);
+            } catch (e) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'INVALID_JSON', message: e.message }));
+            }
+        });
+    } else {
+        res.writeHead(405, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'METHOD_NOT_ALLOWED' }));
+    }
 }
 
 const { Readable } = require('stream');
@@ -692,7 +805,7 @@ async function requestListener(req, res) {
     const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const pathname = parsedUrl.pathname;
 
-    // Return server configuration (Groq validation status, default language & HTTPS status)
+    // Return server configuration (Groq validation status, default language, TTS & HTTPS status)
     if (pathname === '/api/config' && req.method === 'GET') {
         const groqStatus = await checkGroqStatus();
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -703,9 +816,22 @@ async function requestListener(req, res) {
             groqErrorMessage: groqStatus.errorMessage,
             groqModel: VOICE_GROQ_MODEL,
             defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
+            defaultTtsVoice: getDefaultVoiceForLang(DEFAULT_VOICE_LANGUAGE),
             isHttps: isHttps,
             status: groqStatus.isValid ? 'ready' : (groqStatus.error || 'disabled')
         }));
+        return;
+    }
+
+    // Return recommended neural TTS voices
+    if (pathname === '/api/tts/voices' && req.method === 'GET') {
+        handleTtsVoices(req, res);
+        return;
+    }
+
+    // Generate Neural Text-to-Speech audio (Microsoft Edge TTS)
+    if (pathname === '/api/tts' && (req.method === 'GET' || req.method === 'POST')) {
+        handleTts(req, res);
         return;
     }
 
@@ -831,6 +957,7 @@ server.listen(PROXY_PORT, '0.0.0.0', async () => {
     const proto = isHttps ? 'https' : 'http';
     console.log(`[proxy] Web Terminal & Voice Server listening on ${proto}://0.0.0.0:${PROXY_PORT} -> ttyd :${TTYD_PORT}`);
     console.log(`[proxy] Default Voice Language: ${DEFAULT_VOICE_LANGUAGE}`);
+    console.log(`[proxy] Microsoft Edge Neural TTS enabled (Default voice: ${getDefaultVoiceForLang(DEFAULT_VOICE_LANGUAGE)})`);
     if (VOICE_GROQ_API_KEY) {
         const groqStatus = await checkGroqStatus();
         if (groqStatus.isValid) {
