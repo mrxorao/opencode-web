@@ -3091,78 +3091,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             }
         }
 
-        function fallbackSpeakSpeechSynthesis(text) {
-            if (!window.speechSynthesis) {
-                isSpeaking = false;
-                updateTalkButton();
-                return;
-            }
-
-            var bestVoice = getBestVoiceForLang(configuredLang);
-            var sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
-            var validSentences = [];
-            for (var i = 0; i < sentences.length; i++) {
-                var s = sentences[i].trim();
-                if (s.length > 0) validSentences.push(s);
-            }
-            if (validSentences.length === 0) validSentences = [text];
-
-            isSpeaking = true;
-            updateTalkButton();
-
-            validSentences.forEach(function(sentence, idx) {
-                var utterance = new SpeechSynthesisUtterance(sentence);
-                if (bestVoice) utterance.voice = bestVoice;
-                utterance.rate = 1.0;
-                utterance.pitch = 1.0;
-
-                if (idx === validSentences.length - 1) {
-                    utterance.onend = function() {
-                        isSpeaking = false;
-                        updateTalkButton();
-                        if (isConversationMode) {
-                            showPreview('A sua vez...', 'Pode falar para responder...', false, true);
-                            setTimeout(function() {
-                                if (isConversationMode && !isRecording && !isSpeaking) {
-                                    startGroqVoiceRecording();
-                                }
-                            }, 450);
-                        }
-                    };
-                    utterance.onerror = function() {
-                        isSpeaking = false;
-                        updateTalkButton();
-                        if (isConversationMode) {
-                            setTimeout(function() {
-                                if (isConversationMode && !isRecording && !isSpeaking) {
-                                    startGroqVoiceRecording();
-                                }
-                            }, 450);
-                        }
-                    };
-                }
-                window.speechSynthesis.speak(utterance);
-            });
-        }
-
-        function speakAiMessage(rawText) {
-            if (!isConversationMode) return;
-            var text = cleanMarkdownForSpeech(rawText);
-            if (!text || text.length < 2) return;
-
-            stopSpeaking();
-
-            var currentProvider = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser';
-
-            showPreview('A Falar (' + (configuredLang || 'PT') + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
-            hidePreview(4000);
-
-            if (currentProvider === 'browser') {
-                fallbackSpeakSpeechSynthesis(text);
-                return;
-            }
-
-            // Microsoft Neural Voice (Edge TTS)
+        function speakWithMicrosoftTts(text, allowFallbackToBrowser) {
             isSpeaking = true;
             updateTalkButton();
 
@@ -3186,9 +3115,15 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 };
 
                 audio.onerror = function() {
-                    console.warn('[tts] Edge TTS audio request failed, falling back to local speech synthesis.');
+                    console.warn('[tts] Edge TTS audio request failed.');
                     if (currentTtsAudio === audio) currentTtsAudio = null;
-                    fallbackSpeakSpeechSynthesis(text);
+                    if (allowFallbackToBrowser) {
+                        console.log('[tts] Falling back to Browser Web Speech API...');
+                        speakWithBrowserTts(text, false);
+                    } else {
+                        isSpeaking = false;
+                        updateTalkButton();
+                    }
                 };
 
                 var playPromise = audio.play();
@@ -3196,12 +3131,113 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     playPromise.catch(function(err) {
                         console.warn('[tts] Audio playback error or autoplay blocked:', err);
                         if (currentTtsAudio === audio) currentTtsAudio = null;
-                        fallbackSpeakSpeechSynthesis(text);
+                        if (allowFallbackToBrowser) {
+                            console.log('[tts] Falling back to Browser Web Speech API...');
+                            speakWithBrowserTts(text, false);
+                        } else {
+                            isSpeaking = false;
+                            updateTalkButton();
+                        }
                     });
                 }
             } catch(e) {
-                console.error('[tts] Edge TTS initialization error:', e);
-                fallbackSpeakSpeechSynthesis(text);
+                console.error('[tts] Microsoft TTS initialization error:', e);
+                if (allowFallbackToBrowser) {
+                    speakWithBrowserTts(text, false);
+                } else {
+                    isSpeaking = false;
+                    updateTalkButton();
+                }
+            }
+        }
+
+        function speakWithBrowserTts(text, allowFallbackToMicrosoft) {
+            if (!window.speechSynthesis) {
+                if (allowFallbackToMicrosoft) {
+                    console.warn('[tts] Web Speech API not supported in browser, falling back to Microsoft Neural.');
+                    speakWithMicrosoftTts(text, false);
+                    return;
+                }
+                isSpeaking = false;
+                updateTalkButton();
+                return;
+            }
+
+            var bestVoice = getBestVoiceForLang(configuredLang);
+            var sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
+            var validSentences = [];
+            for (var i = 0; i < sentences.length; i++) {
+                var s = sentences[i].trim();
+                if (s.length > 0) validSentences.push(s);
+            }
+            if (validSentences.length === 0) validSentences = [text];
+
+            isSpeaking = true;
+            updateTalkButton();
+
+            var hadFallback = false;
+
+            validSentences.forEach(function(sentence, idx) {
+                var utterance = new SpeechSynthesisUtterance(sentence);
+                if (bestVoice) utterance.voice = bestVoice;
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+
+                if (idx === validSentences.length - 1) {
+                    utterance.onend = function() {
+                        isSpeaking = false;
+                        updateTalkButton();
+                        if (isConversationMode) {
+                            showPreview('A sua vez...', 'Pode falar para responder...', false, true);
+                            setTimeout(function() {
+                                if (isConversationMode && !isRecording && !isSpeaking) {
+                                    startGroqVoiceRecording();
+                                }
+                            }, 450);
+                        }
+                    };
+                }
+
+                utterance.onerror = function(err) {
+                    console.warn('[tts] Browser speech synthesis error:', err);
+                    if (!hadFallback && allowFallbackToMicrosoft) {
+                        hadFallback = true;
+                        try { window.speechSynthesis.cancel(); } catch(e) {}
+                        console.log('[tts] Falling back to Microsoft Neural TTS...');
+                        speakWithMicrosoftTts(text, false);
+                        return;
+                    }
+                    isSpeaking = false;
+                    updateTalkButton();
+                    if (isConversationMode) {
+                        setTimeout(function() {
+                            if (isConversationMode && !isRecording && !isSpeaking) {
+                                startGroqVoiceRecording();
+                            }
+                        }, 450);
+                    }
+                };
+
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+
+        function speakAiMessage(rawText) {
+            if (!isConversationMode) return;
+            var text = cleanMarkdownForSpeech(rawText);
+            if (!text || text.length < 2) return;
+
+            stopSpeaking();
+
+            var currentProvider = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser';
+
+            showPreview('A Falar (' + (configuredLang || 'PT') + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
+            hidePreview(4000);
+
+            if (currentProvider === 'browser') {
+                speakWithBrowserTts(text, true);
+            } else {
+                speakWithMicrosoftTts(text, true);
             }
         }
 
