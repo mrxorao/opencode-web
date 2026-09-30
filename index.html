@@ -2135,8 +2135,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         function showPreview(status, text, isError, showWave, forceShow) {
             var isDebug = isDebugModeActive();
-            // In non-debug mode (default), silence status notifications (e.g. Mode activated, stopped, canceled)
-            if (!isDebug && !isError && !forceShow && !showWave) {
+            // In non-debug mode (default), silence all floating preview popup notifications
+            if (!isDebug && !forceShow) {
                 if (previewBox) previewBox.style.display = 'none';
                 return;
             }
