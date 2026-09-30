@@ -698,78 +698,105 @@ body.theme-light .file-drop-desc{
     top: 50%;
     right: calc(env(safe-area-inset-right, 6px) + 54px);
     transform: translateY(-50%);
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-end !important;
+    gap: 6px;
     max-height: 85vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 4px;
 }
+#quick-prompts-popover.popover-middle-right::-webkit-scrollbar { display: none; }
 
 #quick-prompts-popover.popover-middle-left {
     top: 50%;
     left: calc(env(safe-area-inset-left, 6px) + 54px);
     transform: translateY(-50%);
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-start !important;
+    gap: 6px;
     max-height: 85vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 4px;
 }
+#quick-prompts-popover.popover-middle-left::-webkit-scrollbar { display: none; }
 
 #quick-prompts-popover.popover-top-center {
     top: calc(env(safe-area-inset-top, 6px) + 54px);
     left: 50%;
     transform: translateX(-50%);
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    max-width: calc(100vw - 24px);
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px;
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 4px;
 }
+#quick-prompts-popover.popover-top-center::-webkit-scrollbar { display: none; }
 
 #quick-prompts-popover.popover-bottom-center {
     bottom: calc(env(safe-area-inset-bottom, 6px) + 54px);
     left: 50%;
     transform: translateX(-50%);
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    max-width: calc(100vw - 24px);
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px;
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 4px;
 }
+#quick-prompts-popover.popover-bottom-center::-webkit-scrollbar { display: none; }
 
 .quick-prompts-bubbles-track {
     display: flex;
     gap: 6px;
-    flex-wrap: wrap;
     pointer-events: auto;
-    max-width: 340px;
 }
 
 #quick-prompts-popover.popover-middle-right .quick-prompts-bubbles-track {
-    justify-content: flex-end;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-end;
 }
 
 #quick-prompts-popover.popover-middle-left .quick-prompts-bubbles-track {
-    justify-content: flex-start;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-start;
 }
 
 #quick-prompts-popover.popover-top-center .quick-prompts-bubbles-track,
 #quick-prompts-popover.popover-bottom-center .quick-prompts-bubbles-track {
-    justify-content: center;
-    max-width: calc(100vw - 120px);
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center;
 }
 
-.quick-prompts-actions-track {
-    display: flex;
-    gap: 6px;
-    pointer-events: auto;
+.prompt-card-btn.order-btn {
+    padding: 4px 6px;
+    color: #94a3b8;
 }
-
-#quick-prompts-popover.popover-middle-right .quick-prompts-actions-track {
-    justify-content: flex-end;
-}
-
-#quick-prompts-popover.popover-middle-left .quick-prompts-actions-track {
-    justify-content: flex-start;
+.prompt-card-btn.order-btn:hover {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.25);
 }
 
 /* Quick Prompt Text Bubble (Glassmorphism Pill) */
@@ -2109,16 +2136,9 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
             <div class="quick-prompts-bubbles-track" id="quick-prompts-grid">
                 <div class="quick-prompt-bubble" style="opacity:0.7"><span>...</span></div>
             </div>
-            <div class="quick-prompts-actions-track">
-                <button id="quick-prompts-add-btn" class="quick-prompt-bubble quick-action-bubble" title="Criar novo comando rápido">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    <span>+ Novo</span>
-                </button>
-                <button id="quick-prompts-all-btn" class="quick-prompt-bubble quick-action-bubble secondary" title="Abrir biblioteca completa de prompts">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    <span>📚 Biblioteca</span>
-                </button>
-            </div>
+            <button id="quick-prompts-all-btn" class="quick-prompt-bubble quick-action-bubble secondary" title="Abrir biblioteca completa de prompts">
+                <span>📚 Biblioteca</span>
+            </button>
         `;
 
         var promptsModal = document.createElement('div');
@@ -4153,6 +4173,26 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
                         window.focusTerminal();
                     });
 
+                    var moveUpBtn = document.createElement('button');
+                    moveUpBtn.className = 'prompt-card-btn order-btn';
+                    moveUpBtn.title = 'Mover para Cima (Prioridade)';
+                    moveUpBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>';
+                    moveUpBtn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        await reorderPrompt(p.id, 'up');
+                    });
+
+                    var moveDownBtn = document.createElement('button');
+                    moveDownBtn.className = 'prompt-card-btn order-btn';
+                    moveDownBtn.title = 'Mover para Baixo';
+                    moveDownBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
+                    moveDownBtn.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        await reorderPrompt(p.id, 'down');
+                    });
+
+                    actions.appendChild(moveUpBtn);
+                    actions.appendChild(moveDownBtn);
                     actions.appendChild(copyBtn);
                     actions.appendChild(editBtn);
                     actions.appendChild(deleteBtn);
@@ -4188,6 +4228,22 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
                     promptsCardsContainer.innerHTML = '<div style="text-align:center;padding:24px 12px;color:#ff7b72;font-size:13px">Erro ao aceder à base de dados SQLite: ' + (err.message || 'Falha de comunicação.') + '</div>';
                 }
                 if (promptsPagination) promptsPagination.style.display = 'none';
+            }
+        }
+
+        async function reorderPrompt(id, direction) {
+            try {
+                var resp = await fetch('/api/prompts/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, direction: direction })
+                });
+                if (resp.ok) {
+                    fetchPromptsFromServer(promptCurrentPage, promptSearchQuery, promptCurrentTab);
+                    fetchQuickPrompts();
+                }
+            } catch(err) {
+                console.error('Error reordering prompt:', err);
             }
         }
 

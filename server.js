@@ -483,6 +483,7 @@ function getPromptsDb() {
                 content TEXT NOT NULL,
                 is_quick INTEGER DEFAULT 0,
                 auto_enter INTEGER DEFAULT 0,
+                sort_order INTEGER DEFAULT 0,
                 time_created INTEGER NOT NULL,
                 time_updated INTEGER NOT NULL
             );
@@ -491,52 +492,43 @@ function getPromptsDb() {
         // Run migrations for existing DBs if columns do not exist
         try { db.exec('ALTER TABLE prompts ADD COLUMN is_quick INTEGER DEFAULT 0;'); } catch(e) {}
         try { db.exec('ALTER TABLE prompts ADD COLUMN auto_enter INTEGER DEFAULT 0;'); } catch(e) {}
+        try { db.exec('ALTER TABLE prompts ADD COLUMN sort_order INTEGER DEFAULT 0;'); } catch(e) {}
 
         const countRow = db.prepare('SELECT COUNT(*) as count FROM prompts').get();
         if (countRow && countRow.count === 0) {
             const insertStmt = db.prepare(`
-                INSERT INTO prompts (id, title, content, is_quick, auto_enter, time_created, time_updated)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO prompts (id, title, content, is_quick, auto_enter, sort_order, time_created, time_updated)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `);
             const now = Date.now();
             const seed = [
                 // Quick Command Bubbles
-                { id: 'qp1', title: '/new', content: '/new', is_quick: 1, auto_enter: 1 },
-                { id: 'qp2', title: '/models', content: '/models', is_quick: 1, auto_enter: 1 },
-                { id: 'qp3', title: '/compact', content: '/compact', is_quick: 1, auto_enter: 1 },
-                { id: 'qp4', title: '/clear', content: '/clear', is_quick: 1, auto_enter: 1 },
-                { id: 'qp5', title: 'git status', content: 'git status', is_quick: 1, auto_enter: 1 },
-                { id: 'qp6', title: 'git diff', content: 'git diff', is_quick: 1, auto_enter: 1 },
+                { id: 'qp1', title: '/new', content: '/new', is_quick: 1, auto_enter: 1, sort_order: 1 },
+                { id: 'qp2', title: '/models', content: '/models', is_quick: 1, auto_enter: 1, sort_order: 2 },
+                { id: 'qp3', title: '/compact', content: '/compact', is_quick: 1, auto_enter: 1, sort_order: 3 },
+                { id: 'qp4', title: '/clear', content: '/clear', is_quick: 1, auto_enter: 1, sort_order: 4 },
+                { id: 'qp5', title: 'git status', content: 'git status', is_quick: 1, auto_enter: 1, sort_order: 5 },
+                { id: 'qp6', title: 'git diff', content: 'git diff', is_quick: 1, auto_enter: 1, sort_order: 6 },
                 // Full Library Prompts
-                { id: 'p1', title: '⚡ Refatorar Código', content: 'Por favor refatora o seguinte código para torná-lo mais limpo, modular, eficiente e legível:\n\n', is_quick: 0, auto_enter: 0 },
-                { id: 'p2', title: '🧪 Gerar Testes Unitários', content: 'Cria testes unitários abrangentes cobrindo casos normais e extremos para a seguinte implementação:\n\n', is_quick: 0, auto_enter: 0 },
-                { id: 'p3', title: '🐛 Explicar & Corrigir Bug', content: 'Analisa o seguinte erro/comportamento inesperado e explica a causa raiz com a respetiva correção detalhada:\n\n', is_quick: 0, auto_enter: 0 },
-                { id: 'p4', title: '🛡️ Auditoria de Segurança', content: 'Revê este código identificando possíveis vulnerabilidades de segurança, injeções, validações em falta e boas práticas:\n\n', is_quick: 0, auto_enter: 0 }
+                { id: 'p1', title: '⚡ Refatorar Código', content: 'Por favor refatora o seguinte código para torná-lo mais limpo, modular, eficiente e legível:\n\n', is_quick: 0, auto_enter: 0, sort_order: 7 },
+                { id: 'p2', title: '🧪 Gerar Testes Unitários', content: 'Cria testes unitários abrangentes cobrindo casos normais e extremos para a seguinte implementação:\n\n', is_quick: 0, auto_enter: 0, sort_order: 8 },
+                { id: 'p3', title: '🐛 Explicar & Corrigir Bug', content: 'Analisa o seguinte erro/comportamento inesperado e explica a causa raiz com a respetiva correção detalhada:\n\n', is_quick: 0, auto_enter: 0, sort_order: 9 },
+                { id: 'p4', title: '🛡️ Auditoria de Segurança', content: 'Revê este código identificando possíveis vulnerabilidades de segurança, injeções, validações em falta e boas práticas:\n\n', is_quick: 0, auto_enter: 0, sort_order: 10 }
             ];
             for (const item of seed) {
-                insertStmt.run(item.id, item.title, item.content, item.is_quick, item.auto_enter, now, now);
+                insertStmt.run(item.id, item.title, item.content, item.is_quick, item.auto_enter, item.sort_order, now, now);
             }
         } else {
-            // If DB exists but has 0 quick prompts, seed default quick prompts
-            const quickCountRow = db.prepare('SELECT COUNT(*) as count FROM prompts WHERE is_quick = 1').get();
-            if (quickCountRow && quickCountRow.count === 0) {
-                const insertStmt = db.prepare(`
-                    INSERT INTO prompts (id, title, content, is_quick, auto_enter, time_created, time_updated)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                `);
-                const now = Date.now();
-                const quickSeed = [
-                    { id: 'qp1', title: '/new', content: '/new', is_quick: 1, auto_enter: 1 },
-                    { id: 'qp2', title: '/models', content: '/models', is_quick: 1, auto_enter: 1 },
-                    { id: 'qp3', title: '/compact', content: '/compact', is_quick: 1, auto_enter: 1 },
-                    { id: 'qp4', title: '/clear', content: '/clear', is_quick: 1, auto_enter: 1 },
-                    { id: 'qp5', title: 'git status', content: 'git status', is_quick: 1, auto_enter: 1 },
-                    { id: 'qp6', title: 'git diff', content: 'git diff', is_quick: 1, auto_enter: 1 }
-                ];
-                for (const item of quickSeed) {
-                    try { insertStmt.run(item.id, item.title, item.content, item.is_quick, item.auto_enter, now, now); } catch(e) {}
+            // Normalize any 0 sort_orders
+            try {
+                const unranked = db.prepare('SELECT id FROM prompts WHERE sort_order = 0 ORDER BY is_quick DESC, time_created ASC').all();
+                if (unranked && unranked.length > 0) {
+                    const updateOrder = db.prepare('UPDATE prompts SET sort_order = ? WHERE id = ?');
+                    unranked.forEach((item, idx) => {
+                        updateOrder.run(idx + 1, item.id);
+                    });
                 }
-            }
+            } catch(e) {}
         }
 
         promptsDbInstance = db;
@@ -576,7 +568,7 @@ function handleGetQuickPrompts(req, res) {
             res.end(JSON.stringify({ error: 'DB_UNAVAILABLE' }));
             return;
         }
-        const quickPrompts = db.prepare('SELECT id, title, content, is_quick, auto_enter, time_created, time_updated FROM prompts WHERE is_quick = 1 ORDER BY time_updated DESC, time_created DESC').all();
+        const quickPrompts = db.prepare('SELECT id, title, content, is_quick, auto_enter, sort_order, time_created, time_updated FROM prompts WHERE is_quick = 1 ORDER BY sort_order ASC, time_created ASC').all();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ quickPrompts }));
     } catch(err) {
@@ -622,7 +614,7 @@ function handleGetPrompts(req, res, parsedUrl) {
         const countRow = db.prepare(countQuery).get(...params);
         const total = countRow ? countRow.count : 0;
 
-        const selectQuery = `SELECT id, title, content, is_quick, auto_enter, time_created, time_updated FROM prompts ${whereSql} ORDER BY time_updated DESC, time_created DESC LIMIT ? OFFSET ?`;
+        const selectQuery = `SELECT id, title, content, is_quick, auto_enter, sort_order, time_created, time_updated FROM prompts ${whereSql} ORDER BY sort_order ASC, time_created ASC LIMIT ? OFFSET ?`;
         const prompts = db.prepare(selectQuery).all(...params, limit, offset);
 
         const totalPages = Math.ceil(total / limit) || 1;
@@ -666,11 +658,11 @@ async function handleSavePrompt(req, res) {
 
         const now = Date.now();
         if (id) {
-            const existing = db.prepare('SELECT id, time_created FROM prompts WHERE id = ?').get(id);
+            const existing = db.prepare('SELECT id, sort_order, time_created FROM prompts WHERE id = ?').get(id);
             if (existing) {
                 db.prepare('UPDATE prompts SET title = ?, content = ?, is_quick = ?, auto_enter = ?, time_updated = ? WHERE id = ?').run(title, content, is_quick, auto_enter, now, id);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, prompt: { id, title, content, is_quick, auto_enter, time_created: existing.time_created, time_updated: now } }));
+                res.end(JSON.stringify({ success: true, prompt: { id, title, content, is_quick, auto_enter, sort_order: existing.sort_order, time_created: existing.time_created, time_updated: now } }));
                 return;
             }
         }
@@ -678,12 +670,72 @@ async function handleSavePrompt(req, res) {
         if (!id) {
             id = 'p_' + now + '_' + Math.random().toString(36).substring(2, 7);
         }
-        db.prepare('INSERT INTO prompts (id, title, content, is_quick, auto_enter, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, title, content, is_quick, auto_enter, now, now);
+
+        const maxRow = db.prepare('SELECT MAX(sort_order) as maxOrder FROM prompts').get();
+        const sort_order = ((maxRow && maxRow.maxOrder !== null) ? maxRow.maxOrder : 0) + 1;
+
+        db.prepare('INSERT INTO prompts (id, title, content, is_quick, auto_enter, sort_order, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(id, title, content, is_quick, auto_enter, sort_order, now, now);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, prompt: { id, title, content, is_quick, auto_enter, time_created: now, time_updated: now } }));
+        res.end(JSON.stringify({ success: true, prompt: { id, title, content, is_quick, auto_enter, sort_order, time_created: now, time_updated: now } }));
     } catch(err) {
         console.error('Error saving prompt to SQLite:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+    }
+}
+
+async function handleReorderPrompts(req, res) {
+    try {
+        const db = getPromptsDb();
+        if (!db) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'DB_UNAVAILABLE' }));
+            return;
+        }
+
+        const body = await parseJsonBody(req);
+        const { id, direction, ordered_ids } = body;
+
+        if (Array.isArray(ordered_ids) && ordered_ids.length > 0) {
+            const updateStmt = db.prepare('UPDATE prompts SET sort_order = ? WHERE id = ?');
+            ordered_ids.forEach((pId, idx) => {
+                updateStmt.run(idx + 1, pId);
+            });
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+            return;
+        }
+
+        if (!id || !direction) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'MISSING_PARAMS', message: 'id and direction (up/down) required.' }));
+            return;
+        }
+
+        const allItems = db.prepare('SELECT id, sort_order FROM prompts ORDER BY sort_order ASC, time_created ASC').all();
+        const currIdx = allItems.findIndex(x => x.id === id);
+
+        if (currIdx === -1) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'NOT_FOUND', message: 'Prompt not found.' }));
+            return;
+        }
+
+        const newIdx = direction === 'up' ? Math.max(0, currIdx - 1) : Math.min(allItems.length - 1, currIdx + 1);
+        if (newIdx !== currIdx) {
+            const [moved] = allItems.splice(currIdx, 1);
+            allItems.splice(newIdx, 0, moved);
+            const updateStmt = db.prepare('UPDATE prompts SET sort_order = ? WHERE id = ?');
+            allItems.forEach((it, idx) => {
+                updateStmt.run(idx + 1, it.id);
+            });
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+    } catch(err) {
+        console.error('Error reordering prompts:', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
     }
@@ -920,6 +972,11 @@ async function requestListener(req, res) {
 
     if ((pathname === '/api/prompts' || pathname === '/api/prompts/save') && (req.method === 'POST' || req.method === 'PUT')) {
         handleSavePrompt(req, res);
+        return;
+    }
+
+    if (pathname === '/api/prompts/reorder' && req.method === 'POST') {
+        handleReorderPrompts(req, res);
         return;
     }
 
