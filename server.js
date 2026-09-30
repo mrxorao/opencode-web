@@ -494,6 +494,11 @@ function getPromptsDb() {
         try { db.exec('ALTER TABLE prompts ADD COLUMN auto_enter INTEGER DEFAULT 0;'); } catch(e) {}
         try { db.exec('ALTER TABLE prompts ADD COLUMN sort_order INTEGER DEFAULT 0;'); } catch(e) {}
 
+        // Clean up legacy quick prompts (git status, git diff)
+        try {
+            db.prepare("DELETE FROM prompts WHERE id IN ('qp5', 'qp6') OR (title IN ('git status', 'git diff') AND is_quick = 1)").run();
+        } catch(e) {}
+
         const countRow = db.prepare('SELECT COUNT(*) as count FROM prompts').get();
         if (countRow && countRow.count === 0) {
             const insertStmt = db.prepare(`
@@ -507,13 +512,11 @@ function getPromptsDb() {
                 { id: 'qp2', title: '/models', content: '/models', is_quick: 1, auto_enter: 1, sort_order: 2 },
                 { id: 'qp3', title: '/compact', content: '/compact', is_quick: 1, auto_enter: 1, sort_order: 3 },
                 { id: 'qp4', title: '/clear', content: '/clear', is_quick: 1, auto_enter: 1, sort_order: 4 },
-                { id: 'qp5', title: 'git status', content: 'git status', is_quick: 1, auto_enter: 1, sort_order: 5 },
-                { id: 'qp6', title: 'git diff', content: 'git diff', is_quick: 1, auto_enter: 1, sort_order: 6 },
                 // Full Library Prompts
-                { id: 'p1', title: '⚡ Refatorar Código', content: 'Por favor refatora o seguinte código para torná-lo mais limpo, modular, eficiente e legível:\n\n', is_quick: 0, auto_enter: 0, sort_order: 7 },
-                { id: 'p2', title: '🧪 Gerar Testes Unitários', content: 'Cria testes unitários abrangentes cobrindo casos normais e extremos para a seguinte implementação:\n\n', is_quick: 0, auto_enter: 0, sort_order: 8 },
-                { id: 'p3', title: '🐛 Explicar & Corrigir Bug', content: 'Analisa o seguinte erro/comportamento inesperado e explica a causa raiz com a respetiva correção detalhada:\n\n', is_quick: 0, auto_enter: 0, sort_order: 9 },
-                { id: 'p4', title: '🛡️ Auditoria de Segurança', content: 'Revê este código identificando possíveis vulnerabilidades de segurança, injeções, validações em falta e boas práticas:\n\n', is_quick: 0, auto_enter: 0, sort_order: 10 }
+                { id: 'p1', title: '⚡ Refatorar Código', content: 'Por favor refatora o seguinte código para torná-lo mais limpo, modular, eficiente e legível:\n\n', is_quick: 0, auto_enter: 0, sort_order: 5 },
+                { id: 'p2', title: '🧪 Gerar Testes Unitários', content: 'Cria testes unitários abrangentes cobrindo casos normais e extremos para a seguinte implementação:\n\n', is_quick: 0, auto_enter: 0, sort_order: 6 },
+                { id: 'p3', title: '🐛 Explicar & Corrigir Bug', content: 'Analisa o seguinte erro/comportamento inesperado e explica a causa raiz com a respetiva correção detalhada:\n\n', is_quick: 0, auto_enter: 0, sort_order: 7 },
+                { id: 'p4', title: '🛡️ Auditoria de Segurança', content: 'Revê este código identificando possíveis vulnerabilidades de segurança, injeções, validações em falta e boas práticas:\n\n', is_quick: 0, auto_enter: 0, sort_order: 8 }
             ];
             for (const item of seed) {
                 insertStmt.run(item.id, item.title, item.content, item.is_quick, item.auto_enter, item.sort_order, now, now);
