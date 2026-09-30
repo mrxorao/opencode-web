@@ -1351,7 +1351,7 @@ function initClipboardSync() {
 }
 window.initClipboardSync = initClipboardSync;
 
-// Helper: Thoroughly sanitize voice input so it never starts with shell triggers ($ / \ !) or accidental quotes/dots
+// Helper: Sanitize voice input from speech-to-text without stripping valid command prefixes like / or @
 function sanitizeVoiceInput(rawText) {
     if (!rawText || typeof rawText !== 'string') return '';
     var text = rawText.trim();
@@ -1359,12 +1359,8 @@ function sanitizeVoiceInput(rawText) {
     // 1. Remove wrapping quotes or brackets if speech returned quoted string
     text = text.replace(/^["'`“”«»]+|["'`“”«»]+$/g, '').trim();
 
-    // 2. Loop to aggressively strip any leading command triggers ($, /, \, !), leading punctuation, markdown, dashes, dots, spaces
-    var prev = '';
-    while (text !== prev) {
-        prev = text;
-        text = text.replace(/^[\s"'`“”«»\-–—.*_~#$!\/\\:;>|]+/, '').trim();
-    }
+    // 2. Remove accidental leading punctuation from STT like commas, dots, dashes, colons (preserving / and @ for commands)
+    text = text.replace(/^[\s,"';:!~*–—]+/, '').trim();
 
     return text;
 }
@@ -1372,13 +1368,8 @@ window.sanitizeVoiceInput = sanitizeVoiceInput;
 
 // Helper: Send text directly into terminal via native ttyd instance
 window.sendTextToTerminal = function(text, autoEnter) {
-    if (typeof text === 'string') {
-        if (!text.trim().startsWith('@')) {
-            text = sanitizeVoiceInput(text);
-        } else {
-            text = text.trim();
-        }
-    }
+    if (typeof text !== 'string') return false;
+    text = text.trim();
     if (!text) return false;
     if (window.__ttyd_xterm && typeof window.__ttyd_xterm.sendData === 'function') {
         var payload = (autoEnter ? (text + '\r') : text);
