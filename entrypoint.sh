@@ -31,6 +31,9 @@ set -g allow-passthrough on
 set -s set-clipboard on
 set -as terminal-features ',xterm-256color:clipboard'
 set -as terminal-overrides ',xterm*:Ms=\\E]52;%p1%s;%p2%s\\7'
+set -g exit-unattached off
+set -g destroy-unattached off
+set -s exit-empty off
 EOF
 
 # Create persistent tmux session wrapper for OpenCode
@@ -52,7 +55,7 @@ EOF
 
 chmod +x /start-opencode.sh
 
-TTYD_CMD=(ttyd -W -a -I /usr/local/share/ttyd/index.html -i 127.0.0.1 -p 7680 -t fontSize=14 -t disableLeaveAlert=true)
+TTYD_CMD=(ttyd -W -a -I /usr/local/share/ttyd/index.html -i 127.0.0.1 -p 7680 -P 5 -t fontSize=14 -t disableLeaveAlert=true -t reconnect=2)
 
 if [ -n "$TTYD_AUTH" ]; then
     TTYD_CMD+=(-c "$TTYD_AUTH")

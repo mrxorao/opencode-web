@@ -5075,6 +5075,30 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 hookTerminalCopy();
             }
         }, 1000);
+
+        // Auto-refresh and re-fit terminal when page visibility is restored (e.g., mobile screen unlocked or tab switched)
+        var handleVisibilityOrFocus = function() {
+            var inst = window.term || (window.__ttyd_xterm && window.__ttyd_xterm.terminal);
+            if (inst) {
+                try {
+                    if (typeof inst.refresh === 'function') {
+                        inst.refresh(0, (inst.rows || 24) - 1);
+                    }
+                } catch(e) {}
+            }
+            if (window.__ttyd_xterm && typeof window.__ttyd_xterm.fit === 'function') {
+                try { window.__ttyd_xterm.fit(); } catch(e) {}
+            }
+        };
+
+        window.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                handleVisibilityOrFocus();
+            }
+        });
+        window.addEventListener('pageshow', handleVisibilityOrFocus);
+        window.addEventListener('online', handleVisibilityOrFocus);
+        window.addEventListener('focus', handleVisibilityOrFocus);
     }
 
     if (document.readyState === 'loading') {

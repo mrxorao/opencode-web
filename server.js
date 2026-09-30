@@ -1053,9 +1053,23 @@ if (ENABLE_HTTPS && fs.existsSync(SSL_KEY_PATH) && fs.existsSync(SSL_CERT_PATH))
     server = http.createServer(requestListener);
 }
 
+// Disable global socket timeouts to prevent disconnecting long-lived terminal sessions
+server.timeout = 0;
+server.keepAliveTimeout = 0;
+server.headersTimeout = 0;
+server.requestTimeout = 0;
+
 // Proxy WebSocket upgrades to internal ttyd
 server.on('upgrade', (req, socket, head) => {
+    socket.setNoDelay(true);
+    socket.setKeepAlive(true, 5000);
+    socket.setTimeout(0);
+
     const proxySocket = net.connect(TTYD_PORT, '127.0.0.1', () => {
+        proxySocket.setNoDelay(true);
+        proxySocket.setKeepAlive(true, 5000);
+        proxySocket.setTimeout(0);
+
         proxySocket.write(
             `${req.method} ${req.url} HTTP/${req.httpVersion}\r\n` +
             Object.entries(req.headers)
@@ -1063,17 +1077,22 @@ server.on('upgrade', (req, socket, head) => {
                 .join('') +
             '\r\n'
         );
-        if (head.length > 0) proxySocket.write(head);
+        if (head && head.length > 0) proxySocket.write(head);
         socket.pipe(proxySocket);
         proxySocket.pipe(socket);
     });
 
-    proxySocket.on('error', () => {
-        socket.destroy();
-    });
-    socket.on('error', () => {
-        proxySocket.destroy();
-    });
+    const cleanup = () => {
+        try { socket.destroy(); } catch (e) {}
+        try { proxySocket.destroy(); } catch (e) {}
+    };
+
+    proxySocket.on('error', cleanup);
+    socket.on('error', cleanup);
+    proxySocket.on('close', cleanup);
+    socket.on('close', cleanup);
+    proxySocket.on('end', cleanup);
+    socket.on('end', cleanup);
 });
 
 server.listen(PROXY_PORT, '0.0.0.0', async () => {
