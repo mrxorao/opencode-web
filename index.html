@@ -3879,17 +3879,77 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             talkBtn.addEventListener('click', handleTalkButtonClick);
         }
 
-        async function uploadFiles(files) {
-            if (!files || files.length === 0) return;
-            var formData = new FormData();
-            for (var i = 0; i < files.length; i++) {
-                formData.append('file', files[i]);
+        // Client-side image optimization & resizing to prevent memory spikes and VPS freezing
+        async function optimizeImageForUpload(file) {
+            if (!file || !file.type || !file.type.startsWith('image/')) {
+                return file;
+            }
+            if (file.type === 'image/svg+xml' || file.type === 'image/gif' || file.size < 600 * 1024) {
+                return file;
             }
 
+            return new Promise(function(resolve) {
+                var img = new Image();
+                var url = URL.createObjectURL(file);
+                img.onload = function() {
+                    URL.revokeObjectURL(url);
+                    try {
+                        var maxDim = 1920;
+                        var width = img.naturalWidth || img.width;
+                        var height = img.naturalHeight || img.height;
+
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        var canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        var ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        canvas.toBlob(function(blob) {
+                            if (blob && blob.size < file.size) {
+                                var safeName = file.name.replace(/\.[^/.]+$/, "") + '.jpg';
+                                var optimized = new File([blob], safeName, { type: 'image/jpeg' });
+                                resolve(optimized);
+                            } else {
+                                resolve(file);
+                            }
+                        }, 'image/jpeg', 0.85);
+                    } catch(e) {
+                        resolve(file);
+                    }
+                };
+                img.onerror = function() {
+                    URL.revokeObjectURL(url);
+                    resolve(file);
+                };
+                img.src = url;
+            });
+        }
+
+        async function uploadFiles(files) {
+            if (!files || files.length === 0) return;
             if (uploadBtn) uploadBtn.classList.add('uploading');
-            showPreview('Uploading attachment(s)...', 'Processing ' + files.length + ' file(s)...', false, false);
+            showPreview('Processing attachment(s)...', 'Optimizing ' + files.length + ' file(s)...', false, false);
 
             try {
+                var formData = new FormData();
+                for (var i = 0; i < files.length; i++) {
+                    var f = files[i];
+                    var processed = await optimizeImageForUpload(f);
+                    formData.append('file', processed);
+                }
+
+                showPreview('Uploading attachment(s)...', 'Sending ' + files.length + ' file(s)...', false, false);
+
                 var resp = await fetch('/api/upload', {
                     method: 'POST',
                     body: formData
@@ -3922,6 +3982,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             } finally {
                 if (uploadBtn) uploadBtn.classList.remove('uploading');
                 if (fileUploadInput) fileUploadInput.value = '';
+                if (cameraUploadInput) cameraUploadInput.value = '';
             }
         }
 
