@@ -100,36 +100,380 @@ body.toolbar-dragging #corner-zone-container{display:block}
 #refresh-btn.rotating svg, #settings-refresh-action-btn.rotating svg{animation:refresh-spin .6s cubic-bezier(0.4,0,0.2,1)}
 @keyframes refresh-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 /* White / Light Theme for Floating Toolbar (Default) */
-#voice-toolbar.theme-light{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);box-shadow:0 4px 20px rgba(0,0,0,0.18),0 0 0 1px rgba(255,255,255,0.8) inset}
-#voice-toolbar.theme-light.collapsed{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);box-shadow:0 2px 10px rgba(0,0,0,0.14)}
-#voice-toolbar.theme-light.dragging{box-shadow:0 12px 32px rgba(0,0,0,0.25),0 0 0 2px rgba(2,132,199,0.6)}
-#voice-toolbar.theme-light .drag-handle{color:#64748b}
-#voice-toolbar.theme-light .drag-handle:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
-#voice-toolbar.theme-light .drag-handle:active, #voice-toolbar.theme-light.dragging .drag-handle{color:#0284c7}
-#voice-toolbar.theme-light .collapse-btn{color:#64748b}
-#voice-toolbar.theme-light .collapse-btn:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
-#voice-toolbar.theme-light.collapsed .drag-handle{color:#64748b}
-#voice-toolbar.theme-light.collapsed .drag-handle:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
-#voice-toolbar.theme-light.collapsed .collapse-btn{color:#64748b}
-#voice-toolbar.theme-light.collapsed .collapse-btn:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
-#voice-toolbar.theme-light .voice-btn{background:#f1f5f9;border:1px solid rgba(0,0,0,0.1);color:#334155;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
-#voice-toolbar.theme-light .voice-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
-#voice-toolbar.theme-light #mic-btn{background:#16a34a;color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(22,163,74,0.4)}
-#voice-toolbar.theme-light #mic-btn:hover{background:#15803d}
-#voice-toolbar.theme-light #mic-btn.recording{background:#dc2626!important;box-shadow:0 0 16px rgba(220,38,38,0.85)}
-#voice-toolbar.theme-light #talk-btn{background:#f1f5f9;color:#334155}
-#voice-toolbar.theme-light #talk-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
-#voice-toolbar.theme-light #talk-btn.active{background:#0284c7!important;color:#fff!important;border-color:#0284c7!important;box-shadow:0 0 14px rgba(2,132,199,0.7)}
-#voice-toolbar.theme-light #talk-btn.active.speaking{background:#7c3aed!important;border-color:#7c3aed!important;box-shadow:0 0 16px rgba(124,58,237,0.8)}
-#voice-toolbar.theme-light #upload-btn, #voice-toolbar.theme-light #prompts-btn, #voice-toolbar.theme-light #settings-btn{background:#f1f5f9;color:#334155}
-#voice-toolbar.theme-light #upload-btn:hover, #voice-toolbar.theme-light #prompts-btn:hover, #voice-toolbar.theme-light #settings-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
-#voice-toolbar.theme-light #upload-btn.uploading{background:#0284c7!important;color:#fff!important;box-shadow:0 0 14px rgba(2,132,199,0.8)}
-#voice-toolbar.theme-light ~ #transcript-preview{background:rgba(255,255,255,0.94);border-color:rgba(0,0,0,0.12);color:#1e293b;box-shadow:0 16px 36px -4px rgba(0,0,0,0.2),0 0 0 1px rgba(0,0,0,0.05)}
-#voice-toolbar.theme-light ~ #transcript-preview:hover{border-color:rgba(2,132,199,0.4);background:rgba(255,255,255,0.98)}
-#voice-toolbar.theme-light ~ #transcript-preview .transcript-status{color:#16a34a}
-#voice-toolbar.theme-light ~ #transcript-preview.error .transcript-status{color:#dc2626}
-#voice-toolbar.theme-light ~ #transcript-preview .audio-wave{color:#0284c7}
-#voice-toolbar.theme-light ~ #transcript-preview #transcript-text{color:#475569}
+#voice-toolbar.theme-light, body.theme-light #voice-toolbar{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);box-shadow:0 4px 20px rgba(0,0,0,0.18),0 0 0 1px rgba(255,255,255,0.8) inset}
+#voice-toolbar.theme-light.collapsed, body.theme-light #voice-toolbar.collapsed{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);box-shadow:0 2px 10px rgba(0,0,0,0.14)}
+#voice-toolbar.theme-light.dragging, body.theme-light #voice-toolbar.dragging{box-shadow:0 12px 32px rgba(0,0,0,0.25),0 0 0 2px rgba(2,132,199,0.6)}
+#voice-toolbar.theme-light .drag-handle, body.theme-light #voice-toolbar .drag-handle{color:#64748b}
+#voice-toolbar.theme-light .drag-handle:hover, body.theme-light #voice-toolbar .drag-handle:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
+#voice-toolbar.theme-light .drag-handle:active, #voice-toolbar.theme-light.dragging .drag-handle, body.theme-light #voice-toolbar .drag-handle:active{color:#0284c7}
+#voice-toolbar.theme-light .collapse-btn, body.theme-light #voice-toolbar .collapse-btn{color:#64748b}
+#voice-toolbar.theme-light .collapse-btn:hover, body.theme-light #voice-toolbar .collapse-btn:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
+#voice-toolbar.theme-light.collapsed .drag-handle, body.theme-light #voice-toolbar.collapsed .drag-handle{color:#64748b}
+#voice-toolbar.theme-light.collapsed .drag-handle:hover, body.theme-light #voice-toolbar.collapsed .drag-handle:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
+#voice-toolbar.theme-light.collapsed .collapse-btn, body.theme-light #voice-toolbar.collapsed .collapse-btn{color:#64748b}
+#voice-toolbar.theme-light.collapsed .collapse-btn:hover, body.theme-light #voice-toolbar.collapsed .collapse-btn:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
+#voice-toolbar.theme-light .voice-btn, body.theme-light #voice-toolbar .voice-btn{background:#f1f5f9;border:1px solid rgba(0,0,0,0.1);color:#334155;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+#voice-toolbar.theme-light .voice-btn:hover, body.theme-light #voice-toolbar .voice-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
+#voice-toolbar.theme-light #mic-btn, body.theme-light #voice-toolbar #mic-btn{background:#16a34a;color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(22,163,74,0.4)}
+#voice-toolbar.theme-light #mic-btn:hover, body.theme-light #voice-toolbar #mic-btn:hover{background:#15803d}
+#voice-toolbar.theme-light #mic-btn.recording, body.theme-light #voice-toolbar #mic-btn.recording{background:#dc2626!important;box-shadow:0 0 16px rgba(220,38,38,0.85)}
+#voice-toolbar.theme-light #talk-btn, body.theme-light #voice-toolbar #talk-btn{background:#f1f5f9;color:#334155}
+#voice-toolbar.theme-light #talk-btn:hover, body.theme-light #voice-toolbar #talk-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
+#voice-toolbar.theme-light #talk-btn.active, body.theme-light #voice-toolbar #talk-btn.active{background:#0284c7!important;color:#fff!important;border-color:#0284c7!important;box-shadow:0 0 14px rgba(2,132,199,0.7)}
+#voice-toolbar.theme-light #talk-btn.active.speaking, body.theme-light #voice-toolbar #talk-btn.active.speaking{background:#7c3aed!important;border-color:#7c3aed!important;box-shadow:0 0 16px rgba(124,58,237,0.8)}
+#voice-toolbar.theme-light #upload-btn, #voice-toolbar.theme-light #prompts-btn, #voice-toolbar.theme-light #settings-btn,
+body.theme-light #voice-toolbar #upload-btn, body.theme-light #voice-toolbar #prompts-btn, body.theme-light #voice-toolbar #settings-btn{background:#f1f5f9;color:#334155}
+#voice-toolbar.theme-light #upload-btn:hover, #voice-toolbar.theme-light #prompts-btn:hover, #voice-toolbar.theme-light #settings-btn:hover,
+body.theme-light #voice-toolbar #upload-btn:hover, body.theme-light #voice-toolbar #prompts-btn:hover, body.theme-light #voice-toolbar #settings-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
+#voice-toolbar.theme-light #upload-btn.uploading, body.theme-light #voice-toolbar #upload-btn.uploading{background:#0284c7!important;color:#fff!important;box-shadow:0 0 14px rgba(2,132,199,0.8)}
+#voice-toolbar.theme-light ~ #transcript-preview, body.theme-light #transcript-preview{background:rgba(255,255,255,0.94);border-color:rgba(0,0,0,0.12);color:#1e293b;box-shadow:0 16px 36px -4px rgba(0,0,0,0.2),0 0 0 1px rgba(0,0,0,0.05)}
+#voice-toolbar.theme-light ~ #transcript-preview:hover, body.theme-light #transcript-preview:hover{border-color:rgba(2,132,199,0.4);background:rgba(255,255,255,0.98)}
+#voice-toolbar.theme-light ~ #transcript-preview .transcript-status, body.theme-light #transcript-preview .transcript-status{color:#16a34a}
+#voice-toolbar.theme-light ~ #transcript-preview.error .transcript-status, body.theme-light #transcript-preview.error .transcript-status{color:#dc2626}
+#voice-toolbar.theme-light ~ #transcript-preview .audio-wave, body.theme-light #transcript-preview .audio-wave{color:#0284c7}
+#voice-toolbar.theme-light ~ #transcript-preview #transcript-text, body.theme-light #transcript-preview #transcript-text{color:#475569}
+
+/* White / Light Theme for Modals and Popups */
+body.theme-light #firefox-modal,
+body.theme-light #mic-modal,
+body.theme-light #shortcuts-modal,
+body.theme-light #upload-choice-modal,
+body.theme-light #prompts-modal,
+body.theme-light #font-size-modal,
+body.theme-light #settings-modal{
+    background:rgba(15,23,42,0.45);
+    backdrop-filter:blur(14px) saturate(140%);
+    -webkit-backdrop-filter:blur(14px) saturate(140%);
+}
+
+body.theme-light .modal-card{
+    background:#ffffff;
+    border:1px solid rgba(0,0,0,0.12);
+    color:#1e293b;
+    box-shadow:0 24px 50px -12px rgba(0,0,0,0.22),0 0 0 1px rgba(0,0,0,0.05);
+}
+
+body.theme-light .modal-header{
+    border-bottom:1px solid rgba(0,0,0,0.08);
+}
+
+body.theme-light .modal-title{
+    color:#0f172a;
+}
+
+body.theme-light .modal-title svg{
+    color:#0284c7;
+}
+
+body.theme-light .modal-close{
+    background:rgba(0,0,0,0.04);
+    border:1px solid rgba(0,0,0,0.08);
+    color:#64748b;
+}
+
+body.theme-light .modal-close:hover{
+    background:rgba(0,0,0,0.08);
+    color:#0f172a;
+    border-color:rgba(0,0,0,0.16);
+}
+
+body.theme-light .modal-body{
+    color:#475569;
+}
+
+body.theme-light .modal-steps{
+    color:#334155;
+}
+
+body.theme-light .modal-code{
+    background:#f1f5f9;
+    color:#0f172a;
+    border:1px solid rgba(0,0,0,0.08);
+}
+
+body.theme-light .modal-note{
+    background:#f0f9ff;
+    border:1px solid #bae6fd;
+    border-left:3px solid #0284c7;
+    color:#0369a1;
+}
+
+body.theme-light .modal-note b{
+    color:#0f172a!important;
+}
+
+body.theme-light .modal-footer{
+    border-top:1px solid rgba(0,0,0,0.08);
+}
+
+body.theme-light .modal-btn{
+    background:#0284c7;
+    color:#ffffff;
+    box-shadow:0 2px 6px rgba(2,132,199,0.35);
+}
+
+body.theme-light .modal-btn:hover{
+    background:#0369a1;
+    color:#ffffff;
+    box-shadow:0 4px 10px rgba(2,132,199,0.45);
+}
+
+body.theme-light .modal-btn-sec{
+    background:#f1f5f9;
+    color:#334155;
+    border:1px solid rgba(0,0,0,0.1);
+    box-shadow:none;
+}
+
+body.theme-light .modal-btn-sec:hover{
+    background:#e2e8f0;
+    color:#0f172a;
+    border-color:rgba(0,0,0,0.16);
+}
+
+/* Settings Modal in Light Theme */
+body.theme-light .settings-block{
+    background:#f8fafc;
+    border:1px solid rgba(0,0,0,0.08);
+}
+
+body.theme-light .settings-block-title{
+    color:#0f172a;
+}
+
+body.theme-light .settings-block-title svg{
+    color:#0284c7;
+}
+
+body.theme-light .settings-option-btn{
+    background:#ffffff;
+    border:1px solid rgba(0,0,0,0.1);
+    color:#334155;
+}
+
+body.theme-light .settings-option-btn:hover{
+    background:#f1f5f9;
+    color:#0f172a;
+    border-color:rgba(0,0,0,0.18);
+}
+
+body.theme-light .settings-option-btn.active{
+    background:#0284c7;
+    color:#ffffff;
+    border-color:#0284c7;
+    box-shadow:0 0 10px rgba(2,132,199,0.35);
+}
+
+body.theme-light .settings-action-btn{
+    background:#ffffff;
+    border:1px solid rgba(0,0,0,0.1);
+    color:#334155;
+}
+
+body.theme-light .settings-action-btn:hover{
+    background:#f1f5f9;
+    color:#0f172a;
+    border-color:rgba(0,0,0,0.18);
+}
+
+body.theme-light .font-preset-btn{
+    background:#ffffff;
+    border:1px solid rgba(0,0,0,0.1);
+    color:#334155;
+}
+
+body.theme-light .font-preset-btn:hover{
+    background:#f1f5f9;
+    color:#0f172a;
+    border-color:rgba(0,0,0,0.18);
+}
+
+body.theme-light .font-preset-btn.active{
+    background:#0284c7;
+    color:#ffffff;
+    border-color:#0284c7;
+    box-shadow:0 0 10px rgba(2,132,199,0.35);
+}
+
+body.theme-light #font-size-display{
+    color:#0f172a!important;
+}
+
+body.theme-light #font-reset-btn{
+    color:#0284c7!important;
+}
+
+/* Shortcuts Modal in Light Theme */
+body.theme-light .shortcut-row{
+    border-bottom:1px solid rgba(0,0,0,0.07);
+}
+
+body.theme-light .shortcut-desc{
+    color:#334155;
+}
+
+body.theme-light .shortcut-key{
+    background:#f1f5f9;
+    color:#0f172a;
+    border:1px solid rgba(0,0,0,0.14);
+    box-shadow:0 1px 2px rgba(0,0,0,0.08);
+}
+
+/* Prompts Modal in Light Theme */
+body.theme-light .prompt-search-box{
+    background:#f8fafc;
+    border:1px solid rgba(0,0,0,0.12);
+    color:#0f172a;
+}
+
+body.theme-light .prompt-search-box:focus{
+    background:#ffffff;
+    border-color:#0284c7;
+    box-shadow:0 0 0 3px rgba(2,132,199,0.15);
+}
+
+body.theme-light .prompt-search-box::placeholder{
+    color:#94a3b8;
+}
+
+body.theme-light .prompt-search-icon{
+    color:#94a3b8;
+}
+
+body.theme-light .prompt-count-badge{
+    background:#f1f5f9;
+    border:1px solid rgba(0,0,0,0.08);
+    color:#64748b;
+}
+
+body.theme-light .prompt-card{
+    background:#f8fafc;
+    border:1px solid rgba(0,0,0,0.08);
+}
+
+body.theme-light .prompt-card:hover{
+    background:#ffffff;
+    border-color:rgba(0,0,0,0.16);
+    box-shadow:0 4px 16px rgba(0,0,0,0.08);
+}
+
+body.theme-light .prompt-card-title{
+    color:#0f172a;
+}
+
+body.theme-light .prompt-card-body{
+    background:#ffffff;
+    border:1px solid rgba(0,0,0,0.07);
+    color:#475569;
+}
+
+body.theme-light .prompt-card-btn{
+    background:#ffffff;
+    border:1px solid rgba(0,0,0,0.1);
+    color:#334155;
+}
+
+body.theme-light .prompt-card-btn:hover{
+    background:#f1f5f9;
+    color:#0f172a;
+    border-color:rgba(0,0,0,0.18);
+}
+
+body.theme-light .prompt-card-btn.use-btn{
+    background:#0284c7;
+    color:#ffffff;
+    border-color:#0284c7;
+}
+
+body.theme-light .prompt-card-btn.use-btn:hover{
+    background:#0369a1;
+    color:#ffffff;
+}
+
+body.theme-light .prompt-card-btn.delete-btn:hover{
+    background:rgba(239,68,68,0.1);
+    color:#dc2626;
+    border-color:rgba(239,68,68,0.25);
+}
+
+body.theme-light .prompts-pagination{
+    border-top:1px solid rgba(0,0,0,0.08);
+    color:#64748b;
+}
+
+body.theme-light .pagination-btn{
+    background:#ffffff;
+    border:1px solid rgba(0,0,0,0.1);
+    color:#334155;
+}
+
+body.theme-light .pagination-btn:hover:not(:disabled){
+    background:#f1f5f9;
+    color:#0f172a;
+    border-color:rgba(0,0,0,0.18);
+}
+
+body.theme-light .pagination-indicator{
+    color:#0f172a;
+}
+
+body.theme-light .prompt-form-label{
+    color:#334155;
+}
+
+body.theme-light .prompt-form-input,
+body.theme-light .prompt-form-textarea{
+    background:#f8fafc;
+    border:1px solid rgba(0,0,0,0.12);
+    color:#0f172a;
+}
+
+body.theme-light .prompt-form-input:focus,
+body.theme-light .prompt-form-textarea:focus{
+    background:#ffffff;
+    border-color:#0284c7;
+    box-shadow:0 0 0 3px rgba(2,132,199,0.15);
+}
+
+/* Upload Choice Modal in Light Theme */
+body.theme-light .upload-choice-btn{
+    background:#f8fafc;
+    border:1px solid rgba(0,0,0,0.08);
+    color:#0f172a;
+}
+
+body.theme-light .upload-choice-btn svg{
+    stroke:#0284c7;
+}
+
+body.theme-light .upload-choice-btn:hover{
+    background:#f1f5f9;
+    border-color:rgba(0,0,0,0.18);
+}
+
+/* File Drop Overlay in Light Theme */
+body.theme-light #file-drop-overlay{
+    background:rgba(15,23,42,0.5);
+}
+
+body.theme-light .file-drop-box{
+    background:#ffffff;
+    border:2px dashed rgba(2,132,199,0.45);
+    color:#0f172a;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+}
+
+body.theme-light .file-drop-icon{
+    color:#0284c7;
+}
+
+body.theme-light .file-drop-title{
+    color:#0f172a;
+}
+
+body.theme-light .file-drop-desc{
+    color:#64748b;
+}
 
 
 /* Modals System (Clean Human-Crafted Anti-AI UI) */
@@ -1010,6 +1354,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var toolbar = document.createElement('div');
         toolbar.id = 'voice-toolbar';
         var initialTheme = localStorage.getItem('opencode_toolbar_theme') || 'light';
+        if (document.body) {
+            document.body.classList.remove('theme-light', 'theme-dark');
+            document.body.classList.add(initialTheme === 'dark' ? 'theme-dark' : 'theme-light');
+        }
         toolbar.classList.add(initialTheme === 'dark' ? 'theme-dark' : 'theme-light');
         toolbar.innerHTML = `
             <div id="drag-handle" class="drag-handle" title="Arrastar para mover" aria-label="Arrastar barra">
@@ -2821,23 +3169,23 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         function setToolbarTheme(theme, showToast) {
             var isDark = (theme === 'dark');
+            var selectedTheme = isDark ? 'dark' : 'light';
+            if (document.body) {
+                document.body.classList.toggle('theme-dark', isDark);
+                document.body.classList.toggle('theme-light', !isDark);
+            }
             if (voiceToolbar) {
-                if (isDark) {
-                    voiceToolbar.classList.remove('theme-light');
-                    voiceToolbar.classList.add('theme-dark');
-                } else {
-                    voiceToolbar.classList.remove('theme-dark');
-                    voiceToolbar.classList.add('theme-light');
-                }
+                voiceToolbar.classList.toggle('theme-dark', isDark);
+                voiceToolbar.classList.toggle('theme-light', !isDark);
             }
             try {
-                localStorage.setItem('opencode_toolbar_theme', isDark ? 'dark' : 'light');
+                localStorage.setItem('opencode_toolbar_theme', selectedTheme);
             } catch(e) {}
-            updateThemeModalUI(isDark ? 'dark' : 'light');
+            updateThemeModalUI(selectedTheme);
 
             if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
                 try {
-                    window.__ttyd_xterm.overlayAddon.showOverlay(isDark ? 'Menu: Escuro' : 'Menu: Branco', 350);
+                    window.__ttyd_xterm.overlayAddon.showOverlay(isDark ? 'Tema: Escuro' : 'Tema: Branco', 350);
                 } catch(e) {}
             }
         }
