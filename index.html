@@ -1025,8 +1025,19 @@ window.__pageLoadedAt = Date.now();
     });
 })();
 
-// Helper: Ensure terminal has keyboard focus
-window.focusTerminal = function() {
+function isTouchMobileDevice() {
+    return (window.innerWidth <= 768) ||
+           /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+}
+window.isTouchMobileDevice = isTouchMobileDevice;
+
+// Helper: Ensure terminal has keyboard focus (bypassed on mobile devices to prevent soft keyboard popups)
+window.focusTerminal = function(forceOnMobile) {
+    if (window.isTouchMobileDevice && window.isTouchMobileDevice() && !forceOnMobile) {
+        return;
+    }
+
     try {
         if (window.__ttyd_xterm && typeof window.__ttyd_xterm.focus === 'function') {
             window.__ttyd_xterm.focus();
@@ -1315,8 +1326,11 @@ document.addEventListener('copy', function(e) {
 }, true);
 
 // Variable to hold pending clipboard text if asynchronous write is delayed
-// Helper: Restore focus to xterm terminal immediately without stealing focus
-function restoreTerminalFocus() {
+// Helper: Restore focus to xterm terminal immediately without stealing focus (bypassed on mobile)
+function restoreTerminalFocus(forceOnMobile) {
+    if (window.isTouchMobileDevice && window.isTouchMobileDevice() && !forceOnMobile) {
+        return;
+    }
     try {
         if (window.term && typeof window.term.focus === 'function') {
             window.term.focus();
@@ -1602,6 +1616,14 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
     if (!window.__ttyd_xterm || typeof window.__ttyd_xterm.sendData !== 'function') {
         console.warn('__ttyd_xterm not ready yet');
         return false;
+    }
+
+    // On mobile touch devices: if a helper textarea or input was focused, blur it so the soft keyboard does not pop up
+    if (window.isTouchMobileDevice && window.isTouchMobileDevice()) {
+        var activeEl = document.activeElement;
+        if (activeEl && (activeEl.classList.contains('xterm-helper-textarea') || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
+            try { activeEl.blur(); } catch(e) {}
+        }
     }
 
     var steps = parsePromptSequence(text);
