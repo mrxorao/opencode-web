@@ -684,22 +684,22 @@ body.theme-light .file-drop-desc{
     backdrop-filter:blur(16px);
     -webkit-backdrop-filter:blur(16px);
     z-index:99999;
-    max-width:320px;
-    min-width:250px;
+    max-width:calc(100vw - 32px);
+    width:290px;
     display:none;
     flex-direction:column;
     gap:8px;
-    animation:popover-appear .16s cubic-bezier(0.16, 1, 0.3, 1);
+    animation:popover-fade .15s cubic-bezier(0.16, 1, 0.3, 1);
     font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     box-sizing:border-box;
 }
 #quick-prompts-popover.active{display:flex}
-@keyframes popover-appear{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}
+@keyframes popover-fade{from{opacity:0}to{opacity:1}}
 
-#quick-prompts-popover.popover-top-center{top:calc(env(safe-area-inset-top,6px) + 52px);left:50%;transform:translateX(-50%)}
-#quick-prompts-popover.popover-bottom-center{bottom:calc(env(safe-area-inset-bottom,6px) + 54px);left:50%;transform:translateX(-50%)}
-#quick-prompts-popover.popover-middle-left{top:50%;left:calc(env(safe-area-inset-left,6px) + 52px);transform:translateY(-50%)}
-#quick-prompts-popover.popover-middle-right{top:50%;right:calc(env(safe-area-inset-right,6px) + 52px);transform:translateY(-50%)}
+#quick-prompts-popover.popover-top-center{top:calc(env(safe-area-inset-top,6px) + 56px);left:50%;transform:translateX(-50%)}
+#quick-prompts-popover.popover-bottom-center{bottom:calc(env(safe-area-inset-bottom,6px) + 58px);left:50%;transform:translateX(-50%)}
+#quick-prompts-popover.popover-middle-left{top:50%;left:calc(env(safe-area-inset-left,6px) + 56px);transform:translateY(-50%)}
+#quick-prompts-popover.popover-middle-right{top:50%;right:calc(env(safe-area-inset-right,6px) + 56px);transform:translateY(-50%)}
 
 .quick-prompts-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.06)}
 .quick-prompts-title{font-size:12px;font-weight:600;color:#38bdf8;display:flex;align-items:center;gap:5px;letter-spacing:-0.01em}
@@ -1439,6 +1439,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         function applyCorner(corner) {
             if (validCorners.indexOf(corner) === -1) corner = 'middle-right';
             currentCorner = corner;
+            window.__currentToolbarCorner = corner;
 
             validCorners.forEach(function(c) {
                 toolbar.classList.remove('corner-' + c);
@@ -1460,6 +1461,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
             try {
                 localStorage.setItem('opencode_toolbar_corner', corner);
             } catch(e) {}
+
+            var pop = document.getElementById('quick-prompts-popover');
+            if (pop && pop.classList.contains('active')) {
+                pop.classList.remove('active');
+            }
         }
 
         applyCorner(currentCorner);
@@ -3825,10 +3831,28 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var PROMPT_PAGE_LIMIT = 5;
         var promptSearchDebounceTimer = null;
 
+        function getCurrentToolbarCorner() {
+            if (window.__currentToolbarCorner) return window.__currentToolbarCorner;
+            var tb = document.getElementById('voice-toolbar');
+            if (tb) {
+                if (tb.classList.contains('corner-top-center')) return 'top-center';
+                if (tb.classList.contains('corner-bottom-center')) return 'bottom-center';
+                if (tb.classList.contains('corner-middle-left')) return 'middle-left';
+                if (tb.classList.contains('corner-middle-right')) return 'middle-right';
+            }
+            try {
+                var saved = localStorage.getItem('opencode_toolbar_corner');
+                if (saved && ['top-center', 'bottom-center', 'middle-left', 'middle-right'].indexOf(saved) > -1) {
+                    return saved;
+                }
+            } catch(e) {}
+            return 'middle-right';
+        }
+
         function updateQuickPopoverPosition() {
             if (!quickPromptsPopover) return;
             quickPromptsPopover.classList.remove('popover-top-center', 'popover-bottom-center', 'popover-middle-left', 'popover-middle-right');
-            var corner = currentCorner || 'middle-right';
+            var corner = getCurrentToolbarCorner();
             quickPromptsPopover.classList.add('popover-' + corner);
         }
 
