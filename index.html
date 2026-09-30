@@ -61,6 +61,22 @@
 #voice-toolbar.corner-bottom-center{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);left:50%;right:auto;top:auto;transform:translateX(-50%)}
 #voice-toolbar.corner-bottom-left{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);left:calc(env(safe-area-inset-left,12px) + 24px);right:auto;top:auto;transform:none}
 
+/* Edge Docking Mode when Collapsed (Junto ao Ecrã) */
+#voice-toolbar.minimize-edge.collapsed{box-shadow:0 3px 12px rgba(0,0,0,0.6)}
+#voice-toolbar.minimize-edge.collapsed.corner-top-right{top:calc(env(safe-area-inset-top,0px) + 12px);right:env(safe-area-inset-right,0px);border-top-right-radius:0;border-bottom-right-radius:0;border-right:none}
+#voice-toolbar.minimize-edge.collapsed.corner-middle-right{top:50%;right:env(safe-area-inset-right,0px);transform:translateY(-50%);border-top-right-radius:0;border-bottom-right-radius:0;border-right:none}
+#voice-toolbar.minimize-edge.collapsed.corner-bottom-right{bottom:calc(env(safe-area-inset-bottom,0px) + 12px);right:env(safe-area-inset-right,0px);border-top-right-radius:0;border-bottom-right-radius:0;border-right:none}
+#voice-toolbar.minimize-edge.collapsed.corner-top-left{top:calc(env(safe-area-inset-top,0px) + 12px);left:env(safe-area-inset-left,0px);border-top-left-radius:0;border-bottom-left-radius:0;border-left:none}
+#voice-toolbar.minimize-edge.collapsed.corner-middle-left{top:50%;left:env(safe-area-inset-left,0px);transform:translateY(-50%);border-top-left-radius:0;border-bottom-left-radius:0;border-left:none}
+#voice-toolbar.minimize-edge.collapsed.corner-bottom-left{bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:env(safe-area-inset-left,0px);border-top-left-radius:0;border-bottom-left-radius:0;border-left:none}
+#voice-toolbar.minimize-edge.collapsed.corner-top-center{top:env(safe-area-inset-top,0px);left:50%;transform:translateX(-50%);border-top-left-radius:0;border-top-right-radius:0;border-top:none}
+#voice-toolbar.minimize-edge.collapsed.corner-bottom-center{bottom:env(safe-area-inset-bottom,0px);left:50%;transform:translateX(-50%);border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none}
+
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-top-right{top:calc(env(safe-area-inset-top,0px) + 12px);right:env(safe-area-inset-right,0px);border-top-right-radius:0;border-bottom-right-radius:0;border-right:none}
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-bottom-right{bottom:calc(env(safe-area-inset-bottom,0px) + 12px);right:env(safe-area-inset-right,0px);border-top-right-radius:0;border-bottom-right-radius:0;border-right:none}
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-top-left{top:calc(env(safe-area-inset-top,0px) + 12px);left:env(safe-area-inset-left,0px);border-top-left-radius:0;border-bottom-left-radius:0;border-left:none}
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-bottom-left{bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:env(safe-area-inset-left,0px);border-top-left-radius:0;border-bottom-left-radius:0;border-left:none}
+
 /* Transcript Preview Popup & Audio Monitor */
 #transcript-preview{position:fixed;max-width:min(340px,calc(100vw - 36px));background:rgba(15,18,25,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;color:#f8fafc;font-size:12.5px;line-height:1.45;box-shadow:0 16px 36px -4px rgba(0,0,0,0.65),0 0 0 1px rgba(255,255,255,0.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease, border-color .2s ease, background .2s ease;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer;user-select:text}
 #transcript-preview:hover{border-color:rgba(56,189,248,0.35);background:rgba(18,22,31,0.96)}
@@ -1492,6 +1508,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
             document.body.classList.add(initialTheme === 'dark' ? 'theme-dark' : 'theme-light');
         }
         toolbar.classList.add(initialTheme === 'dark' ? 'theme-dark' : 'theme-light');
+        var initialMinimizeStyle = localStorage.getItem('opencode_toolbar_minimize_style') || 'float';
+        toolbar.classList.add(initialMinimizeStyle === 'edge' ? 'minimize-edge' : 'minimize-float');
         toolbar.innerHTML = `
             <div id="drag-handle" class="drag-handle" title="Arrastar para mover" aria-label="Arrastar barra">
                 <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -1747,7 +1765,25 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         </div>
                     </div>
 
-                    <!-- 4. Modo Debugger / Notificações -->
+                    <!-- 4. Estilo ao Minimizar -->
+                    <div class="settings-block">
+                        <div class="settings-block-title">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="21" y1="3" x2="21" y2="21"></line><path d="M14 9l-3 3 3 3"></path></svg>
+                            <span>Estilo ao Minimizar</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                            <button id="minimize-float-btn" class="settings-option-btn active" title="Minimiza no mesmo local (pílula flutuante)">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="6"></rect></svg>
+                                <span>Flutuante (Padrão)</span>
+                            </button>
+                            <button id="minimize-edge-btn" class="settings-option-btn" title="Minimiza encostado à borda do ecrã">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="21" y1="3" x2="21" y2="21"></line><path d="M15 9l-3 3 3 3"></path></svg>
+                                <span>Junto ao Ecrã</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 5. Modo Debugger / Notificações -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
@@ -1765,7 +1801,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         </div>
                     </div>
 
-                    <!-- 5. Atalhos de Teclado -->
+                    <!-- 6. Atalhos de Teclado -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6.01" y2="8"></line><line x1="10" y1="8" x2="10.01" y2="8"></line><line x1="14" y1="8" x2="14.01" y2="8"></line><line x1="18" y1="8" x2="18.01" y2="8"></line><line x1="8" y1="12" x2="8.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="16" y1="12" x2="16.01" y2="12"></line><line x1="6" y1="16" x2="18" y2="16"></line></svg>
@@ -3436,6 +3472,56 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
+        // Toolbar Minimize Style (Float is Default, Edge Dock)
+        var minimizeFloatBtn = document.getElementById('minimize-float-btn');
+        var minimizeEdgeBtn = document.getElementById('minimize-edge-btn');
+
+        function updateMinimizeStyleModalUI(style) {
+            var isEdge = (style === 'edge');
+            if (minimizeFloatBtn) {
+                if (!isEdge) minimizeFloatBtn.classList.add('active'); else minimizeFloatBtn.classList.remove('active');
+            }
+            if (minimizeEdgeBtn) {
+                if (isEdge) minimizeEdgeBtn.classList.add('active'); else minimizeEdgeBtn.classList.remove('active');
+            }
+        }
+
+        function setToolbarMinimizeStyle(style, showToast) {
+            var isEdge = (style === 'edge');
+            var selectedStyle = isEdge ? 'edge' : 'float';
+            if (voiceToolbar) {
+                if (isEdge) {
+                    voiceToolbar.classList.add('minimize-edge');
+                    voiceToolbar.classList.remove('minimize-float');
+                } else {
+                    voiceToolbar.classList.remove('minimize-edge');
+                    voiceToolbar.classList.add('minimize-float');
+                }
+            }
+            try {
+                localStorage.setItem('opencode_toolbar_minimize_style', selectedStyle);
+            } catch(e) {}
+            updateMinimizeStyleModalUI(selectedStyle);
+
+            if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                try {
+                    window.__ttyd_xterm.overlayAddon.showOverlay(isEdge ? 'Minimizar: Junto ao Ecrã' : 'Minimizar: Flutuante', 350);
+                } catch(e) {}
+            }
+        }
+        window.setToolbarMinimizeStyle = setToolbarMinimizeStyle;
+
+        if (minimizeFloatBtn) {
+            minimizeFloatBtn.addEventListener('click', function() {
+                setToolbarMinimizeStyle('float', true);
+            });
+        }
+        if (minimizeEdgeBtn) {
+            minimizeEdgeBtn.addEventListener('click', function() {
+                setToolbarMinimizeStyle('edge', true);
+            });
+        }
+
         // Debugger Mode (Default is Disabled)
         var debugOffBtn = document.getElementById('debug-off-btn');
         var debugOnBtn = document.getElementById('debug-on-btn');
@@ -3479,6 +3565,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 updateFontSizeModalUI(getCurrentTerminalFontSize());
                 updateOrientationModalUI();
                 updateThemeModalUI(localStorage.getItem('opencode_toolbar_theme') || 'light');
+                updateMinimizeStyleModalUI(localStorage.getItem('opencode_toolbar_minimize_style') || 'float');
                 updateDebugModalUI(isDebugModeActive());
                 if (settingsModal) settingsModal.classList.add('active');
             });
@@ -3534,6 +3621,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
             try {
                 var savedTheme = localStorage.getItem('opencode_toolbar_theme') || 'light';
                 setToolbarTheme(savedTheme, false);
+            } catch(e) {}
+            try {
+                var savedMinimize = localStorage.getItem('opencode_toolbar_minimize_style') || 'float';
+                setToolbarMinimizeStyle(savedMinimize, false);
             } catch(e) {}
             try {
                 updateDebugModalUI(isDebugModeActive());

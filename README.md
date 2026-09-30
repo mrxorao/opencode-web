@@ -74,6 +74,7 @@ A built-in floating voice toolbar is available directly on the web interface (de
 - **🔒 Dedicated Voice Key:** `VOICE_GROQ_API_KEY` is used exclusively for speech-to-text without cluttering OpenCode AI models.
 - **⚙️ Configurable Language:** Set `VOICE_LANGUAGE=EN` (default), `PT`, or `BR` in your `.env` file.
 - **📌 8-Zone Drag & Drop Snapping:** Drag the floating toolbar anywhere across the screen to automatically snap and dock to any of the 8 screen zones (Corners and Center edges: Top-Center, Bottom-Center, Middle-Left, Middle-Right, Top-Left, Top-Right, Bottom-Left, Bottom-Right), with your preference saved in local storage.
+- **🗂️ Configurable Minimization Style:** Choose between **Floating Pill** (collapses in place) or **Screen Edge Dock** (collapses flush against the screen border) in the UI Settings modal.
 - **📱 Mobile Responsive:** Floating toolbar designed specifically for touchscreen devices and mobile browsers (Chrome, Safari, Firefox, Edge).
 
 ---
