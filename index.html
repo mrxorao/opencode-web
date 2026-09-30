@@ -80,6 +80,14 @@ body.toolbar-dragging #corner-zone-container{display:block}
 .corner-hint-br{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);right:calc(env(safe-area-inset-right,12px) + 24px)}
 .corner-hint-bl{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);left:calc(env(safe-area-inset-left,12px) + 24px)}
 
+/* Disabled state for Voice & Talk buttons when Groq is unconfigured or invalid */
+.voice-btn.disabled{opacity:0.35!important;cursor:not-allowed!important;filter:grayscale(1);box-shadow:none!important}
+.voice-btn.disabled:hover{background:#30363d!important;color:#8b949e!important;border-color:rgba(255,255,255,0.1)!important;transform:none!important}
+.voice-btn.disabled:active{transform:none!important}
+#mic-btn.disabled{background:#30363d!important;color:#8b949e!important;box-shadow:none!important}
+body.theme-light .voice-btn.disabled, #voice-toolbar.theme-light .voice-btn.disabled{opacity:0.35!important;cursor:not-allowed!important;filter:grayscale(1);box-shadow:none!important}
+body.theme-light .voice-btn.disabled:hover, #voice-toolbar.theme-light .voice-btn.disabled:hover{background:#f1f5f9!important;color:#94a3b8!important;border-color:rgba(0,0,0,0.08)!important;transform:none!important}
+body.theme-light #mic-btn.disabled{background:#f1f5f9!important;color:#94a3b8!important;box-shadow:none!important}
 .voice-btn{background:#30363d;border:1px solid rgba(255,255,255,0.14);color:#c9d1d9;cursor:pointer;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;outline:none;transition:all .2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;z-index:2;touch-action:manipulation;pointer-events:auto}
 .voice-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 .voice-btn:active{transform:scale(.92)}
@@ -1340,6 +1348,39 @@ window.sendTextToTerminal = function(text, autoEnter) {
     function mountVoiceUI() {
         if (document.getElementById('voice-toolbar')) return;
 
+        var isVoiceEnabled = true;
+        var voiceDisabledReason = '';
+
+        function updateMicButton() {
+            if (!micBtn) return;
+            if (!isVoiceEnabled) {
+                micBtn.classList.add('disabled');
+                micBtn.classList.remove('recording');
+                micBtn.title = 'Microfone desativado: ' + (voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no .env');
+            } else {
+                micBtn.classList.remove('disabled');
+                if (isRecording) {
+                    micBtn.classList.add('recording');
+                    micBtn.title = 'A gravar áudio... Clique para parar';
+                } else {
+                    micBtn.classList.remove('recording');
+                    micBtn.title = 'Ditado por Voz (Clique para falar prompt)';
+                }
+            }
+        }
+
+        
+
+        function updateVoiceButtonsState(isEnabled, reasonMessage) {
+            isVoiceEnabled = Boolean(isEnabled);
+            voiceDisabledReason = reasonMessage || '';
+            updateMicButton();
+            updateTalkButton();
+            if (!isVoiceEnabled && isConversationMode) {
+                cancelVoiceAndConversation(false);
+            }
+        }
+
         var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
         var cornerContainer = document.createElement('div');
@@ -1993,7 +2034,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         }
 
 
-        // Fetch server configuration on load
+        // Fetch server configuration on load (validates Groq API Key and Model)
         async function fetchServerConfig() {
             try {
                 var resp = await fetch('/api/config');
@@ -2002,9 +2043,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     if (data.defaultLanguage) {
                         configuredLang = String(data.defaultLanguage).toUpperCase();
                     }
-                    return Boolean(data.hasGroqKey);
+                    var isValid = Boolean(data.isGroqValid);
+                    updateVoiceButtonsState(isValid, data.groqErrorMessage);
+                    return isValid;
                 }
             } catch(e) {}
+            updateVoiceButtonsState(false, 'Servidor de voz indisponível');
             return false;
         }
 
@@ -2034,20 +2078,26 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         function updateTalkButton() {
             if (!talkBtn) return;
+            if (!isVoiceEnabled) {
+                talkBtn.className = 'voice-btn disabled';
+                talkBtn.title = 'Conversa desativada: ' + (voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no .env');
+                updateCollapseState();
+                return;
+            }
             if (isConversationMode) {
                 if (isSpeaking) {
                     talkBtn.className = 'voice-btn active speaking';
-                    talkBtn.title = 'AI is speaking... Click to stop conversation mode';
+                    talkBtn.title = 'A IA está a falar... Clique para desligar modo conversa';
                 } else if (isRecording) {
                     talkBtn.className = 'voice-btn active';
-                    talkBtn.title = 'Listening to your voice... Click to stop conversation mode';
+                    talkBtn.title = 'A ouvir a sua voz... Clique para desligar modo conversa';
                 } else {
                     talkBtn.className = 'voice-btn active';
-                    talkBtn.title = 'Conversation Mode Active (Click to turn off)';
+                    talkBtn.title = 'Modo Conversa Ativo (Clique para desligar)';
                 }
             } else {
                 talkBtn.className = 'voice-btn';
-                talkBtn.title = 'Start Conversation Mode (Continuous voice dialogue)';
+                talkBtn.title = 'Iniciar Modo Conversa (Diálogo contínuo por voz)';
             }
             updateCollapseState();
         }
@@ -2509,6 +2559,14 @@ window.sendTextToTerminal = function(text, autoEnter) {
             var thisSession = ++voiceSessionId;
             isStartingRecording = true;
 
+            if (!isVoiceEnabled) {
+                isStartingRecording = false;
+                showPreview('Voz Desativada', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
+                hidePreview(5000);
+                if (isConversationMode) toggleConversationMode();
+                return;
+            }
+
             var isConfigured = await fetchServerConfig();
             if (thisSession !== voiceSessionId) {
                 isStartingRecording = false;
@@ -2516,7 +2574,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
             if (!isConfigured) {
                 isStartingRecording = false;
-                showPreview('Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env', true, false);
+                showPreview('Voz Desativada', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
                 hidePreview(5000);
                 if (isConversationMode) toggleConversationMode();
                 return;
@@ -2761,12 +2819,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                                     }
                                 }, 1000);
                             }
-                        } else if (data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
-                            showPreview('Chave API Necessária', 'Configure VOICE_GROQ_API_KEY no ficheiro .env', true, false);
-                            hidePreview(4500);
+                        } else if (data.isGroqValid === false || data.error === 'INVALID_GROQ_KEY' || data.error === 'INVALID_GROQ_MODEL' || data.error === 'GROQ_API_KEY_NOT_CONFIGURED') {
+                            updateVoiceButtonsState(false, data.message || 'Chave ou modelo Groq inválido.');
+                            showPreview('Voz Desativada', data.message || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
+                            hidePreview(5000);
                             if (isConversationMode) toggleConversationMode();
                         } else {
-                            showPreview('Erro na Transcrição', (data.error || 'Nenhuma fala reconhecida.'), true, false);
+                            showPreview('Erro na Transcrição', (data.message || data.error || 'Nenhuma fala reconhecida.'), true, false);
                             hidePreview(3500);
                         }
                     } catch(err) {
@@ -2822,6 +2881,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var conversationPollTimer = null;
 
         function toggleConversationMode() {
+            if (!isConversationMode && !isVoiceEnabled) {
+                showPreview('Conversa Desativada', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
+                hidePreview(5000);
+                return;
+            }
             if (isConversationMode) {
                 isConversationMode = false;
                 if (conversationPollTimer) {
@@ -2858,6 +2922,11 @@ window.sendTextToTerminal = function(text, autoEnter) {
         }
 
         window.triggerVoiceRecognition = function() {
+            if (!isVoiceEnabled) {
+                showPreview('Microfone Desativado', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
+                hidePreview(5000);
+                return;
+            }
             if (isConversationMode) {
                 // If in conversation mode, clicking mic stops conversation mode
                 toggleConversationMode();

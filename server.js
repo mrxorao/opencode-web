@@ -123,12 +123,82 @@ function sanitizeVoiceInput(rawText) {
     return text;
 }
 
+let groqValidationCache = {
+    checkedAt: 0,
+    isValid: false,
+    error: null,
+    errorMessage: null
+};
+
+async function checkGroqStatus(forceRecheck = false) {
+    if (!VOICE_GROQ_API_KEY) {
+        groqValidationCache = {
+            checkedAt: Date.now(),
+            isValid: false,
+            error: 'MISSING_GROQ_KEY',
+            errorMessage: 'Chave VOICE_GROQ_API_KEY não configurada no ficheiro .env'
+        };
+        return groqValidationCache;
+    }
+
+    if (!forceRecheck && (Date.now() - groqValidationCache.checkedAt < 45000)) {
+        return groqValidationCache;
+    }
+
+    try {
+        const modelResp = await fetch(`https://api.groq.com/openai/v1/models/${encodeURIComponent(VOICE_GROQ_MODEL)}`, {
+            headers: {
+                'Authorization': `Bearer ${VOICE_GROQ_API_KEY}`
+            },
+            signal: AbortSignal.timeout(5000)
+        });
+
+        if (modelResp.status === 401 || modelResp.status === 403) {
+            const errData = await modelResp.json().catch(() => ({}));
+            groqValidationCache = {
+                checkedAt: Date.now(),
+                isValid: false,
+                error: 'INVALID_GROQ_KEY',
+                errorMessage: errData.error?.message || 'Chave VOICE_GROQ_API_KEY inválida ou não autorizada no Groq.'
+            };
+            return groqValidationCache;
+        }
+
+        if (modelResp.status === 404 || !modelResp.ok) {
+            const errData = await modelResp.json().catch(() => ({}));
+            groqValidationCache = {
+                checkedAt: Date.now(),
+                isValid: false,
+                error: 'INVALID_GROQ_MODEL',
+                errorMessage: errData.error?.message || `O modelo de voz '${VOICE_GROQ_MODEL}' não existe na API da Groq.`
+            };
+            return groqValidationCache;
+        }
+
+        groqValidationCache = {
+            checkedAt: Date.now(),
+            isValid: true,
+            error: null,
+            errorMessage: null
+        };
+    } catch (err) {
+        groqValidationCache = {
+            checkedAt: Date.now(),
+            isValid: false,
+            error: 'GROQ_NETWORK_ERROR',
+            errorMessage: `Erro de ligação à API da Groq: ${err.message}`
+        };
+    }
+    return groqValidationCache;
+}
+
 async function handleTranscribe(req, res) {
     if (!VOICE_GROQ_API_KEY) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             error: 'GROQ_API_KEY_NOT_CONFIGURED',
-            message: 'Please configure VOICE_GROQ_API_KEY in your .env file first!' 
+            message: 'Chave VOICE_GROQ_API_KEY não configurada no ficheiro .env',
+            isGroqValid: false
         }));
         return;
     }
@@ -161,20 +231,34 @@ async function handleTranscribe(req, res) {
             const data = await groqResp.json();
             if (!groqResp.ok) {
                 console.error('Groq transcription error response:', data);
+                let errCode = 'GROQ_TRANSCRIPTION_ERROR';
+                if (groqResp.status === 401 || groqResp.status === 403) {
+                    errCode = 'INVALID_GROQ_KEY';
+                    groqValidationCache = { checkedAt: Date.now(), isValid: false, error: errCode, errorMessage: data.error?.message || 'Chave VOICE_GROQ_API_KEY inválida.' };
+                } else if (groqResp.status === 400 || groqResp.status === 404) {
+                    errCode = 'INVALID_GROQ_MODEL';
+                    groqValidationCache = { checkedAt: Date.now(), isValid: false, error: errCode, errorMessage: data.error?.message || `Modelo '${VOICE_GROQ_MODEL}' não existe na Groq.` };
+                }
                 res.writeHead(groqResp.status, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: data.error?.message || 'Groq transcription error' }));
+                res.end(JSON.stringify({ 
+                    error: errCode,
+                    message: data.error?.message || 'Erro de transcrição na API da Groq',
+                    isGroqValid: false
+                }));
                 return;
             }
+
+            groqValidationCache = { checkedAt: Date.now(), isValid: true, error: null, errorMessage: null };
 
             let rawText = (data.text || '').trim();
             let text = sanitizeVoiceInput(rawText);
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ text }));
+            res.end(JSON.stringify({ text, isGroqValid: true }));
         } catch (err) {
             console.error('Server transcription error:', err);
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: err.message }));
+            res.end(JSON.stringify({ error: err.message, isGroqValid: false }));
         }
     });
 }
@@ -599,7 +683,7 @@ const ENABLE_HTTPS = (process.env.ENABLE_HTTPS === 'true' || process.env.ENABLE_
 const SSL_KEY_PATH = process.env.SSL_KEY || '/root/.config/opencode/ssl/server.key';
 const SSL_CERT_PATH = process.env.SSL_CERT || '/root/.config/opencode/ssl/server.crt';
 
-function requestListener(req, res) {
+async function requestListener(req, res) {
     // Serve PWA assets (manifest, Service Worker, icons)
     if (handleStaticPwa(req, res)) {
         return;
@@ -608,15 +692,19 @@ function requestListener(req, res) {
     const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const pathname = parsedUrl.pathname;
 
-    // Return server configuration (Groq status, default language & HTTPS status)
+    // Return server configuration (Groq validation status, default language & HTTPS status)
     if (pathname === '/api/config' && req.method === 'GET') {
+        const groqStatus = await checkGroqStatus();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             hasGroqKey: Boolean(VOICE_GROQ_API_KEY),
+            isGroqValid: Boolean(groqStatus.isValid),
+            groqError: groqStatus.error,
+            groqErrorMessage: groqStatus.errorMessage,
             groqModel: VOICE_GROQ_MODEL,
             defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
             isHttps: isHttps,
-            status: Boolean(VOICE_GROQ_API_KEY) ? 'ready' : 'missing_groq_key'
+            status: groqStatus.isValid ? 'ready' : (groqStatus.error || 'disabled')
         }));
         return;
     }
@@ -739,13 +827,18 @@ server.on('upgrade', (req, socket, head) => {
     });
 });
 
-server.listen(PROXY_PORT, '0.0.0.0', () => {
+server.listen(PROXY_PORT, '0.0.0.0', async () => {
     const proto = isHttps ? 'https' : 'http';
     console.log(`[proxy] Web Terminal & Voice Server listening on ${proto}://0.0.0.0:${PROXY_PORT} -> ttyd :${TTYD_PORT}`);
     console.log(`[proxy] Default Voice Language: ${DEFAULT_VOICE_LANGUAGE}`);
     if (VOICE_GROQ_API_KEY) {
-        console.log(`[proxy] Groq Whisper Cloud API enabled (${VOICE_GROQ_MODEL})`);
+        const groqStatus = await checkGroqStatus();
+        if (groqStatus.isValid) {
+            console.log(`[proxy] Groq Whisper Cloud API enabled (${VOICE_GROQ_MODEL}) - Status: Valid`);
+        } else {
+            console.warn(`[proxy] ⚠️ Groq Voice Disabled: ${groqStatus.errorMessage}`);
+        }
     } else {
-        console.log(`[proxy] VOICE_GROQ_API_KEY not configured in .env`);
+        console.log(`[proxy] VOICE_GROQ_API_KEY not configured in .env (Voice dictation & Conversation disabled)`);
     }
 });
