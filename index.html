@@ -99,6 +99,38 @@ body.toolbar-dragging #corner-zone-container{display:block}
 #prompts-btn:hover, #settings-btn:hover, #shortcuts-btn:hover, #font-size-btn:hover, #refresh-btn:hover, #orientation-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 #refresh-btn.rotating svg, #settings-refresh-action-btn.rotating svg{animation:refresh-spin .6s cubic-bezier(0.4,0,0.2,1)}
 @keyframes refresh-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+/* White / Light Theme for Floating Toolbar (Default) */
+#voice-toolbar.theme-light{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);box-shadow:0 4px 20px rgba(0,0,0,0.18),0 0 0 1px rgba(255,255,255,0.8) inset}
+#voice-toolbar.theme-light.collapsed{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);box-shadow:0 2px 10px rgba(0,0,0,0.14)}
+#voice-toolbar.theme-light.dragging{box-shadow:0 12px 32px rgba(0,0,0,0.25),0 0 0 2px rgba(2,132,199,0.6)}
+#voice-toolbar.theme-light .drag-handle{color:#64748b}
+#voice-toolbar.theme-light .drag-handle:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
+#voice-toolbar.theme-light .drag-handle:active, #voice-toolbar.theme-light.dragging .drag-handle{color:#0284c7}
+#voice-toolbar.theme-light .collapse-btn{color:#64748b}
+#voice-toolbar.theme-light .collapse-btn:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
+#voice-toolbar.theme-light.collapsed .drag-handle{color:#64748b}
+#voice-toolbar.theme-light.collapsed .drag-handle:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
+#voice-toolbar.theme-light.collapsed .collapse-btn{color:#64748b}
+#voice-toolbar.theme-light.collapsed .collapse-btn:hover{color:#0284c7;background:rgba(0,0,0,0.06)}
+#voice-toolbar.theme-light .voice-btn{background:#f1f5f9;border:1px solid rgba(0,0,0,0.1);color:#334155;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+#voice-toolbar.theme-light .voice-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
+#voice-toolbar.theme-light #mic-btn{background:#16a34a;color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(22,163,74,0.4)}
+#voice-toolbar.theme-light #mic-btn:hover{background:#15803d}
+#voice-toolbar.theme-light #mic-btn.recording{background:#dc2626!important;box-shadow:0 0 16px rgba(220,38,38,0.85)}
+#voice-toolbar.theme-light #talk-btn{background:#f1f5f9;color:#334155}
+#voice-toolbar.theme-light #talk-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
+#voice-toolbar.theme-light #talk-btn.active{background:#0284c7!important;color:#fff!important;border-color:#0284c7!important;box-shadow:0 0 14px rgba(2,132,199,0.7)}
+#voice-toolbar.theme-light #talk-btn.active.speaking{background:#7c3aed!important;border-color:#7c3aed!important;box-shadow:0 0 16px rgba(124,58,237,0.8)}
+#voice-toolbar.theme-light #upload-btn, #voice-toolbar.theme-light #prompts-btn, #voice-toolbar.theme-light #settings-btn{background:#f1f5f9;color:#334155}
+#voice-toolbar.theme-light #upload-btn:hover, #voice-toolbar.theme-light #prompts-btn:hover, #voice-toolbar.theme-light #settings-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
+#voice-toolbar.theme-light #upload-btn.uploading{background:#0284c7!important;color:#fff!important;box-shadow:0 0 14px rgba(2,132,199,0.8)}
+#voice-toolbar.theme-light ~ #transcript-preview{background:rgba(255,255,255,0.94);border-color:rgba(0,0,0,0.12);color:#1e293b;box-shadow:0 16px 36px -4px rgba(0,0,0,0.2),0 0 0 1px rgba(0,0,0,0.05)}
+#voice-toolbar.theme-light ~ #transcript-preview:hover{border-color:rgba(2,132,199,0.4);background:rgba(255,255,255,0.98)}
+#voice-toolbar.theme-light ~ #transcript-preview .transcript-status{color:#16a34a}
+#voice-toolbar.theme-light ~ #transcript-preview.error .transcript-status{color:#dc2626}
+#voice-toolbar.theme-light ~ #transcript-preview .audio-wave{color:#0284c7}
+#voice-toolbar.theme-light ~ #transcript-preview #transcript-text{color:#475569}
+
 
 /* Modals System (Clean Human-Crafted Anti-AI UI) */
 #firefox-modal, #mic-modal, #shortcuts-modal, #upload-choice-modal, #prompts-modal, #font-size-modal, #settings-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,15,0.74);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);z-index:100002;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
@@ -977,6 +1009,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
         var toolbar = document.createElement('div');
         toolbar.id = 'voice-toolbar';
+        var initialTheme = localStorage.getItem('opencode_toolbar_theme') || 'light';
+        toolbar.classList.add(initialTheme === 'dark' ? 'theme-dark' : 'theme-light');
         toolbar.innerHTML = `
             <div id="drag-handle" class="drag-handle" title="Arrastar para mover" aria-label="Arrastar barra">
                 <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -1204,6 +1238,24 @@ window.sendTextToTerminal = function(text, autoEnter) {
                             <button id="orient-vert-btn" class="settings-option-btn" title="Menu na Vertical">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="18" rx="2"></rect><line x1="12" y1="7" x2="12.01" y2="7"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                                 <span>Vertical</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Cor do Menu Flutuante -->
+                    <div class="settings-block">
+                        <div class="settings-block-title">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                            <span>Cor do Menu Flutuante</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                            <button id="theme-light-btn" class="settings-option-btn active" title="Menu na cor Branca (Padrão)">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                                <span>Branco (Padrão)</span>
+                            </button>
+                            <button id="theme-dark-btn" class="settings-option-btn" title="Menu na cor Escura">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                                <span>Escuro</span>
                             </button>
                         </div>
                     </div>
@@ -2638,7 +2690,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
-        // Unified Settings Modal (Font Size, Orientation, Refresh, Shortcuts)
+        // Unified Settings Modal (Font Size, Orientation, Theme, Refresh, Shortcuts)
         var settingsBtn = document.getElementById('settings-btn');
         var settingsModal = document.getElementById('settings-modal');
         var settingsCloseBtn = document.getElementById('settings-close-btn');
@@ -2648,6 +2700,8 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var fontResetBtn = document.getElementById('font-reset-btn');
         var orientHorizBtn = document.getElementById('orient-horiz-btn');
         var orientVertBtn = document.getElementById('orient-vert-btn');
+        var themeLightBtn = document.getElementById('theme-light-btn');
+        var themeDarkBtn = document.getElementById('theme-dark-btn');
         var settingsRefreshBtn = document.getElementById('settings-refresh-action-btn');
         var settingsShortcutsBtn = document.getElementById('settings-shortcuts-action-btn');
         var shortcutsModal = document.getElementById('shortcuts-modal');
@@ -2754,10 +2808,62 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
+        // Toolbar Color Theme (Light / White is Default, Dark)
+        function updateThemeModalUI(theme) {
+            var isLight = (theme !== 'dark');
+            if (themeLightBtn) {
+                if (isLight) themeLightBtn.classList.add('active'); else themeLightBtn.classList.remove('active');
+            }
+            if (themeDarkBtn) {
+                if (!isLight) themeDarkBtn.classList.add('active'); else themeDarkBtn.classList.remove('active');
+            }
+        }
+
+        function setToolbarTheme(theme, showToast) {
+            var isDark = (theme === 'dark');
+            if (voiceToolbar) {
+                if (isDark) {
+                    voiceToolbar.classList.remove('theme-light');
+                    voiceToolbar.classList.add('theme-dark');
+                } else {
+                    voiceToolbar.classList.remove('theme-dark');
+                    voiceToolbar.classList.add('theme-light');
+                }
+            }
+            try {
+                localStorage.setItem('opencode_toolbar_theme', isDark ? 'dark' : 'light');
+            } catch(e) {}
+            updateThemeModalUI(isDark ? 'dark' : 'light');
+
+            if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                try {
+                    window.__ttyd_xterm.overlayAddon.showOverlay(isDark ? 'Menu: Escuro' : 'Menu: Branco', 350);
+                } catch(e) {}
+            }
+        }
+        function toggleToolbarTheme() {
+            var currentTheme = localStorage.getItem('opencode_toolbar_theme') || 'light';
+            setToolbarTheme(currentTheme === 'dark' ? 'light' : 'dark', true);
+        }
+        window.setToolbarTheme = setToolbarTheme;
+        window.toggleToolbarTheme = toggleToolbarTheme;
+
+        if (themeLightBtn) {
+            themeLightBtn.addEventListener('click', function() {
+                setToolbarTheme('light', true);
+            });
+        }
+        if (themeDarkBtn) {
+            themeDarkBtn.addEventListener('click', function() {
+                setToolbarTheme('dark', true);
+            });
+        }
+
         if (settingsBtn) {
             settingsBtn.addEventListener('click', function() {
                 updateFontSizeModalUI(getCurrentTerminalFontSize());
                 updateOrientationModalUI();
+                updateThemeModalUI(localStorage.getItem('opencode_toolbar_theme') || 'light');
                 if (settingsModal) settingsModal.classList.add('active');
             });
         }
@@ -2797,7 +2903,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         });
 
-        // Apply saved settings on load
+        // Apply saved settings on load (White / Light theme is default)
         setTimeout(function() {
             var savedSz = localStorage.getItem('terminal_font_size');
             if (savedSz) {
@@ -2808,6 +2914,10 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 if (savedOrientation === 'vertical') {
                     setToolbarOrientation('vertical', false);
                 }
+            } catch(e) {}
+            try {
+                var savedTheme = localStorage.getItem('opencode_toolbar_theme') || 'light';
+                setToolbarTheme(savedTheme, false);
             } catch(e) {}
         }, 300);
 
