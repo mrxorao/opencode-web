@@ -2471,10 +2471,10 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 micBtn.classList.remove('disabled');
                 if (isRecording) {
                     micBtn.classList.add('recording');
-                    micBtn.title = 'A gravar áudio... Clique para parar';
+                    micBtn.title = isConversationMode ? 'A gravar... Clique para enviar agora' : 'A gravar áudio... Clique para processar e enviar';
                 } else {
                     micBtn.classList.remove('recording');
-                    micBtn.title = 'Ditado por Voz (Clique para falar prompt)';
+                    micBtn.title = isConversationMode ? 'Modo Conversa (Clique para falar)' : 'Ditado por Voz (Clique para falar prompt)';
                 }
             }
         }
@@ -2490,7 +2490,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             if (isConversationMode) {
                 if (isSpeaking) {
                     talkBtn.className = 'voice-btn active speaking';
-                    talkBtn.title = 'A IA está a falar... Clique para desligar modo conversa';
+                    talkBtn.title = 'A IA está a falar... Clique para interromper e falar';
                 } else if (isRecording) {
                     talkBtn.className = 'voice-btn active';
                     talkBtn.title = 'A ouvir a sua voz... Clique para desligar modo conversa';
@@ -3692,31 +3692,80 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             }
         }
 
+        function handleTalkButtonClick(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            if (!isVoiceEnabled) {
+                showPreview('Conversa Desativada', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
+                hidePreview(5000);
+                return;
+            }
+
+            // Se estiver em modo conversa e a IA estiver a falar (áudio a reproduzir):
+            // Não desliga a conversa! Interrompe o áudio da IA e passa logo para o modo de ouvir a voz do utilizador.
+            if (isConversationMode && isSpeaking) {
+                stopSpeaking();
+                showPreview('Interrompido', 'Pode falar agora...', false, true);
+                if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
+                    showFirefoxModal('talk');
+                    return;
+                }
+                startGroqVoiceRecording();
+                return;
+            }
+
+            // Caso contrário, ativa ou desativa o modo conversa
+            toggleConversationMode();
+        }
+        window.triggerConversationMode = handleTalkButtonClick;
+
         window.triggerVoiceRecognition = function() {
             if (!isVoiceEnabled) {
                 showPreview('Microfone Desativado', voiceDisabledReason || 'Configure VOICE_GROQ_API_KEY e VOICE_GROQ_MODEL no ficheiro .env', true, false);
                 hidePreview(5000);
                 return;
             }
-            if (isConversationMode) {
-                // If in conversation mode, clicking mic stops conversation mode
-                toggleConversationMode();
-                return;
-            }
 
-            if (isRecording || isStartingRecording) {
-                playMicStopSound();
-                stopAllAudioAndMic();
-                showPreview('Gravação Parada', 'Microfone desativado.', false, false);
-                hidePreview(2000);
-                updateTalkButton();
-            } else {
+            // Se a IA estiver a falar e o utilizador clicar no microfone:
+            // Interrompe a leitura de imediato e começa a ouvir o utilizador
+            if (isSpeaking) {
+                stopSpeaking();
                 if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
-                    showFirefoxModal('mic');
+                    showFirefoxModal(isConversationMode ? 'talk' : 'mic');
                     return;
                 }
                 startGroqVoiceRecording();
+                return;
             }
+
+            // Se o microfone estiver a gravar:
+            // Para a gravação imediatamente e processa/envia a mensagem para o terminal (sem desligar a conversa)
+            if (isRecording || (mediaRecorder && mediaRecorder.state === 'recording')) {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    try {
+                        mediaRecorder.stop();
+                    } catch(e) {
+                        stopAllAudioAndMic();
+                    }
+                } else {
+                    stopAllAudioAndMic();
+                }
+                return;
+            }
+
+            if (isStartingRecording) {
+                return;
+            }
+
+            // Se não estiver a gravar: inicia a gravação de voz
+            if (isFirefox && !localStorage.getItem('firefox_voice_tip_shown')) {
+                showFirefoxModal(isConversationMode ? 'talk' : 'mic');
+                return;
+            }
+            startGroqVoiceRecording();
         };
 
         function cancelVoiceAndConversation(showFeedback) {
@@ -3769,7 +3818,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         }
 
         if (talkBtn) {
-            talkBtn.addEventListener('click', toggleConversationMode);
+            talkBtn.addEventListener('click', handleTalkButtonClick);
         }
 
         async function uploadFiles(files) {
@@ -4767,11 +4816,11 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 return;
             }
 
-            // Ctrl + L -> Conversation mode toggle
+            // Ctrl + L -> Conversation mode toggle / interrupt
             if ((e.ctrlKey || e.metaKey) && (e.key === 'l' || e.key === 'L')) {
                 e.preventDefault();
                 e.stopPropagation();
-                toggleConversationMode();
+                handleTalkButtonClick();
                 return;
             }
 
