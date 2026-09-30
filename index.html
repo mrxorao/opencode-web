@@ -293,8 +293,8 @@ body.theme-light #talk-btn.disabled:hover,
 #upload-btn{background:#30363d;color:#e6edf3}
 #upload-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 #upload-btn.uploading{background:#1f6feb!important;color:#fff!important;animation:mic-pulse 1s infinite ease-in-out;box-shadow:0 0 14px rgba(31,111,235,0.8)}
-#prompts-btn, #settings-btn, #shortcuts-btn, #font-size-btn, #orientation-btn{background:#30363d;color:#e6edf3}
-#prompts-btn:hover, #settings-btn:hover, #shortcuts-btn:hover, #font-size-btn:hover, #orientation-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
+#prompts-btn, #settings-btn, #shortcuts-btn{background:#30363d;color:#e6edf3}
+#prompts-btn:hover, #settings-btn:hover, #shortcuts-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 #refresh-btn{background:#d97706!important;color:#ffffff!important;border:1px solid rgba(245,158,11,0.5)!important;box-shadow:0 2px 8px rgba(217,119,6,0.45)!important}
 #refresh-btn:hover{background:#f59e0b!important;color:#ffffff!important;border-color:#fbbf24!important;box-shadow:0 3px 12px rgba(245,158,11,0.6)!important}
 #refresh-btn svg{stroke:#ffffff!important}
@@ -1414,6 +1414,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         } catch(e) {}
 
+        function isCornerVertical(corner) {
+            // Top-center and bottom-center are horizontal.
+            // Left and right edges (top-left, middle-left, bottom-left, top-right, middle-right, bottom-right) are vertical.
+            return corner !== 'top-center' && corner !== 'bottom-center';
+        }
+
         function applyCorner(corner) {
             if (validCorners.indexOf(corner) === -1) corner = 'top-right';
             currentCorner = corner;
@@ -1425,6 +1431,15 @@ window.sendTextToTerminal = function(text, autoEnter) {
 
             toolbar.classList.add('corner-' + corner);
             if (preview) preview.classList.add('preview-' + corner);
+
+            // Automatic orientation based on position:
+            // Top/Bottom centers -> Horizontal
+            // Sides/Edges -> Vertical
+            if (isCornerVertical(corner)) {
+                toolbar.classList.add('vertical');
+            } else {
+                toolbar.classList.remove('vertical');
+            }
 
             try {
                 localStorage.setItem('opencode_toolbar_corner', corner);
@@ -1516,6 +1531,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 lastDropY = (e.clientY !== undefined && e.clientY > 0) ? e.clientY : (newTop + rect.height / 2);
                 var closest = getClosestCorner(lastDropX, lastDropY);
                 updateHints(closest);
+
+                // Dynamically preview orientation while dragging
+                if (isCornerVertical(closest)) {
+                    toolbar.classList.add('vertical');
+                } else {
+                    toolbar.classList.remove('vertical');
+                }
             }
         }
 
@@ -1813,25 +1835,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         </div>
                     </div>
 
-                    <!-- 2. Orientação da Barra -->
-                    <div class="settings-block">
-                        <div class="settings-block-title">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1.5"></rect><rect x="14" y="3" width="7" height="8" rx="1.5"></rect><rect x="14" y="13" width="7" height="8" rx="1.5"></rect></svg>
-                            <span>Orientação do Menu Flutuante</span>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-                            <button id="orient-horiz-btn" class="settings-option-btn active" title="Menu na Horizontal">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" rx="2"></rect><line x1="7" y1="12" x2="7.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="17" y1="12" x2="17.01" y2="12"></line></svg>
-                                <span>Horizontal</span>
-                            </button>
-                            <button id="orient-vert-btn" class="settings-option-btn" title="Menu na Vertical">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="18" rx="2"></rect><line x1="12" y1="7" x2="12.01" y2="7"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                                <span>Vertical</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 3. Cor do Menu Flutuante -->
+                    <!-- 2. Cor do Menu Flutuante -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -1849,7 +1853,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         </div>
                     </div>
 
-                    <!-- 4. Estilo ao Minimizar -->
+                    <!-- 3. Estilo ao Minimizar -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="21" y1="3" x2="21" y2="21"></line><path d="M14 9l-3 3 3 3"></path></svg>
@@ -1867,7 +1871,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         </div>
                     </div>
 
-                    <!-- 5. Modo Debugger / Notificações -->
+                    <!-- 4. Modo Debugger / Notificações -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
@@ -1885,7 +1889,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         </div>
                     </div>
 
-                    <!-- 6. Atalhos de Teclado -->
+                    <!-- 5. Atalhos de Teclado -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6.01" y2="8"></line><line x1="10" y1="8" x2="10.01" y2="8"></line><line x1="14" y1="8" x2="14.01" y2="8"></line><line x1="18" y1="8" x2="18.01" y2="8"></line><line x1="8" y1="12" x2="8.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="16" y1="12" x2="16.01" y2="12"></line><line x1="6" y1="16" x2="18" y2="16"></line></svg>
@@ -1948,10 +1952,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     <div class="shortcut-row">
                         <div class="shortcut-desc">Recarregar Terminal / Página</div>
                         <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">R</span> / <span class="shortcut-key">F5</span></div>
-                    </div>
-                    <div class="shortcut-row">
-                        <div class="shortcut-desc">Alternar Menu Horizontal / Vertical</div>
-                        <div class="shortcut-keys"><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">Alt</span> + <span class="shortcut-key">O</span></div>
                     </div>
                     <div class="shortcut-row">
                         <div class="shortcut-desc">Copiar texto selecionado</div>
@@ -3493,8 +3493,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var fontDecBtn = document.getElementById('font-dec-btn');
         var fontIncBtn = document.getElementById('font-inc-btn');
         var fontResetBtn = document.getElementById('font-reset-btn');
-        var orientHorizBtn = document.getElementById('orient-horiz-btn');
-        var orientVertBtn = document.getElementById('orient-vert-btn');
         var themeLightBtn = document.getElementById('theme-light-btn');
         var themeDarkBtn = document.getElementById('theme-dark-btn');
         var settingsRefreshBtn = document.getElementById('settings-refresh-action-btn');
@@ -3554,54 +3552,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
         }
         window.setTerminalFontSize = setTerminalFontSize;
         window.getCurrentTerminalFontSize = getCurrentTerminalFontSize;
-
-        function updateOrientationModalUI() {
-            var isVert = voiceToolbar ? voiceToolbar.classList.contains('vertical') : false;
-            if (orientHorizBtn) {
-                if (!isVert) orientHorizBtn.classList.add('active'); else orientHorizBtn.classList.remove('active');
-            }
-            if (orientVertBtn) {
-                if (isVert) orientVertBtn.classList.add('active'); else orientVertBtn.classList.remove('active');
-            }
-        }
-
-        function setToolbarOrientation(orientation, showToast) {
-            var isVert = (orientation === 'vertical');
-            if (voiceToolbar) {
-                if (isVert) {
-                    voiceToolbar.classList.add('vertical');
-                } else {
-                    voiceToolbar.classList.remove('vertical');
-                }
-            }
-            try {
-                localStorage.setItem('opencode_toolbar_orientation', isVert ? 'vertical' : 'horizontal');
-            } catch(e) {}
-            updateOrientationModalUI();
-
-            if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                try {
-                    window.__ttyd_xterm.overlayAddon.showOverlay(isVert ? 'Menu Vertical' : 'Menu Horizontal', 350);
-                } catch(e) {}
-            }
-        }
-        function toggleToolbarOrientation() {
-            var currentIsVert = voiceToolbar ? voiceToolbar.classList.contains('vertical') : false;
-            setToolbarOrientation(currentIsVert ? 'horizontal' : 'vertical', true);
-        }
-        window.setToolbarOrientation = setToolbarOrientation;
-        window.toggleToolbarOrientation = toggleToolbarOrientation;
-
-        if (orientHorizBtn) {
-            orientHorizBtn.addEventListener('click', function() {
-                setToolbarOrientation('horizontal', true);
-            });
-        }
-        if (orientVertBtn) {
-            orientVertBtn.addEventListener('click', function() {
-                setToolbarOrientation('vertical', true);
-            });
-        }
 
         // Toolbar Color Theme (Light / White is Default, Dark)
         function updateThemeModalUI(theme) {
@@ -3745,7 +3695,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
         if (settingsBtn) {
             settingsBtn.addEventListener('click', function() {
                 updateFontSizeModalUI(getCurrentTerminalFontSize());
-                updateOrientationModalUI();
                 updateThemeModalUI(localStorage.getItem('opencode_toolbar_theme') || 'light');
                 updateMinimizeStyleModalUI(localStorage.getItem('opencode_toolbar_minimize_style') || 'float');
                 updateDebugModalUI(isDebugModeActive());
@@ -3794,12 +3743,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
             if (savedSz) {
                 setTerminalFontSize(savedSz, false);
             }
-            try {
-                var savedOrientation = localStorage.getItem('opencode_toolbar_orientation');
-                if (savedOrientation === 'vertical') {
-                    setToolbarOrientation('vertical', false);
-                }
-            } catch(e) {}
             try {
                 var savedTheme = localStorage.getItem('opencode_toolbar_theme') || 'light';
                 setToolbarTheme(savedTheme, false);
@@ -4368,10 +4311,6 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     }
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === '0' || ev.code === 'Digit0' || ev.code === 'Numpad0') && ev.type === 'keydown') {
                         setTerminalFontSize(14, true);
-                        return false;
-                    }
-                    if ((ev.ctrlKey || ev.metaKey) && ev.altKey && (ev.key === 'o' || ev.key === 'O' || ev.code === 'KeyO') && ev.type === 'keydown') {
-                        toggleToolbarOrientation();
                         return false;
                     }
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'c' || ev.key === 'C') && ev.type === 'keydown') {
