@@ -1,3 +1,11 @@
+// Suppress Node.js ExperimentalWarning (e.g. node:sqlite) to keep container logs clean
+const originalEmitWarning = process.emitWarning;
+process.emitWarning = function(warning, ...args) {
+    if (typeof warning === 'string' && (warning.includes('ExperimentalWarning') || warning.includes('SQLite'))) return;
+    if (warning && typeof warning === 'object' && (warning.name === 'ExperimentalWarning' || warning.message?.includes('SQLite'))) return;
+    return originalEmitWarning.call(process, warning, ...args);
+};
+
 const http = require('http');
 const net = require('net');
 const fs = require('fs');

@@ -81,7 +81,7 @@ if [ "$ENABLE_HTTPS" = "true" ] || [ "$ENABLE_SSL" = "true" ]; then
 fi
 
 echo "Starting Web Terminal & Voice Server on port 7681..."
-node /server.js &
+node --no-warnings /server.js &
 SERVER_PID=$!
 
 # Trap termination signals
