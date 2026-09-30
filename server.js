@@ -47,12 +47,17 @@ const DB_PATHS = [
     path.join(__dirname, 'data', 'share', 'opencode.db')
 ];
 
+let openCodeDbInstance = null;
+let latestAiStmt = null;
+
 function getOpenCodeDb() {
+    if (openCodeDbInstance) return openCodeDbInstance;
     for (const p of DB_PATHS) {
         if (fs.existsSync(p)) {
             try {
                 const { DatabaseSync } = require('node:sqlite');
-                return new DatabaseSync(p, { readOnly: true });
+                openCodeDbInstance = new DatabaseSync(p, { readOnly: true });
+                return openCodeDbInstance;
             } catch (e) {
                 console.error('Failed to open SQLite DB at', p, e.message);
             }
@@ -70,19 +75,29 @@ function handleLatestAiMessage(req, res) {
             return;
         }
 
-        const rows = db.prepare(`
-            SELECT p.id, p.data, p.time_created
-            FROM part p
-            JOIN message m ON p.message_id = m.id
-            WHERE json_extract(m.data, '$.role') = 'assistant'
-              AND (
-                json_extract(p.data, '$.type') = 'text'
-                OR json_extract(p.data, '$.tool') = 'question'
-                OR json_extract(p.data, '$.type') = 'tool'
-              )
-            ORDER BY p.time_created DESC
-            LIMIT 15
-        `).all();
+        if (!latestAiStmt) {
+            try {
+                latestAiStmt = db.prepare(`
+                    SELECT p.id, p.data, p.time_created
+                    FROM part p
+                    JOIN message m ON p.message_id = m.id
+                    WHERE json_extract(m.data, '$.role') = 'assistant'
+                      AND (
+                        json_extract(p.data, '$.type') = 'text'
+                        OR json_extract(p.data, '$.tool') = 'question'
+                        OR json_extract(p.data, '$.type') = 'tool'
+                      )
+                    ORDER BY p.time_created DESC
+                    LIMIT 15
+                `);
+            } catch (stmtErr) {
+                openCodeDbInstance = null;
+                latestAiStmt = null;
+                throw stmtErr;
+            }
+        }
+
+        const rows = latestAiStmt.all();
 
         for (const row of rows) {
             const data = JSON.parse(row.data);

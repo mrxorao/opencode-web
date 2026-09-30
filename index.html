@@ -3294,8 +3294,10 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             }
         }
 
+        var isCheckingAiResponse = false;
         async function checkForNewAiResponse() {
-            if (!isWaitingForAiResponse) return;
+            if (!isWaitingForAiResponse || isCheckingAiResponse) return;
+            isCheckingAiResponse = true;
             try {
                 var resp = await fetch('/api/latest-ai-message');
                 if (resp.ok) {
@@ -3314,7 +3316,10 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         }
                     }
                 }
-            } catch(e) {}
+            } catch(e) {
+            } finally {
+                isCheckingAiResponse = false;
+            }
         }
 
         async function getAudioMediaStream() {
@@ -5062,10 +5067,16 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             }, 1000);
         };
 
+        var checkAiThrottleTimer = null;
         window.__onTerminalOutput = function(chunk) {
             markToolbarReady();
-            checkForNewAiResponse();
             hookTerminalCopy();
+            if ((isWaitingForAiResponse || isConversationMode) && !checkAiThrottleTimer) {
+                checkAiThrottleTimer = setTimeout(function() {
+                    checkAiThrottleTimer = null;
+                    checkForNewAiResponse();
+                }, 1200);
+            }
         };
 
         // Periodic check to show toolbar when xterm terminal is loaded
