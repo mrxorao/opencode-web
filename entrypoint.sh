@@ -44,6 +44,7 @@ cd /workspace
 # Unset Groq API key inside OpenCode session so it is only used by the voice transcription proxy
 unset GROQ_API_KEY
 unset VOICE_GROQ_API_KEY
+unset VOICE_GROQ_MODEL
 
 # Attach to existing opencode tmux session, or create it if not running
 exec tmux -u new-session -A -s opencode "/bin/bash -c 'while true; do clear; echo \"🚀 ===============================================\"; echo \"   OpenCode AI Web Terminal\"; echo \"   Working Directory: /workspace\"; echo \"===============================================\"; echo \"\"; opencode || true; echo \"\"; echo \"🔄 OpenCode session ended. Restarting in 2 seconds...\"; sleep 2; done'"

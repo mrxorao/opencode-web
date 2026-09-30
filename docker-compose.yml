@@ -9,6 +9,7 @@ services:
     environment:
       - TTYD_AUTH=${TTYD_AUTH:-admin:admin123}
       - VOICE_GROQ_API_KEY=${VOICE_GROQ_API_KEY:-${GROQ_API_KEY:-}}
+      - VOICE_GROQ_MODEL=${VOICE_GROQ_MODEL:-whisper-large-v3-turbo}
       - VOICE_LANGUAGE=${VOICE_LANGUAGE:-EN}
       - ENABLE_HTTPS=${ENABLE_HTTPS:-false}
       - AUTO_UPDATE=${AUTO_UPDATE:-true}

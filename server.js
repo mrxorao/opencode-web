@@ -6,6 +6,7 @@ const path = require('path');
 const TTYD_PORT = 7680;
 const PROXY_PORT = 7681;
 const VOICE_GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
+const VOICE_GROQ_MODEL = (process.env.VOICE_GROQ_MODEL || 'whisper-large-v3-turbo').trim();
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
 
 const DB_PATHS = [
@@ -145,7 +146,7 @@ async function handleTranscribe(req, res) {
             const formData = new FormData();
             const blob = new Blob([buffer], { type: contentType });
             formData.append('file', blob, 'recording.webm');
-            formData.append('model', 'whisper-large-v3-turbo');
+            formData.append('model', VOICE_GROQ_MODEL);
             formData.append('language', language);
             formData.append('response_format', 'json');
 
@@ -612,6 +613,7 @@ function requestListener(req, res) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
             hasGroqKey: Boolean(VOICE_GROQ_API_KEY),
+            groqModel: VOICE_GROQ_MODEL,
             defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
             isHttps: isHttps,
             status: Boolean(VOICE_GROQ_API_KEY) ? 'ready' : 'missing_groq_key'
@@ -742,7 +744,7 @@ server.listen(PROXY_PORT, '0.0.0.0', () => {
     console.log(`[proxy] Web Terminal & Voice Server listening on ${proto}://0.0.0.0:${PROXY_PORT} -> ttyd :${TTYD_PORT}`);
     console.log(`[proxy] Default Voice Language: ${DEFAULT_VOICE_LANGUAGE}`);
     if (VOICE_GROQ_API_KEY) {
-        console.log(`[proxy] Groq Whisper Cloud API enabled (whisper-large-v3-turbo)`);
+        console.log(`[proxy] Groq Whisper Cloud API enabled (${VOICE_GROQ_MODEL})`);
     } else {
         console.log(`[proxy] VOICE_GROQ_API_KEY not configured in .env`);
     }
