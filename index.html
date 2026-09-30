@@ -2760,9 +2760,13 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             } catch(e) {}
         }
         var currentTtsAudio = null;
+        var ttsSessionId = 0;
         function stopSpeaking() {
+            ttsSessionId++; // Invalidate any active or pending TTS utterance / fallback / timeout
             if (currentTtsAudio) {
                 try {
+                    currentTtsAudio.onended = null;
+                    currentTtsAudio.onerror = null;
                     currentTtsAudio.pause();
                     currentTtsAudio.currentTime = 0;
                     currentTtsAudio.src = '';
@@ -2770,7 +2774,9 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 currentTtsAudio = null;
             }
             if (window.speechSynthesis) {
-                try { window.speechSynthesis.cancel(); } catch(e) {}
+                try { 
+                    window.speechSynthesis.cancel(); 
+                } catch(e) {}
             }
             isSpeaking = false;
             updateTalkButton();
@@ -3101,6 +3107,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         }
 
         function speakWithMicrosoftTts(text, allowFallbackToBrowser) {
+            var thisSession = ++ttsSessionId;
             isSpeaking = true;
             updateTalkButton();
 
@@ -3110,13 +3117,14 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 currentTtsAudio = audio;
 
                 audio.onended = function() {
+                    if (thisSession !== ttsSessionId) return;
                     if (currentTtsAudio === audio) currentTtsAudio = null;
                     isSpeaking = false;
                     updateTalkButton();
                     if (isConversationMode) {
                         showPreview('Your turn...', 'You can speak to answer...', false, true);
                         setTimeout(function() {
-                            if (isConversationMode && !isRecording && !isSpeaking) {
+                            if (thisSession === ttsSessionId && isConversationMode && !isRecording && !isSpeaking && !isStartingRecording) {
                                 startGroqVoiceRecording();
                             }
                         }, 450);
@@ -3124,6 +3132,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 };
 
                 audio.onerror = function() {
+                    if (thisSession !== ttsSessionId) return;
                     console.warn('[tts] Edge TTS audio request failed.');
                     if (currentTtsAudio === audio) currentTtsAudio = null;
                     if (allowFallbackToBrowser) {
@@ -3138,6 +3147,11 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 var playPromise = audio.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(function(err) {
+                        if (thisSession !== ttsSessionId) return;
+                        // Ignore intentional cancellation/pause errors
+                        if (err && (err.name === 'AbortError' || String(err).indexOf('abort') > -1 || String(err).indexOf('pause') > -1)) {
+                            return;
+                        }
                         console.warn('[tts] Audio playback error or autoplay blocked:', err);
                         if (currentTtsAudio === audio) currentTtsAudio = null;
                         if (allowFallbackToBrowser) {
@@ -3150,6 +3164,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     });
                 }
             } catch(e) {
+                if (thisSession !== ttsSessionId) return;
                 console.error('[tts] Microsoft TTS initialization error:', e);
                 if (allowFallbackToBrowser) {
                     speakWithBrowserTts(text, false);
@@ -3161,6 +3176,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         }
 
         function speakWithBrowserTts(text, allowFallbackToMicrosoft) {
+            var thisSession = ++ttsSessionId;
             if (!window.speechSynthesis) {
                 if (allowFallbackToMicrosoft) {
                     console.warn('[tts] Web Speech API not supported in browser, falling back to Microsoft Neural.');
@@ -3194,12 +3210,13 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                 if (idx === validSentences.length - 1) {
                     utterance.onend = function() {
+                        if (thisSession !== ttsSessionId) return;
                         isSpeaking = false;
                         updateTalkButton();
                         if (isConversationMode) {
                             showPreview('Your turn...', 'You can speak to answer...', false, true);
                             setTimeout(function() {
-                                if (isConversationMode && !isRecording && !isSpeaking) {
+                                if (thisSession === ttsSessionId && isConversationMode && !isRecording && !isSpeaking && !isStartingRecording) {
                                     startGroqVoiceRecording();
                                 }
                             }, 450);
@@ -3208,6 +3225,11 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 }
 
                 utterance.onerror = function(err) {
+                    if (thisSession !== ttsSessionId) return;
+                    // Ignore intentional cancel/interrupt events
+                    if (err && (err.error === 'interrupted' || err.error === 'canceled' || err.error === 'cancelled')) {
+                        return;
+                    }
                     console.warn('[tts] Browser speech synthesis error:', err);
                     if (!hadFallback && allowFallbackToMicrosoft) {
                         hadFallback = true;
@@ -3220,7 +3242,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     updateTalkButton();
                     if (isConversationMode) {
                         setTimeout(function() {
-                            if (isConversationMode && !isRecording && !isSpeaking) {
+                            if (thisSession === ttsSessionId && isConversationMode && !isRecording && !isSpeaking && !isStartingRecording) {
                                 startGroqVoiceRecording();
                             }
                         }, 450);
