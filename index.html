@@ -1740,6 +1740,24 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         </div>
                     </div>
 
+                    <!-- 4. Modo Debugger / Notificações -->
+                    <div class="settings-block">
+                        <div class="settings-block-title">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                            <span>Modo Debugger (Notificações)</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                            <button id="debug-off-btn" class="settings-option-btn active" title="Desativar notificações informativas ao clicar no microfone ou conversa">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                                <span>Desativado (Padrão)</span>
+                            </button>
+                            <button id="debug-on-btn" class="settings-option-btn" title="Ativar balões e avisos de estado ao clicar no microfone ou conversa">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M4.93 4.93l2.83 2.83"></path><path d="M16.24 16.24l2.83 2.83"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M4.93 19.07l2.83-2.83"></path><path d="M16.24 7.76l2.83-2.83"></path></svg>
+                                <span>Ativado</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- 4. Atalhos de Teclado -->
                     <div class="settings-block">
                         <div class="settings-block-title">
@@ -2107,7 +2125,22 @@ window.sendTextToTerminal = function(text, autoEnter) {
         var ffDontShowCheckbox = document.getElementById('ff-dont-show-checkbox');
         var pendingVoiceAction = null;
 
-        function showPreview(status, text, isError, showWave) {
+        function isDebugModeActive() {
+            try {
+                return localStorage.getItem('opencode_debug_mode') === 'true';
+            } catch(e) {
+                return false;
+            }
+        }
+
+        function showPreview(status, text, isError, showWave, forceShow) {
+            var isDebug = isDebugModeActive();
+            // In non-debug mode (default), silence status notifications (e.g. Mode activated, stopped, canceled)
+            if (!isDebug && !isError && !forceShow && !showWave) {
+                if (previewBox) previewBox.style.display = 'none';
+                return;
+            }
+
             if (!previewBox) return;
             clearTimeout(previewTimer);
             previewStatus.textContent = status;
@@ -3395,11 +3428,50 @@ window.sendTextToTerminal = function(text, autoEnter) {
             });
         }
 
+        // Debugger Mode (Default is Disabled)
+        var debugOffBtn = document.getElementById('debug-off-btn');
+        var debugOnBtn = document.getElementById('debug-on-btn');
+
+        function updateDebugModalUI(isDebug) {
+            if (debugOffBtn) {
+                if (!isDebug) debugOffBtn.classList.add('active'); else debugOffBtn.classList.remove('active');
+            }
+            if (debugOnBtn) {
+                if (isDebug) debugOnBtn.classList.add('active'); else debugOnBtn.classList.remove('active');
+            }
+        }
+
+        function setDebugMode(enabled, showToast) {
+            var isEnabled = Boolean(enabled);
+            try {
+                localStorage.setItem('opencode_debug_mode', isEnabled ? 'true' : 'false');
+            } catch(e) {}
+            updateDebugModalUI(isEnabled);
+            if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                try {
+                    window.__ttyd_xterm.overlayAddon.showOverlay(isEnabled ? 'Debugger: Ativado' : 'Debugger: Desativado', 350);
+                } catch(e) {}
+            }
+        }
+        window.setDebugMode = setDebugMode;
+
+        if (debugOffBtn) {
+            debugOffBtn.addEventListener('click', function() {
+                setDebugMode(false, true);
+            });
+        }
+        if (debugOnBtn) {
+            debugOnBtn.addEventListener('click', function() {
+                setDebugMode(true, true);
+            });
+        }
+
         if (settingsBtn) {
             settingsBtn.addEventListener('click', function() {
                 updateFontSizeModalUI(getCurrentTerminalFontSize());
                 updateOrientationModalUI();
                 updateThemeModalUI(localStorage.getItem('opencode_toolbar_theme') || 'light');
+                updateDebugModalUI(isDebugModeActive());
                 if (settingsModal) settingsModal.classList.add('active');
             });
         }
@@ -3454,6 +3526,9 @@ window.sendTextToTerminal = function(text, autoEnter) {
             try {
                 var savedTheme = localStorage.getItem('opencode_toolbar_theme') || 'light';
                 setToolbarTheme(savedTheme, false);
+            } catch(e) {}
+            try {
+                updateDebugModalUI(isDebugModeActive());
             } catch(e) {}
         }, 300);
 
