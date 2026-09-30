@@ -81,13 +81,83 @@ body.toolbar-dragging #corner-zone-container{display:block}
 .corner-hint-bl{bottom:calc(env(safe-area-inset-bottom,12px) + 20px);left:calc(env(safe-area-inset-left,12px) + 24px)}
 
 /* Disabled state for Voice & Talk buttons when Groq is unconfigured or invalid */
-.voice-btn.disabled{opacity:0.35!important;cursor:not-allowed!important;filter:grayscale(1);box-shadow:none!important}
-.voice-btn.disabled:hover{background:#30363d!important;color:#8b949e!important;border-color:rgba(255,255,255,0.1)!important;transform:none!important}
-.voice-btn.disabled:active{transform:none!important}
-#mic-btn.disabled{background:#30363d!important;color:#8b949e!important;box-shadow:none!important}
-body.theme-light .voice-btn.disabled, #voice-toolbar.theme-light .voice-btn.disabled{opacity:0.35!important;cursor:not-allowed!important;filter:grayscale(1);box-shadow:none!important}
-body.theme-light .voice-btn.disabled:hover, #voice-toolbar.theme-light .voice-btn.disabled:hover{background:#f1f5f9!important;color:#94a3b8!important;border-color:rgba(0,0,0,0.08)!important;transform:none!important}
-body.theme-light #mic-btn.disabled{background:#f1f5f9!important;color:#94a3b8!important;box-shadow:none!important}
+.voice-btn.disabled,
+#mic-btn.disabled,
+#talk-btn.disabled,
+#voice-toolbar #mic-btn.disabled,
+#voice-toolbar #talk-btn.disabled,
+#voice-toolbar.theme-light #mic-btn.disabled,
+#voice-toolbar.theme-light #talk-btn.disabled,
+body.theme-light #voice-toolbar #mic-btn.disabled,
+body.theme-light #voice-toolbar #talk-btn.disabled,
+body.theme-light .voice-btn.disabled{
+    background:#21262d!important;
+    border:1px solid rgba(248,81,73,0.45)!important;
+    color:#8b949e!important;
+    box-shadow:none!important;
+    cursor:not-allowed!important;
+    opacity:0.75!important;
+    filter:none!important;
+    transform:none!important;
+}
+
+.voice-btn.disabled svg,
+#mic-btn.disabled svg,
+#talk-btn.disabled svg,
+#voice-toolbar #mic-btn.disabled svg,
+#voice-toolbar #talk-btn.disabled svg{
+    stroke:#8b949e!important;
+}
+
+body.theme-light .voice-btn.disabled,
+body.theme-light #mic-btn.disabled,
+body.theme-light #talk-btn.disabled,
+body.theme-light #voice-toolbar #mic-btn.disabled,
+body.theme-light #voice-toolbar #talk-btn.disabled,
+#voice-toolbar.theme-light .voice-btn.disabled,
+#voice-toolbar.theme-light #mic-btn.disabled,
+#voice-toolbar.theme-light #talk-btn.disabled{
+    background:#f1f5f9!important;
+    border:1px solid rgba(220,38,38,0.45)!important;
+    color:#94a3b8!important;
+    box-shadow:none!important;
+    cursor:not-allowed!important;
+    opacity:0.85!important;
+    filter:none!important;
+    transform:none!important;
+}
+
+body.theme-light .voice-btn.disabled svg,
+body.theme-light #mic-btn.disabled svg,
+body.theme-light #talk-btn.disabled svg,
+#voice-toolbar.theme-light #mic-btn.disabled svg,
+#voice-toolbar.theme-light #talk-btn.disabled svg{
+    stroke:#94a3b8!important;
+}
+
+.voice-btn.disabled:hover,
+#mic-btn.disabled:hover,
+#talk-btn.disabled:hover,
+#voice-toolbar #mic-btn.disabled:hover,
+#voice-toolbar #talk-btn.disabled:hover{
+    background:#282e38!important;
+    border-color:rgba(248,81,73,0.65)!important;
+    color:#cbd5e1!important;
+    transform:none!important;
+    box-shadow:none!important;
+}
+
+body.theme-light .voice-btn.disabled:hover,
+body.theme-light #mic-btn.disabled:hover,
+body.theme-light #talk-btn.disabled:hover,
+#voice-toolbar.theme-light #mic-btn.disabled:hover,
+#voice-toolbar.theme-light #talk-btn.disabled:hover{
+    background:#e2e8f0!important;
+    border-color:rgba(220,38,38,0.65)!important;
+    color:#64748b!important;
+    transform:none!important;
+    box-shadow:none!important;
+}
 .voice-btn{background:#30363d;border:1px solid rgba(255,255,255,0.14);color:#c9d1d9;cursor:pointer;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;outline:none;transition:all .2s ease;box-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;z-index:2;touch-action:manipulation;pointer-events:auto}
 .voice-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 .voice-btn:active{transform:scale(.92)}
