@@ -77,6 +77,80 @@
 #voice-toolbar.vertical.minimize-edge.collapsed.corner-top-left{top:calc(env(safe-area-inset-top,0px) + 12px);left:env(safe-area-inset-left,0px);border-top-left-radius:0;border-bottom-left-radius:0;border-left:none}
 #voice-toolbar.vertical.minimize-edge.collapsed.corner-bottom-left{bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:env(safe-area-inset-left,0px);border-top-left-radius:0;border-bottom-left-radius:0;border-left:none}
 
+/* Arrow Directions for Edge Minimization Mode (Pointing towards screen / edge) */
+#voice-toolbar.minimize-edge.corner-top-right .collapse-btn svg,
+#voice-toolbar.minimize-edge.corner-middle-right .collapse-btn svg,
+#voice-toolbar.minimize-edge.corner-bottom-right .collapse-btn svg{
+    transform: rotate(180deg);
+}
+#voice-toolbar.minimize-edge.collapsed.corner-top-right .collapse-btn svg,
+#voice-toolbar.minimize-edge.collapsed.corner-middle-right .collapse-btn svg,
+#voice-toolbar.minimize-edge.collapsed.corner-bottom-right .collapse-btn svg{
+    transform: rotate(0deg)!important;
+}
+
+#voice-toolbar.minimize-edge.corner-top-left .collapse-btn svg,
+#voice-toolbar.minimize-edge.corner-middle-left .collapse-btn svg,
+#voice-toolbar.minimize-edge.corner-bottom-left .collapse-btn svg{
+    transform: rotate(0deg);
+}
+#voice-toolbar.minimize-edge.collapsed.corner-top-left .collapse-btn svg,
+#voice-toolbar.minimize-edge.collapsed.corner-middle-left .collapse-btn svg,
+#voice-toolbar.minimize-edge.collapsed.corner-bottom-left .collapse-btn svg{
+    transform: rotate(180deg)!important;
+}
+
+#voice-toolbar.minimize-edge.corner-top-center .collapse-btn svg{
+    transform: rotate(270deg);
+}
+#voice-toolbar.minimize-edge.collapsed.corner-top-center .collapse-btn svg{
+    transform: rotate(90deg)!important;
+}
+
+#voice-toolbar.minimize-edge.corner-bottom-center .collapse-btn svg{
+    transform: rotate(90deg);
+}
+#voice-toolbar.minimize-edge.collapsed.corner-bottom-center .collapse-btn svg{
+    transform: rotate(270deg)!important;
+}
+
+/* Vertical Toolbar Arrow Directions for Edge Minimization Mode */
+#voice-toolbar.vertical.minimize-edge.corner-top-right .collapse-btn svg,
+#voice-toolbar.vertical.minimize-edge.corner-middle-right .collapse-btn svg,
+#voice-toolbar.vertical.minimize-edge.corner-bottom-right .collapse-btn svg{
+    transform: rotate(180deg);
+}
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-top-right .collapse-btn svg,
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-middle-right .collapse-btn svg,
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-bottom-right .collapse-btn svg{
+    transform: rotate(0deg)!important;
+}
+
+#voice-toolbar.vertical.minimize-edge.corner-top-left .collapse-btn svg,
+#voice-toolbar.vertical.minimize-edge.corner-middle-left .collapse-btn svg,
+#voice-toolbar.vertical.minimize-edge.corner-bottom-left .collapse-btn svg{
+    transform: rotate(0deg);
+}
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-top-left .collapse-btn svg,
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-middle-left .collapse-btn svg,
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-bottom-left .collapse-btn svg{
+    transform: rotate(180deg)!important;
+}
+
+#voice-toolbar.vertical.minimize-edge.corner-top-center .collapse-btn svg{
+    transform: rotate(270deg);
+}
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-top-center .collapse-btn svg{
+    transform: rotate(90deg)!important;
+}
+
+#voice-toolbar.vertical.minimize-edge.corner-bottom-center .collapse-btn svg{
+    transform: rotate(90deg);
+}
+#voice-toolbar.vertical.minimize-edge.collapsed.corner-bottom-center .collapse-btn svg{
+    transform: rotate(270deg)!important;
+}
+
 /* Transcript Preview Popup & Audio Monitor */
 #transcript-preview{position:fixed;max-width:min(340px,calc(100vw - 36px));background:rgba(15,18,25,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;color:#f8fafc;font-size:12.5px;line-height:1.45;box-shadow:0 16px 36px -4px rgba(0,0,0,0.65),0 0 0 1px rgba(255,255,255,0.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:100000;display:none;word-break:break-word;transition:top .3s ease, bottom .3s ease, left .3s ease, right .3s ease, border-color .2s ease, background .2s ease;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer;user-select:text}
 #transcript-preview:hover{border-color:rgba(56,189,248,0.35);background:rgba(18,22,31,0.96)}
