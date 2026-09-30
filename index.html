@@ -2413,7 +2413,16 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 }
             } catch(e) {}
         }
+        var currentTtsAudio = null;
         function stopSpeaking() {
+            if (currentTtsAudio) {
+                try {
+                    currentTtsAudio.pause();
+                    currentTtsAudio.currentTime = 0;
+                    currentTtsAudio.src = '';
+                } catch(e) {}
+                currentTtsAudio = null;
+            }
             if (window.speechSynthesis) {
                 try { window.speechSynthesis.cancel(); } catch(e) {}
             }
@@ -2733,16 +2742,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
         }
 
-        function speakAiMessage(rawText) {
-            if (!isConversationMode) return;
-            var text = cleanMarkdownForSpeech(rawText);
-            if (!text || text.length < 2) return;
-            if (!window.speechSynthesis) return;
-
-            stopSpeaking();
-
-            showPreview('A Falar (' + (configuredLang || 'PT') + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
-            hidePreview(4000);
+        function fallbackSpeakSpeechSynthesis(text) {
+            if (!window.speechSynthesis) {
+                isSpeaking = false;
+                updateTalkButton();
+                return;
+            }
 
             var bestVoice = getBestVoiceForLang(configuredLang);
             var sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
@@ -2789,6 +2794,58 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 }
                 window.speechSynthesis.speak(utterance);
             });
+        }
+
+        function speakAiMessage(rawText) {
+            if (!isConversationMode) return;
+            var text = cleanMarkdownForSpeech(rawText);
+            if (!text || text.length < 2) return;
+
+            stopSpeaking();
+
+            showPreview('A Falar (' + (configuredLang || 'PT') + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
+            hidePreview(4000);
+
+            isSpeaking = true;
+            updateTalkButton();
+
+            try {
+                var ttsUrl = '/api/tts?text=' + encodeURIComponent(text) + '&lang=' + encodeURIComponent(configuredLang || 'PT');
+                var audio = new Audio(ttsUrl);
+                currentTtsAudio = audio;
+
+                audio.onended = function() {
+                    if (currentTtsAudio === audio) currentTtsAudio = null;
+                    isSpeaking = false;
+                    updateTalkButton();
+                    if (isConversationMode) {
+                        showPreview('A sua vez...', 'Pode falar para responder...', false, true);
+                        setTimeout(function() {
+                            if (isConversationMode && !isRecording && !isSpeaking) {
+                                startGroqVoiceRecording();
+                            }
+                        }, 450);
+                    }
+                };
+
+                audio.onerror = function() {
+                    console.warn('[tts] Edge TTS audio request failed, falling back to local speech synthesis.');
+                    if (currentTtsAudio === audio) currentTtsAudio = null;
+                    fallbackSpeakSpeechSynthesis(text);
+                };
+
+                var playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function(err) {
+                        console.warn('[tts] Audio playback error or autoplay blocked:', err);
+                        if (currentTtsAudio === audio) currentTtsAudio = null;
+                        fallbackSpeakSpeechSynthesis(text);
+                    });
+                }
+            } catch(e) {
+                console.error('[tts] Edge TTS initialization error:', e);
+                fallbackSpeakSpeechSynthesis(text);
+            }
         }
 
         async function checkForNewAiResponse() {

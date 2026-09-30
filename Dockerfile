@@ -20,17 +20,20 @@ RUN curl -fsSL https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_
 # Install OpenCode AI CLI globally
 RUN npm install -g opencode-ai@latest
 
-# Default working directory for projects
-WORKDIR /workspace
+# Install Edge TTS and Node.js dependencies
+WORKDIR /
+COPY package.json ./
+RUN npm install --omit=dev
 
-# Copy mobile-optimized web terminal template
+# Copy voice transcription and Edge TTS server
+COPY server.js /server.js
+
+# Copy mobile-optimized web terminal template and PWA assets
 COPY index.html /usr/local/share/ttyd/index.html
-
-# Copy PWA assets
 COPY public /public
 
-# Copy voice transcription proxy server
-COPY server.js /server.js
+# Default working directory for projects
+WORKDIR /workspace
 
 # Copy clipboard helper and create symlinks for Linux clipboard commands
 COPY clipboard-helper.sh /usr/local/bin/clipboard-helper

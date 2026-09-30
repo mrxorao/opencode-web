@@ -5,6 +5,10 @@
 data/
 workspace/
 
+# Node modules
+node_modules/
+package-lock.json
+
 # OS / Editor temporary files
 .DS_Store
 Thumbs.db

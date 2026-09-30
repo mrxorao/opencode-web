@@ -9,6 +9,28 @@ const VOICE_GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_A
 const VOICE_GROQ_MODEL = (process.env.VOICE_GROQ_MODEL || 'whisper-large-v3').trim();
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
 
+let MsEdgeTTS, OUTPUT_FORMAT;
+try {
+    const msedgeModule = require('msedge-tts');
+    MsEdgeTTS = msedgeModule.MsEdgeTTS;
+    OUTPUT_FORMAT = msedgeModule.OUTPUT_FORMAT;
+} catch (e) {
+    console.warn('[proxy] msedge-tts module could not be loaded:', e.message);
+}
+
+const EDGE_VOICE_MAP = {
+    'PT': 'pt-PT-RaquelNeural',
+    'PT-PT': 'pt-PT-RaquelNeural',
+    'BR': 'pt-BR-FranciscaNeural',
+    'PT-BR': 'pt-BR-FranciscaNeural',
+    'EN': 'en-US-JennyNeural',
+    'EN-US': 'en-US-JennyNeural',
+    'ES': 'es-ES-ElviraNeural',
+    'FR': 'fr-FR-DeniseNeural',
+    'DE': 'de-DE-KatjaNeural',
+    'IT': 'it-IT-ElsaNeural'
+};
+
 const DB_PATHS = [
     '/root/.local/share/opencode/opencode.db',
     path.join(__dirname, 'data', 'share', 'opencode.db')
@@ -341,6 +363,91 @@ async function handleUpload(req, res) {
         console.error('Server upload error:', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message || 'Upload failed' }));
+    }
+}
+
+// Edge TTS (Microsoft Neural Voice) Audio Synthesis Handler
+async function handleTTS(req, res, parsedUrl) {
+    if (!MsEdgeTTS || !OUTPUT_FORMAT) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'TTS_UNAVAILABLE', message: 'msedge-tts module is not available.' }));
+        return;
+    }
+
+    if (req.method === 'GET') {
+        const text = parsedUrl.searchParams.get('text') || '';
+        const lang = parsedUrl.searchParams.get('lang') || DEFAULT_VOICE_LANGUAGE;
+        const voice = parsedUrl.searchParams.get('voice') || '';
+        await processTTS(text, lang, voice, res);
+    } else if (req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk;
+            if (body.length > 100000) req.destroy();
+        });
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body || '{}');
+                const text = data.text || '';
+                const lang = data.lang || DEFAULT_VOICE_LANGUAGE;
+                const voice = data.voice || '';
+                await processTTS(text, lang, voice, res);
+            } catch (err) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'INVALID_JSON', message: err.message }));
+            }
+        });
+    } else {
+        res.writeHead(405, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'METHOD_NOT_ALLOWED' }));
+    }
+}
+
+async function processTTS(rawText, langCode, requestedVoice, res) {
+    let text = (rawText || '').trim();
+    if (!text) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'EMPTY_TEXT', message: 'Texto para sintetizar não fornecido.' }));
+        return;
+    }
+
+    if (text.length > 5000) {
+        text = text.substring(0, 5000);
+    }
+
+    const normLang = (langCode || 'PT').toUpperCase().trim();
+    const selectedVoice = requestedVoice || process.env.VOICE_TTS_NAME || EDGE_VOICE_MAP[normLang] || EDGE_VOICE_MAP['PT'] || 'pt-PT-RaquelNeural';
+
+    try {
+        const tts = new MsEdgeTTS();
+        await tts.setMetadata(selectedVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+        const { audioStream } = tts.toStream(text);
+
+        res.writeHead(200, {
+            'Content-Type': 'audio/mpeg',
+            'Cache-Control': 'no-cache',
+            'X-TTS-Voice': selectedVoice
+        });
+
+        audioStream.pipe(res);
+
+        audioStream.on('error', (err) => {
+            console.error('[tts] Audio stream error:', err.message);
+            if (!res.headersSent) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'TTS_STREAM_ERROR', message: err.message }));
+            } else {
+                res.end();
+            }
+        });
+    } catch (err) {
+        console.error('[tts] Edge TTS generation error:', err);
+        if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'TTS_SYNTHESIS_ERROR', message: err.message }));
+        } else {
+            res.end();
+        }
     }
 }
 
@@ -703,6 +810,7 @@ async function requestListener(req, res) {
             groqErrorMessage: groqStatus.errorMessage,
             groqModel: VOICE_GROQ_MODEL,
             defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
+            hasEdgeTTS: Boolean(MsEdgeTTS),
             isHttps: isHttps,
             status: groqStatus.isValid ? 'ready' : (groqStatus.error || 'disabled')
         }));
@@ -712,6 +820,12 @@ async function requestListener(req, res) {
     // Return latest clean assistant message for Text-to-Speech
     if (pathname === '/api/latest-ai-message' && req.method === 'GET') {
         handleLatestAiMessage(req, res);
+        return;
+    }
+
+    // Handle Edge TTS Text-to-Speech synthesis
+    if (pathname === '/api/tts' && (req.method === 'GET' || req.method === 'POST')) {
+        await handleTTS(req, res, parsedUrl);
         return;
     }
 

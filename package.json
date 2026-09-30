@@ -1,0 +1,12 @@
+{
+  "name": "opencode-web",
+  "version": "1.0.0",
+  "description": "OpenCode AI Web Terminal & Voice Interface",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "msedge-tts": "^2.0.8"
+  }
+}
