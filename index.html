@@ -3,14 +3,21 @@
 /* Floating Voice Control Toolbar */
 #voice-toolbar{position:fixed;z-index:99999;display:none;opacity:0;pointer-events:none;align-items:center;gap:6px;background:rgba(22,27,34,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.18);border-radius:30px;padding:5px 6px;box-shadow:0 4px 16px rgba(0,0,0,0.6);user-select:none;-webkit-user-select:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;transition:top .3s cubic-bezier(0.2,0.9,0.3,1.2), bottom .3s cubic-bezier(0.2,0.9,0.3,1.2), left .3s cubic-bezier(0.2,0.9,0.3,1.2), right .3s cubic-bezier(0.2,0.9,0.3,1.2), transform .18s ease, box-shadow .18s ease, padding .2s ease, border-radius .2s ease, opacity .35s ease}
 #voice-toolbar.ready{display:flex;opacity:1;pointer-events:auto}
-#voice-toolbar.collapsed{padding:4px 6px;gap:2px;border-radius:18px;background:rgba(22,27,34,0.88);box-shadow:0 2px 10px rgba(0,0,0,0.5)}
+#voice-toolbar.collapsed{padding:4px 6px;gap:3px;border-radius:22px;background:rgba(22,27,34,0.88);box-shadow:0 2px 10px rgba(0,0,0,0.5)}
 #voice-toolbar.dragging{transition:none!important;transform:scale(1.06);box-shadow:0 12px 32px rgba(0,0,0,0.85),0 0 0 2px rgba(88,166,255,0.6);opacity:0.96}
 
 .desktop-only{display:flex}
 @media (max-width: 768px), (pointer: coarse){.desktop-only{display:none!important}}
 
 .toolbar-actions{display:flex;align-items:center;gap:7px}
-#voice-toolbar.collapsed .toolbar-actions{display:none}
+#voice-toolbar.collapsed .toolbar-actions{display:flex;align-items:center;gap:4px}
+#voice-toolbar.collapsed .toolbar-actions .voice-btn{display:none}
+#voice-toolbar.collapsed #mic-btn.recording{display:flex!important}
+#voice-toolbar.collapsed #talk-btn.active{display:flex!important}
+#voice-toolbar.vertical.collapsed .toolbar-actions{flex-direction:column;gap:4px}
+#voice-toolbar.vertical.collapsed .toolbar-actions .voice-btn{display:none}
+#voice-toolbar.vertical.collapsed #mic-btn.recording{display:flex!important}
+#voice-toolbar.vertical.collapsed #talk-btn.active{display:flex!important}
 
 /* Drag Handle */
 .drag-handle{display:flex;align-items:center;justify-content:center;width:18px;height:32px;color:#8b949e;cursor:grab;touch-action:none;margin-left:2px;margin-right:1px;border-radius:8px;transition:all .15s ease}
@@ -41,7 +48,7 @@
 #voice-toolbar.vertical .collapse-btn{width:32px;height:18px;margin:1px 0}
 #voice-toolbar.vertical .collapse-btn svg{transform:rotate(90deg)}
 #voice-toolbar.vertical.collapsed .collapse-btn svg{transform:rotate(270deg)}
-#voice-toolbar.vertical.collapsed{padding:6px 4px;border-radius:18px;gap:2px}
+#voice-toolbar.vertical.collapsed{padding:6px 4px;border-radius:22px;gap:3px}
 #voice-toolbar.vertical.collapsed .drag-handle, #voice-toolbar.vertical.collapsed .collapse-btn{width:30px;height:18px;margin:0}
 
 /* 8 Target Zones (4 Corners + 4 Centers) for Voice Toolbar */
