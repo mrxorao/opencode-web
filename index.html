@@ -2029,6 +2029,24 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
                         </div>
                     </div>
 
+                    <!-- 3. Voz da IA (Leitor TTS) -->
+                    <div class="settings-block">
+                        <div class="settings-block-title">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                            <span>Voz da IA (Leitor TTS)</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                            <button id="tts-browser-btn" class="settings-option-btn active" title="Leitor Nativo do Navegador (Web Speech API - Padrão)">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                <span>Browser (Padrão)</span>
+                            </button>
+                            <button id="tts-microsoft-btn" class="settings-option-btn" title="Voz Neural Microsoft (Edge TTS)">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg>
+                                <span>Microsoft Neural</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- 3. Modo Debugger / Notificações -->
                     <div class="settings-block">
                         <div class="settings-block-title">
@@ -2267,6 +2285,7 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
         var pollTimer = null;
         var previewTimer = null;
         var configuredLang = 'PT'; // Loaded dynamically from server
+        var configuredTtsProvider = 'browser'; // Loaded dynamically from server or localStorage
 
         var mediaStream = null;
         var mediaRecorder = null;
@@ -2567,7 +2586,7 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
         }
 
 
-        // Fetch server configuration on load (validates Groq API Key and Model)
+        // Fetch server configuration on load (validates Groq API Key, Model & TTS Provider)
         async function fetchServerConfig() {
             try {
                 var resp = await fetch('/api/config');
@@ -2575,6 +2594,16 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
                     var data = await resp.json();
                     if (data.defaultLanguage) {
                         configuredLang = String(data.defaultLanguage).toUpperCase();
+                    }
+                    if (data.ttsProvider) {
+                        var serverProvider = String(data.ttsProvider).toLowerCase();
+                        if (!localStorage.getItem('opencode_tts_provider')) {
+                            configuredTtsProvider = serverProvider;
+                        }
+                    }
+                    var savedTts = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser';
+                    if (typeof updateTtsProviderUI === 'function') {
+                        updateTtsProviderUI(savedTts);
                     }
                     var isValid = Boolean(data.isGroqValid);
                     updateVoiceButtonsState(isValid, data.groqErrorMessage);
@@ -2989,9 +3018,17 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
 
             stopSpeaking();
 
+            var currentProvider = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser';
+
             showPreview('A Falar (' + (configuredLang || 'PT') + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
             hidePreview(4000);
 
+            if (currentProvider === 'browser') {
+                fallbackSpeakSpeechSynthesis(text);
+                return;
+            }
+
+            // Microsoft Neural Voice (Edge TTS)
             isSpeaking = true;
             updateTalkButton();
 
@@ -3790,6 +3827,47 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
             });
         }
 
+        // Voice TTS Provider (Browser Native vs Microsoft Neural)
+        var ttsBrowserBtn = document.getElementById('tts-browser-btn');
+        var ttsMicrosoftBtn = document.getElementById('tts-microsoft-btn');
+
+        function updateTtsProviderUI(provider) {
+            var isBrowser = (provider !== 'microsoft');
+            if (ttsBrowserBtn) {
+                if (isBrowser) ttsBrowserBtn.classList.add('active'); else ttsBrowserBtn.classList.remove('active');
+            }
+            if (ttsMicrosoftBtn) {
+                if (!isBrowser) ttsMicrosoftBtn.classList.add('active'); else ttsMicrosoftBtn.classList.remove('active');
+            }
+        }
+
+        function setTtsProvider(provider, showToast) {
+            var selected = (provider === 'microsoft') ? 'microsoft' : 'browser';
+            configuredTtsProvider = selected;
+            try {
+                localStorage.setItem('opencode_tts_provider', selected);
+            } catch(e) {}
+            updateTtsProviderUI(selected);
+
+            if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                try {
+                    window.__ttyd_xterm.overlayAddon.showOverlay(selected === 'microsoft' ? 'Voz: Microsoft Neural' : 'Voz: Browser (Padrão)', 350);
+                } catch(e) {}
+            }
+        }
+        window.setTtsProvider = setTtsProvider;
+
+        if (ttsBrowserBtn) {
+            ttsBrowserBtn.addEventListener('click', function() {
+                setTtsProvider('browser', true);
+            });
+        }
+        if (ttsMicrosoftBtn) {
+            ttsMicrosoftBtn.addEventListener('click', function() {
+                setTtsProvider('microsoft', true);
+            });
+        }
+
         // Debugger Mode (Default is Disabled)
         var debugOffBtn = document.getElementById('debug-off-btn');
         var debugOnBtn = document.getElementById('debug-on-btn');
@@ -3832,6 +3910,7 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
             settingsBtn.addEventListener('click', function() {
                 updateFontSizeModalUI(getCurrentTerminalFontSize());
                 updateThemeModalUI(localStorage.getItem('opencode_toolbar_theme') || 'light');
+                updateTtsProviderUI(localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser');
                 updateDebugModalUI(isDebugModeActive());
                 if (settingsModal) settingsModal.classList.add('active');
             });
@@ -3881,6 +3960,9 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
             try {
                 var savedTheme = localStorage.getItem('opencode_toolbar_theme') || 'light';
                 setToolbarTheme(savedTheme, false);
+            } catch(e) {}
+            try {
+                updateTtsProviderUI(localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser');
             } catch(e) {}
             try {
                 updateDebugModalUI(isDebugModeActive());

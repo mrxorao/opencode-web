@@ -8,6 +8,8 @@ const PROXY_PORT = 7681;
 const VOICE_GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
 const VOICE_GROQ_MODEL = (process.env.VOICE_GROQ_MODEL || 'whisper-large-v3').trim();
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
+const RAW_TTS_PROVIDER = (process.env.VOICE_TTS_PROVIDER || process.env.TTS_PROVIDER || 'browser').toLowerCase().trim();
+const DEFAULT_TTS_PROVIDER = (RAW_TTS_PROVIDER === 'microsoft' || RAW_TTS_PROVIDER === 'edge' || RAW_TTS_PROVIDER === 'edge-tts') ? 'microsoft' : 'browser';
 
 let MsEdgeTTS, OUTPUT_FORMAT;
 try {
@@ -932,6 +934,7 @@ async function requestListener(req, res) {
             groqModel: VOICE_GROQ_MODEL,
             defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
             hasEdgeTTS: Boolean(MsEdgeTTS),
+            ttsProvider: DEFAULT_TTS_PROVIDER,
             isHttps: isHttps,
             status: groqStatus.isValid ? 'ready' : (groqStatus.error || 'disabled')
         }));
@@ -1076,6 +1079,7 @@ server.listen(PROXY_PORT, '0.0.0.0', async () => {
     const proto = isHttps ? 'https' : 'http';
     console.log(`[proxy] Web Terminal & Voice Server listening on ${proto}://0.0.0.0:${PROXY_PORT} -> ttyd :${TTYD_PORT}`);
     console.log(`[proxy] Default Voice Language: ${DEFAULT_VOICE_LANGUAGE}`);
+    console.log(`[proxy] Default TTS Voice Provider: ${DEFAULT_TTS_PROVIDER}`);
     if (VOICE_GROQ_API_KEY) {
         const groqStatus = await checkGroqStatus();
         if (groqStatus.isValid) {
