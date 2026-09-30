@@ -181,6 +181,7 @@ body.toolbar-dragging #corner-zone-container{display:block}
 .file-drop-desc{font-size:13px;color:#64748b}
 </style>
 <script type="text/javascript">
+window.__pageLoadedAt = Date.now();
 // 1. Dynamic Virtual Keyboard & Viewport Sync for Mobile
 (function() {
     function handleViewportResize() {
@@ -272,6 +273,75 @@ window.focusTerminal = function() {
     } catch(e) {}
 };
 
+// Variable to track overlay toasts to avoid spam / loops
+var _lastOverlayTime = 0;
+var _lastOverlayText = '';
+
+function showCopiedOverlay(text) {
+    try {
+        var now = Date.now();
+        // Do not show copied overlay on page load startup (first 2 seconds)
+        if (window.__pageLoadedAt && (now - window.__pageLoadedAt < 2000)) {
+            return;
+        }
+        // Deduplicate overlay for the same text within 5000ms, or any overlay within 800ms
+        if (text && text === _lastOverlayText && (now - _lastOverlayTime < 5000)) {
+            return;
+        }
+        if (now - _lastOverlayTime < 800) {
+            return;
+        }
+        _lastOverlayTime = now;
+        _lastOverlayText = text || '';
+
+        if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+            window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+        }
+    } catch(e) {}
+}
+
+// Anti-loop auto-refresh guard: triggers a clean page reload when text is copied,
+// but strictly prevents reload loops via a startup grace period, session cooldown and text deduplication.
+var MIN_REFRESH_INTERVAL_MS = 6000;
+
+function triggerAutoRefresh(text) {
+    try {
+        var now = Date.now();
+        // 1. Startup grace period (5 seconds after page opened or reloaded)
+        if (window.__pageLoadedAt && (now - window.__pageLoadedAt < 5000)) {
+            console.log('[refresh-guard] Skipping auto-refresh: inside 5s startup grace period');
+            return;
+        }
+
+        // 2. Cooldown timer stored in sessionStorage (at least 6s between refreshes)
+        var lastRefreshTime = parseInt(sessionStorage.getItem('opencode_last_clip_refresh_time') || '0', 10);
+        if (now - lastRefreshTime < MIN_REFRESH_INTERVAL_MS) {
+            console.log('[refresh-guard] Skipping auto-refresh: cooldown active (' + (now - lastRefreshTime) + 'ms)');
+            return;
+        }
+
+        // 3. Text deduplication: do not refresh again if identical text already triggered the last refresh
+        var lastRefreshedText = sessionStorage.getItem('opencode_last_refreshed_text') || '';
+        if (text && text === lastRefreshedText) {
+            console.log('[refresh-guard] Skipping auto-refresh: identical text already refreshed');
+            return;
+        }
+
+        // Record refresh timestamp & text in sessionStorage so it persists across page reload
+        sessionStorage.setItem('opencode_last_clip_refresh_time', String(now));
+        if (text) {
+            sessionStorage.setItem('opencode_last_refreshed_text', String(text));
+        }
+
+        console.log('[refresh-guard] Triggering smooth page refresh in 400ms...');
+        setTimeout(function() {
+            window.location.reload();
+        }, 400);
+    } catch(e) {
+        console.warn('[refresh-guard] Error in triggerAutoRefresh:', e);
+    }
+}
+
 // Global variable to hold explicitly requested copy payload during synthetic copy commands
 var _currentPendingCopyText = '';
 
@@ -292,9 +362,8 @@ document.addEventListener('copy', function(e) {
             if (e.clipboardData) {
                 e.clipboardData.setData('text/plain', text);
                 e.preventDefault();
-                if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                    window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
-                }
+                showCopiedOverlay(text);
+                triggerAutoRefresh(text);
             }
         }
     }
@@ -350,10 +419,11 @@ window.execCommandDirect = execCommandDirect;
 var _lastCopiedText = '';
 var _lastCopiedTime = 0;
 
-function copyToClipboard(text) {
+function copyToClipboard(text, options) {
     if (text === undefined || text === null || text === '') {
         return Promise.resolve(false);
     }
+    var opts = options || {};
     var str = String(text);
     var now = Date.now();
 
@@ -364,19 +434,24 @@ function copyToClipboard(text) {
     _lastCopiedText = str;
     _lastCopiedTime = now;
 
+    function handleAfterCopySuccess() {
+        showCopiedOverlay(str);
+        restoreTerminalFocus();
+        if (!opts.noRefresh) {
+            triggerAutoRefresh(str);
+        }
+    }
+
     // 1. Primary: Modern Async Clipboard API (Directly writes to OS Clipboard)
     if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         return navigator.clipboard.writeText(str).then(function() {
-            if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
-            }
-            restoreTerminalFocus();
+            handleAfterCopySuccess();
             return true;
         }).catch(function(err) {
             console.warn('[copy] navigator.clipboard.writeText error, fallback:', err);
             var ok = execCommandDirect(str);
-            if (ok && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+            if (ok) {
+                handleAfterCopySuccess();
             }
             return ok;
         });
@@ -384,8 +459,8 @@ function copyToClipboard(text) {
 
     // 2. Fallback only if navigator.clipboard is unavailable
     var ok = execCommandDirect(str);
-    if (ok && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-        window.__ttyd_xterm.overlayAddon.showOverlay("✓ Copiado", 200);
+    if (ok) {
+        handleAfterCopySuccess();
     }
     return Promise.resolve(ok);
 }
@@ -462,16 +537,21 @@ function initClipboardSync() {
     window.__clipboardSyncInitialized = true;
 
     try {
+        var savedClipId = sessionStorage.getItem('opencode_last_synced_clip_id');
         var evtSource = new EventSource('/api/clipboard-events');
         evtSource.onmessage = function(e) {
             try {
                 if (!e.data) return;
                 var data = JSON.parse(e.data);
-                if (data && data.text && data.id && data.id !== _lastSyncedClipId && data.id !== '0') {
-                    _lastSyncedClipId = data.id;
-                    if (_initialClipSyncDone) {
-                        console.log('[clipboard-sync] Received update from server (' + data.text.length + ' chars)');
-                        copyToClipboard(data.text);
+                if (data && data.text && data.id && data.id !== '0') {
+                    var lastId = _lastSyncedClipId || savedClipId;
+                    if (data.id !== lastId) {
+                        _lastSyncedClipId = data.id;
+                        sessionStorage.setItem('opencode_last_synced_clip_id', data.id);
+                        if (_initialClipSyncDone) {
+                            console.log('[clipboard-sync] Received update from server (' + data.text.length + ' chars)');
+                            copyToClipboard(data.text);
+                        }
                     }
                 }
             } catch(err) {}
@@ -480,10 +560,10 @@ function initClipboardSync() {
         console.warn('[clipboard-sync] SSE unavailable');
     }
 
-    // Mark initial sync done after 1 second
+    // Mark initial sync done after 1.5 seconds
     setTimeout(function() {
         _initialClipSyncDone = true;
-    }, 1000);
+    }, 1500);
 }
 window.initClipboardSync = initClipboardSync;
 
@@ -1256,7 +1336,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             previewBox.addEventListener('click', function(e) {
                 var textToCopy = previewText ? previewText.textContent : '';
                 if (textToCopy && textToCopy.trim()) {
-                    copyToClipboard(textToCopy.trim()).then(function(ok) {
+                    copyToClipboard(textToCopy.trim(), { noRefresh: true }).then(function(ok) {
                         if (ok) {
                             var origStatus = previewStatus ? previewStatus.textContent : '';
                             if (previewStatus) previewStatus.textContent = '✓ Copiado para a área de transferência!';
@@ -1314,7 +1394,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
         if (micCopyUrlBtn) {
             micCopyUrlBtn.addEventListener('click', function() {
                 var targetHttpsUrl = 'https://' + location.hostname + ':7681';
-                copyToClipboard(targetHttpsUrl).then(function(ok) {
+                copyToClipboard(targetHttpsUrl, { noRefresh: true }).then(function(ok) {
                     if (ok) {
                         micCopyUrlBtn.textContent = '✓ Copiado!';
                         setTimeout(function() { micCopyUrlBtn.textContent = 'Copiar URL HTTPS'; }, 2000);
@@ -2686,7 +2766,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
                     copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copiar</span>';
                     copyBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        copyToClipboard(p.content || '').then(function(ok) {
+                        copyToClipboard(p.content || '', { noRefresh: true }).then(function(ok) {
                             if (ok) {
                                 copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span style="color:#34d399">Copiado!</span>';
                                 setTimeout(function() {
