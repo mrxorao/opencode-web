@@ -2869,16 +2869,16 @@ window.sendTextToTerminal = function(text, autoEnter) {
         }
 
         async function checkForNewAiResponse() {
-            if (!isWaitingForAiResponse && !isConversationMode) return;
+            if (!isWaitingForAiResponse) return;
             try {
                 var resp = await fetch('/api/latest-ai-message');
                 if (resp.ok) {
                     var data = await resp.json();
                     if (data && data.id && data.id !== lastKnownAiMessageId && data.text) {
-                        if (!data.time || data.time >= (promptSubmittedAt - 3000) || isConversationMode) {
+                        if (!data.time || data.time >= (promptSubmittedAt - 3000)) {
                             lastKnownAiMessageId = data.id;
                             isWaitingForAiResponse = false;
-                            if (pollTimer && !isConversationMode) { clearInterval(pollTimer); pollTimer = null; }
+                            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
                             
                             if (isConversationMode) {
                                 speakAiMessage(data.text);
@@ -3253,6 +3253,7 @@ window.sendTextToTerminal = function(text, autoEnter) {
             }
             if (isConversationMode) {
                 isConversationMode = false;
+                isWaitingForAiResponse = false;
                 if (conversationPollTimer) {
                     clearInterval(conversationPollTimer);
                     conversationPollTimer = null;
@@ -3267,9 +3268,13 @@ window.sendTextToTerminal = function(text, autoEnter) {
                 showPreview('Modo Conversa Desativado', 'Pode usar o microfone para ditado normal.', false, false);
                 hidePreview(2500);
                 restoreTerminalFocus();
+                syncInitialMessageId();
             } else {
                 isConversationMode = true;
+                isWaitingForAiResponse = false;
+                promptSubmittedAt = Date.now();
                 stopSpeaking();
+                syncInitialMessageId();
                 updateTalkButton();
                 playConversationStartSound();
                 showPreview('Modo Conversa Ativado', 'Fale para o microfone. A IA responderá e voltará a ouvir.', false, false);
