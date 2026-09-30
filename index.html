@@ -173,8 +173,11 @@ body.theme-light #talk-btn.disabled:hover,
 #upload-btn{background:#30363d;color:#e6edf3}
 #upload-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
 #upload-btn.uploading{background:#1f6feb!important;color:#fff!important;animation:mic-pulse 1s infinite ease-in-out;box-shadow:0 0 14px rgba(31,111,235,0.8)}
-#prompts-btn, #settings-btn, #shortcuts-btn, #font-size-btn, #refresh-btn, #orientation-btn{background:#30363d;color:#e6edf3}
-#prompts-btn:hover, #settings-btn:hover, #shortcuts-btn:hover, #font-size-btn:hover, #refresh-btn:hover, #orientation-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
+#prompts-btn, #settings-btn, #shortcuts-btn, #font-size-btn, #orientation-btn{background:#30363d;color:#e6edf3}
+#prompts-btn:hover, #settings-btn:hover, #shortcuts-btn:hover, #font-size-btn:hover, #orientation-btn:hover{background:#388bfd;color:#fff;border-color:#58a6ff}
+#refresh-btn{background:#d97706!important;color:#ffffff!important;border:1px solid rgba(245,158,11,0.5)!important;box-shadow:0 2px 8px rgba(217,119,6,0.45)!important}
+#refresh-btn:hover{background:#f59e0b!important;color:#ffffff!important;border-color:#fbbf24!important;box-shadow:0 3px 12px rgba(245,158,11,0.6)!important}
+#refresh-btn svg{stroke:#ffffff!important}
 #refresh-btn.rotating svg, #settings-refresh-action-btn.rotating svg{animation:refresh-spin .6s cubic-bezier(0.4,0,0.2,1)}
 @keyframes refresh-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 /* White / Light Theme for Floating Toolbar (Default) */
@@ -201,6 +204,12 @@ body.theme-light #talk-btn.disabled:hover,
 #voice-toolbar.theme-light #talk-btn.active.speaking, body.theme-light #voice-toolbar #talk-btn.active.speaking{background:#7c3aed!important;border-color:#7c3aed!important;box-shadow:0 0 16px rgba(124,58,237,0.8)}
 #voice-toolbar.theme-light #upload-btn, #voice-toolbar.theme-light #prompts-btn, #voice-toolbar.theme-light #settings-btn,
 body.theme-light #voice-toolbar #upload-btn, body.theme-light #voice-toolbar #prompts-btn, body.theme-light #voice-toolbar #settings-btn{background:#f1f5f9;color:#334155}
+#voice-toolbar.theme-light #refresh-btn,
+body.theme-light #voice-toolbar #refresh-btn{background:#eab308!important;border:1px solid rgba(202,138,4,0.5)!important;color:#ffffff!important;box-shadow:0 2px 8px rgba(234,179,8,0.35)!important}
+#voice-toolbar.theme-light #refresh-btn:hover,
+body.theme-light #voice-toolbar #refresh-btn:hover{background:#ca8a04!important;color:#ffffff!important;border-color:#a16207!important;box-shadow:0 3px 10px rgba(202,138,4,0.45)!important}
+#voice-toolbar.theme-light #refresh-btn svg,
+body.theme-light #voice-toolbar #refresh-btn svg{stroke:#ffffff!important}
 #voice-toolbar.theme-light #upload-btn:hover, #voice-toolbar.theme-light #prompts-btn:hover, #voice-toolbar.theme-light #settings-btn:hover,
 body.theme-light #voice-toolbar #upload-btn:hover, body.theme-light #voice-toolbar #prompts-btn:hover, body.theme-light #voice-toolbar #settings-btn:hover{background:#0284c7;color:#fff;border-color:#0284c7}
 #voice-toolbar.theme-light #upload-btn.uploading, body.theme-light #voice-toolbar #upload-btn.uploading{background:#0284c7!important;color:#fff!important;box-shadow:0 0 14px rgba(2,132,199,0.8)}
@@ -1477,6 +1486,12 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         <line x1="9" y1="11" x2="13" y2="11"></line>
                     </svg>
                 </button>
+                <button id="refresh-btn" class="voice-btn" title="Recarregar Terminal / Página" aria-label="Refresh">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
                 <button id="settings-btn" class="voice-btn" title="Definições (Tamanho da letra, Orientação, Atalhos, Refresh)" aria-label="Settings">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -1686,20 +1701,16 @@ window.sendTextToTerminal = function(text, autoEnter) {
                         </div>
                     </div>
 
-                    <!-- 3. Ações e Atalhos -->
+                    <!-- 4. Atalhos de Teclado -->
                     <div class="settings-block">
                         <div class="settings-block-title">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            <span>Ações Rápidas</span>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6.01" y2="8"></line><line x1="10" y1="8" x2="10.01" y2="8"></line><line x1="14" y1="8" x2="14.01" y2="8"></line><line x1="18" y1="8" x2="18.01" y2="8"></line><line x1="8" y1="12" x2="8.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="16" y1="12" x2="16.01" y2="12"></line><line x1="6" y1="16" x2="18" y2="16"></line></svg>
+                            <span>Atalhos do Sistema</span>
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-                            <button id="settings-refresh-action-btn" class="settings-action-btn" title="Recarregar Terminal / Atualizar Página">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                                <span>Recarregar</span>
-                            </button>
-                            <button id="settings-shortcuts-action-btn" class="settings-action-btn" title="Ver Atalhos de Teclado">
+                        <div style="margin-top:8px;">
+                            <button id="settings-shortcuts-action-btn" class="settings-action-btn" style="width:100%" title="Ver Atalhos de Teclado">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6.01" y2="8"></line><line x1="10" y1="8" x2="10.01" y2="8"></line><line x1="14" y1="8" x2="14.01" y2="8"></line><line x1="18" y1="8" x2="18.01" y2="8"></line><line x1="8" y1="12" x2="8.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="16" y1="12" x2="16.01" y2="12"></line><line x1="6" y1="16" x2="18" y2="16"></line></svg>
-                                <span>Atalhos</span>
+                                <span>Ver Atalhos de Teclado</span>
                             </button>
                         </div>
                     </div>
@@ -3407,18 +3418,31 @@ window.sendTextToTerminal = function(text, autoEnter) {
             } catch(e) {}
         }, 300);
 
-        // Settings Modal: Refresh Action
+        // Toolbar & Settings: Refresh Action (Yellow Refresh Button)
+        var refreshBtn = document.getElementById('refresh-btn');
+        function handleRefreshClick(btn) {
+            if (btn) btn.classList.add('rotating');
+            if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                try {
+                    window.__ttyd_xterm.overlayAddon.showOverlay('A recarregar...', 400);
+                } catch(e) {}
+            }
+            setTimeout(function() {
+                window.location.reload();
+            }, 150);
+        }
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                handleRefreshClick(refreshBtn);
+            });
+        }
         if (settingsRefreshBtn) {
             settingsRefreshBtn.addEventListener('click', function() {
-                settingsRefreshBtn.classList.add('rotating');
-                if (window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
-                    try {
-                        window.__ttyd_xterm.overlayAddon.showOverlay('A recarregar...', 400);
-                    } catch(e) {}
-                }
-                setTimeout(function() {
-                    window.location.reload();
-                }, 150);
+                handleRefreshClick(settingsRefreshBtn);
             });
         }
 
