@@ -1518,33 +1518,109 @@ function sanitizeVoiceInput(rawText) {
 }
 window.sanitizeVoiceInput = sanitizeVoiceInput;
 
-// Helper: Send text directly into terminal via native ttyd instance
-window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
+// Helper: Parse automation macro tags in prompts like {sleep:5}, {enter}, {tab}, {ctrl+c}
+function parsePromptSequence(rawText) {
+    if (!rawText || typeof rawText !== 'string') return [];
+    
+    var tagRegex = /\{(sleep|wait|enter|return|cr|tab|space|backspace|bksp|ctrl\+c|ctrl-c|esc|escape)(?::([^}]+))?\}/gi;
+    var steps = [];
+    var lastIndex = 0;
+    var match;
+
+    while ((match = tagRegex.exec(rawText)) !== null) {
+        var matchStart = match.index;
+        var matchEnd = tagRegex.lastIndex;
+
+        // Text before the tag
+        if (matchStart > lastIndex) {
+            var textChunk = rawText.substring(lastIndex, matchStart);
+            if (textChunk.length > 0) {
+                steps.push({ type: 'text', content: textChunk });
+            }
+        }
+
+        var tagName = match[1].toLowerCase();
+        var tagArg = (match[2] || '').trim();
+
+        if (tagName === 'sleep' || tagName === 'wait') {
+            var ms = 1000;
+            if (tagArg) {
+                var lowerArg = tagArg.toLowerCase();
+                if (lowerArg.endsWith('ms')) {
+                    ms = parseFloat(lowerArg.replace('ms', '')) || 1000;
+                } else if (lowerArg.endsWith('s')) {
+                    ms = (parseFloat(lowerArg.replace('s', '')) || 1) * 1000;
+                } else {
+                    var num = parseFloat(lowerArg);
+                    if (!isNaN(num)) {
+                        ms = (num < 50) ? (num * 1000) : num;
+                    }
+                }
+            }
+            steps.push({ type: 'sleep', durationMs: Math.max(0, Math.min(120000, Math.round(ms))) });
+        } else if (tagName === 'enter' || tagName === 'return' || tagName === 'cr') {
+            steps.push({ type: 'enter' });
+        } else if (tagName === 'tab') {
+            steps.push({ type: 'key', data: '\t' });
+        } else if (tagName === 'space') {
+            steps.push({ type: 'key', data: ' ' });
+        } else if (tagName === 'backspace' || tagName === 'bksp') {
+            steps.push({ type: 'key', data: '\x7f' });
+        } else if (tagName === 'ctrl+c' || tagName === 'ctrl-c') {
+            steps.push({ type: 'key', data: '\x03' });
+        } else if (tagName === 'esc' || tagName === 'escape') {
+            steps.push({ type: 'key', data: '\x1b' });
+        }
+
+        lastIndex = matchEnd;
+    }
+
+    if (lastIndex < rawText.length) {
+        var remainingText = rawText.substring(lastIndex);
+        if (remainingText.length > 0) {
+            steps.push({ type: 'text', content: remainingText });
+        }
+    }
+
+    return steps;
+}
+window.parsePromptSequence = parsePromptSequence;
+
+// Helper: Send text directly into terminal via native ttyd instance with automation macro support
+window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
     if (typeof text !== 'string') return false;
-    text = text.trim();
-    if (!text) return false;
-    if (window.__ttyd_xterm && typeof window.__ttyd_xterm.sendData === 'function') {
+    if (!text.trim() && !text.includes('{')) return false;
+    if (!window.__ttyd_xterm || typeof window.__ttyd_xterm.sendData !== 'function') {
+        console.warn('__ttyd_xterm not ready yet');
+        return false;
+    }
+
+    var steps = parsePromptSequence(text);
+    if (steps.length === 0) return false;
+
+    var hasTags = steps.some(function(s) { return s.type !== 'text'; });
+
+    if (!hasTags) {
+        // Standard text without macro tags
+        var plainText = text.trim();
         if (autoEnter && enterDelayMs && enterDelayMs > 0) {
-            // Write the text immediately into terminal buffer so user sees what is being typed
-            window.__ttyd_xterm.sendData(text);
+            window.__ttyd_xterm.sendData(plainText);
             setTimeout(window.focusTerminal, 30);
             setTimeout(window.focusTerminal, 150);
-
-            // Wait specified delay (e.g. 1000ms = 1s) and then submit with Enter
             setTimeout(function() {
                 if (window.__ttyd_xterm && typeof window.__ttyd_xterm.sendData === 'function') {
                     window.__ttyd_xterm.sendData('\r');
                     if (window.__onPromptSubmitted) {
-                        window.__onPromptSubmitted(text);
+                        window.__onPromptSubmitted(plainText);
                     }
                     setTimeout(window.focusTerminal, 30);
                     setTimeout(window.focusTerminal, 150);
                 }
             }, enterDelayMs);
         } else {
-            var payload = (autoEnter ? (text + '\r') : text);
+            var payload = (autoEnter ? (plainText + '\r') : plainText);
             if (autoEnter && window.__onPromptSubmitted) {
-                window.__onPromptSubmitted(text);
+                window.__onPromptSubmitted(plainText);
             }
             window.__ttyd_xterm.sendData(payload);
             setTimeout(window.focusTerminal, 30);
@@ -1553,8 +1629,51 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
         }
         return true;
     }
-    console.warn('__ttyd_xterm not ready yet');
-    return false;
+
+    // Step-by-step macro execution for tags like {sleep:5}, {enter}, {tab}, etc.
+    var accumulatedText = '';
+    var hasSentEnter = false;
+
+    for (var i = 0; i < steps.length; i++) {
+        var step = steps[i];
+        if (step.type === 'text') {
+            window.__ttyd_xterm.sendData(step.content);
+            accumulatedText += step.content;
+            window.focusTerminal();
+        } else if (step.type === 'sleep') {
+            if (step.durationMs > 0) {
+                await new Promise(function(resolve) { setTimeout(resolve, step.durationMs); });
+                window.focusTerminal();
+            }
+        } else if (step.type === 'enter') {
+            window.__ttyd_xterm.sendData('\r');
+            hasSentEnter = true;
+            if (window.__onPromptSubmitted && accumulatedText.trim()) {
+                window.__onPromptSubmitted(accumulatedText.trim());
+                accumulatedText = '';
+            }
+            window.focusTerminal();
+        } else if (step.type === 'key') {
+            window.__ttyd_xterm.sendData(step.data);
+            window.focusTerminal();
+        }
+    }
+
+    // If autoEnter is enabled and the script did not already end with an explicit {enter}:
+    if (autoEnter && !hasSentEnter) {
+        if (enterDelayMs && enterDelayMs > 0) {
+            await new Promise(function(resolve) { setTimeout(resolve, enterDelayMs); });
+        }
+        window.__ttyd_xterm.sendData('\r');
+        if (window.__onPromptSubmitted && accumulatedText.trim()) {
+            window.__onPromptSubmitted(accumulatedText.trim());
+        }
+        window.focusTerminal();
+    }
+
+    setTimeout(window.focusTerminal, 50);
+    setTimeout(window.focusTerminal, 200);
+    return true;
 };
 
 // 3. Mount and ensure UI elements exist persistently
@@ -2222,6 +2341,9 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
                     <div class="prompt-form-group">
                         <label class="prompt-form-label" for="prompt-input-content">Conteúdo do Prompt</label>
                         <textarea id="prompt-input-content" class="prompt-form-textarea" placeholder="Escreve o comando ou o texto do prompt..."></textarea>
+                        <div style="font-size:11.5px;color:#94a3b8;margin-top:6px;line-height:1.5;background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.05);">
+                            💡 <b>Comandos de automação suportados:</b> <code class="modal-code">{sleep:5}</code> (aguarda 5s), <code class="modal-code">{enter}</code> (tecla Enter), <code class="modal-code">{tab}</code> (Tab), <code class="modal-code">{ctrl+c}</code>, <code class="modal-code">{esc}</code>
+                        </div>
                     </div>
                     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;background:rgba(0,0,0,0.2);padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
                         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;color:#f8fafc;">
