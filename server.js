@@ -5,6 +5,7 @@ const path = require('path');
 
 const TTYD_PORT = 7680;
 const PROXY_PORT = 7681;
+const TTYD_AUTH = (process.env.TTYD_AUTH || '').trim();
 const VOICE_GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
 const VOICE_GROQ_MODEL = (process.env.VOICE_GROQ_MODEL || 'whisper-large-v3').trim();
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
@@ -1077,17 +1078,29 @@ server.on('upgrade', (req, socket, head) => {
 
 server.listen(PROXY_PORT, '0.0.0.0', async () => {
     const proto = isHttps ? 'https' : 'http';
-    console.log(`[proxy] Web Terminal & Voice Server listening on ${proto}://0.0.0.0:${PROXY_PORT} -> ttyd :${TTYD_PORT}`);
-    console.log(`[proxy] Default Voice Language: ${DEFAULT_VOICE_LANGUAGE}`);
-    console.log(`[proxy] Default TTS Voice Provider: ${DEFAULT_TTS_PROVIDER}`);
+    const authStatus = TTYD_AUTH ? TTYD_AUTH : 'Desativada (Acesso direto sem login)';
+    let groqInfo = 'Não configurado (Ditado/Conversa desativados)';
+
     if (VOICE_GROQ_API_KEY) {
         const groqStatus = await checkGroqStatus();
         if (groqStatus.isValid) {
-            console.log(`[proxy] Groq Whisper Cloud API enabled (${VOICE_GROQ_MODEL}) - Status: Valid`);
+            groqInfo = `Ativo & Válido (${VOICE_GROQ_MODEL})`;
         } else {
-            console.warn(`[proxy] ⚠️ Groq Voice Disabled: ${groqStatus.errorMessage}`);
+            groqInfo = `⚠️ Erro: ${groqStatus.errorMessage}`;
         }
-    } else {
-        console.log(`[proxy] VOICE_GROQ_API_KEY not configured in .env (Voice dictation & Conversation disabled)`);
     }
+
+    console.log('');
+    console.log('===================================================================');
+    console.log('🎉 OpenCode AI Web Terminal está pronto a ser usado!');
+    console.log('-------------------------------------------------------------------');
+    console.log(`🌐 Endpoint Web:      ${proto}://0.0.0.0:${PROXY_PORT} (${proto}://localhost:${PROXY_PORT})`);
+    console.log(`🔑 Autenticação:      ${authStatus}`);
+    console.log(`🎙️ Reconhecimento:    ${groqInfo}`);
+    console.log(`🔊 Motor TTS:         ${DEFAULT_TTS_PROVIDER} (com fallback bidirecional)`);
+    console.log(`🗣️ Idioma de Voz:     ${DEFAULT_VOICE_LANGUAGE}`);
+    console.log(`🔒 Modo HTTPS:        ${isHttps ? 'Ativado (SSL auto-gerado)' : 'Desativado (HTTP)'}`);
+    console.log(`📁 Diretório:         ${WORKSPACE_DIR}`);
+    console.log('===================================================================');
+    console.log('');
 });
