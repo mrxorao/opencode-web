@@ -2706,26 +2706,38 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
             text = text.replace(/[\^><_\-][_\.\-][\^><_\-]/g, ' ');
             text = text.replace(/\(y\)|\(n\)/gi, ' ');
 
-            // 7. Strip Markdown syntax formatting and symbols
-            text = text.replace(/#{1,6}\s+/g, ' ');
+            // 7. Convert colons (:) and semicolons (;) to commas for natural breath pauses without pronouncing "dois pontos"
+            text = text.replace(/[:;]+/g, ', ');
+
+            // 8. Headings (# Header) -> Ensure sentence pause at the end
+            text = text.replace(/^#{1,6}\s+(.+)$/gm, '$1. ');
+
+            // 9. List items (- item, * item, 1. item) -> Ensure sentence pause between items
+            text = text.replace(/^\s*[-*•+]\s+/gm, '. ');
+            text = text.replace(/^\s*\d+\.\s+/gm, '. ');
+
+            // 10. Convert remaining newlines into natural sentence pauses if not already punctuated
+            text = text.replace(/([^\.,!\?:;])\n+/g, '$1. ');
+            text = text.replace(/\n+/g, ' ');
+
+            // 11. Strip remaining Markdown formatting symbols
             text = text.replace(/[*_~`#$@^&+=|\\<>{}\[\]()\"\/%]/g, ' ');
 
-            // 8. Keep ONLY letters (including accents), digits (0-9), whitespace, and standard sentence punctuation (. , ! ?)
-            text = text.replace(/[^\p{L}\p{N}\s\.,!\?:;]/gu, ' ');
+            // 12. Keep ONLY letters (including accents), digits (0-9), whitespace, and standard pause punctuation (. , ! ?)
+            text = text.replace(/[^\p{L}\p{N}\s\.,!\?]/gu, ' ');
 
-            // 9. Remove colons and semicolons so they aren't spoken as "dois pontos" or "ponto e vírgula"
-            text = text.replace(/[:;]+/g, ' ');
-
-            // 10. Clean up repeated punctuation (e.g. "..." -> ".", "???" -> "?", "!!!" -> "!")
+            // 13. Clean up repeated and redundant punctuation (e.g. "..." -> ".", ",." -> ".", "???" -> "?")
+            text = text.replace(/[,;]\s*[\.]/g, '.');
             text = text.replace(/\.{2,}/g, '.');
             text = text.replace(/!{2,}/g, '!');
             text = text.replace(/\?{2,}/g, '?');
             text = text.replace(/,{2,}/g, ',');
+            text = text.replace(/\s*([.,!?])\s*/g, '$1 ');
 
-            // 11. Remove standalone punctuation marks not connected to words
+            // 14. Remove standalone punctuation marks not connected to words
             text = text.replace(/(^|\s)[.,!?]+(?=\s|$)/g, ' ');
 
-            // 12. Collapse multiple whitespaces and trim
+            // 15. Collapse multiple whitespaces and trim
             text = text.replace(/\s+/g, ' ').trim();
 
             return text;
@@ -2979,7 +2991,7 @@ window.sendTextToTerminal = function(text, autoEnter, enterDelayMs) {
             validSentences.forEach(function(sentence, idx) {
                 var utterance = new SpeechSynthesisUtterance(sentence);
                 if (bestVoice) utterance.voice = bestVoice;
-                utterance.rate = 1.05;
+                utterance.rate = 1.0;
                 utterance.pitch = 1.0;
 
                 if (idx === validSentences.length - 1) {
