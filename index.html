@@ -2465,6 +2465,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         var previewTimer = null;
         var configuredLang = 'PT'; // Loaded dynamically from server
         var configuredTtsProvider = 'browser'; // Loaded dynamically from server or localStorage
+        var DEFAULT_CONVERSATION_PROMPT = "[Voice Conversation Mode: Provide a natural, clear, and well-balanced conversational answer in the user's spoken language. Keep it engaging, direct, and pleasant for audio listening—avoiding overly long monologues, endless bullet lists, or heavy markdown unless explicitly requested.]";
 
         var mediaStream = null;
         var mediaRecorder = null;
@@ -2778,6 +2779,12 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         var serverProvider = String(data.ttsProvider).toLowerCase();
                         if (!localStorage.getItem('opencode_tts_provider')) {
                             configuredTtsProvider = serverProvider;
+                        }
+                    }
+                    if (data.conversationPrompt && String(data.conversationPrompt).trim()) {
+                        DEFAULT_CONVERSATION_PROMPT = String(data.conversationPrompt).trim();
+                        if (typeof updateConversationPromptModalUI === 'function') {
+                            updateConversationPromptModalUI();
                         }
                     }
                     var savedTts = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser';
@@ -4287,8 +4294,6 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         }
 
         // Conversation Mode Prompt Directive Management
-        var DEFAULT_CONVERSATION_PROMPT = "[Voice Conversation Mode: Provide a natural, clear, and well-balanced conversational answer in the user's spoken language. Keep it engaging, direct, and pleasant for audio listening—avoiding overly long monologues, endless bullet lists, or heavy markdown unless explicitly requested.]";
-
         function isConversationPromptEnabled() {
             try {
                 return localStorage.getItem('opencode_conversation_prompt_enabled') !== 'false';

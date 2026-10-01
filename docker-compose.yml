@@ -12,9 +12,11 @@ services:
       - VOICE_GROQ_MODEL=${VOICE_GROQ_MODEL:-whisper-large-v3}
       - VOICE_LANGUAGE=${VOICE_LANGUAGE:-EN}
       - VOICE_TTS_PROVIDER=${VOICE_TTS_PROVIDER:-browser}
+      - VOICE_CONVERSATION_PROMPT=${VOICE_CONVERSATION_PROMPT:-}
       - ENABLE_HTTPS=${ENABLE_HTTPS:-false}
       - AUTO_UPDATE=${AUTO_UPDATE:-true}
-      - AUTO_START_OPENCODE=true
+      - AUTO_START_OPENCODE=${AUTO_START_OPENCODE:-true}
+      - NODE_OPTIONS=${NODE_OPTIONS:---max-old-space-size=256}
     volumes:
       - ./data/config:/root/.config/opencode
       - ./data/share:/root/.local/share/opencode
