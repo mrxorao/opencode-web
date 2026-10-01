@@ -3302,7 +3302,12 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 var resp = await fetch('/api/latest-ai-message');
                 if (resp.ok) {
                     var data = await resp.json();
-                    if (data && data.id && data.id !== lastKnownAiMessageId && data.text) {
+                    if (data && data.isProcessing) {
+                        // AI is currently searching or executing tools
+                        if (isConversationMode && !isSpeaking && !isRecording) {
+                            showPreview('AI Working...', 'Executing tools & processing response...', false, true);
+                        }
+                    } else if (data && data.id && data.id !== lastKnownAiMessageId && data.text) {
                         if (!data.time || data.time >= (promptSubmittedAt - 3000)) {
                             lastKnownAiMessageId = data.id;
                             isWaitingForAiResponse = false;
@@ -3628,10 +3633,18 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
                         if (resp.ok && text) {
                             // In conversation mode: always auto-enter and trigger AI response wait
-                            var autoSend = isConversationMode;
-                            window.sendTextToTerminal(text, autoSend);
-                            showPreview(text, isConversationMode ? 'Sent to AI...' : 'Inserted into terminal.', false, false);
-                            if (!isConversationMode) hidePreview(2500);
+                            if (isConversationMode) {
+                                var isPt = (configuredLang === 'PT' || configuredLang === 'BR');
+                                var voiceDirective = isPt
+                                    ? " [Modo Conversa por Voz: Responde de forma concisa e natural em português para fala/áudio (1 a 3 frases curtas), evita listas longas ou markdown excessivo]"
+                                    : " [Voice Conversation Mode: Reply concisely and naturally for spoken audio (1 to 3 short sentences), avoid long lists or complex markdown]";
+                                window.sendTextToTerminal(text + voiceDirective, true);
+                                showPreview(text, 'Sent to AI (Conversation Mode)...', false, false);
+                            } else {
+                                window.sendTextToTerminal(text, false);
+                                showPreview(text, 'Inserted into terminal.', false, false);
+                                hidePreview(2500);
+                            }
                         } else if (resp.ok && !text) {
                             showPreview('No speech recognized', 'Speak closer to the microphone.', true, false);
                             hidePreview(3000);
@@ -3736,7 +3749,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 syncInitialMessageId();
                 updateTalkButton();
                 playConversationStartSound();
-                showPreview('Conversation Mode Activated', 'Speak into the microphone. AI will respond and listen again.', false, false);
+                showPreview('Conversation Mode Activated', 'Voice dialogue active (short spoken answers enabled).', false, false);
                 
                 if (conversationPollTimer) clearInterval(conversationPollTimer);
                 conversationPollTimer = setInterval(checkForNewAiResponse, 1000);

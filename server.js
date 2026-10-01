@@ -48,7 +48,8 @@ const DB_PATHS = [
 ];
 
 let openCodeDbInstance = null;
-let latestAiStmt = null;
+let latestMsgStmt = null;
+let partsForMsgStmt = null;
 
 function getOpenCodeDb() {
     if (openCodeDbInstance) return openCodeDbInstance;
@@ -75,36 +76,51 @@ function handleLatestAiMessage(req, res) {
             return;
         }
 
-        if (!latestAiStmt) {
+        if (!latestMsgStmt || !partsForMsgStmt) {
             try {
-                latestAiStmt = db.prepare(`
+                latestMsgStmt = db.prepare(`
+                    SELECT m.id, m.data, m.time_created, m.time_updated
+                    FROM message m
+                    WHERE json_extract(m.data, '$.role') = 'assistant'
+                    ORDER BY m.time_created DESC
+                    LIMIT 3
+                `);
+                partsForMsgStmt = db.prepare(`
                     SELECT p.id, p.data, p.time_created
                     FROM part p
-                    JOIN message m ON p.message_id = m.id
-                    WHERE json_extract(m.data, '$.role') = 'assistant'
-                      AND (
-                        json_extract(p.data, '$.type') = 'text'
-                        OR json_extract(p.data, '$.tool') = 'question'
-                        OR json_extract(p.data, '$.type') = 'tool'
-                      )
-                    ORDER BY p.time_created DESC
-                    LIMIT 15
+                    WHERE p.message_id = ?
+                    ORDER BY p.time_created ASC
                 `);
             } catch (stmtErr) {
                 openCodeDbInstance = null;
-                latestAiStmt = null;
+                latestMsgStmt = null;
+                partsForMsgStmt = null;
                 throw stmtErr;
             }
         }
 
-        const rows = latestAiStmt.all();
+        const messages = latestMsgStmt.all();
+        if (!messages || messages.length === 0) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ text: null, id: null }));
+            return;
+        }
 
-        for (const row of rows) {
-            const data = JSON.parse(row.data);
-            
-            // 1. Question Tool (Multiple choice / selection options)
-            if (data.type === 'tool' && data.tool === 'question') {
-                const questions = data.state?.input?.questions || [];
+        const latestMsg = messages[0];
+        let msgData = {};
+        try {
+            msgData = JSON.parse(latestMsg.data || '{}');
+        } catch(e) {}
+
+        const parts = partsForMsgStmt.all(latestMsg.id);
+
+        // 1. Check for interactive question tool prompt waiting for user response
+        for (const part of parts) {
+            let partData = {};
+            try { partData = JSON.parse(part.data || '{}'); } catch(e) {}
+
+            if (partData.type === 'tool' && partData.tool === 'question') {
+                const questions = partData.state?.input?.questions || [];
                 let questionText = '';
                 const isPt = (DEFAULT_VOICE_LANGUAGE === 'PT' || DEFAULT_VOICE_LANGUAGE === 'BR');
                 const optPrefix = isPt ? 'Opção' : 'Option';
@@ -123,26 +139,48 @@ function handleLatestAiMessage(req, res) {
                 if (questionText.trim()) {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
-                        id: row.id + (data.state?.status || ''),
+                        id: part.id + (partData.state?.status || ''),
                         text: questionText.trim(),
-                        time: row.time_created,
-                        isQuestion: true
+                        time: part.time_created,
+                        isQuestion: true,
+                        isComplete: true
                     }));
                     return;
                 }
             }
+        }
 
-            // 2. Standard Text Part
-            if (data.type === 'text' && data.text && data.text.trim()) {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    id: row.id,
-                    text: data.text,
-                    time: row.time_created,
-                    isQuestion: false
-                }));
-                return;
+        // 2. Check if the assistant turn is still active/processing (tools running, search, etc.)
+        const isFinished = (msgData.finish === 'stop' || msgData.time?.completed != null);
+
+        if (!isFinished) {
+            // Message is still streaming or running background tools (web search, reading files, etc.)
+            // Do NOT trigger speech or open the microphone yet!
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ text: null, id: null, isProcessing: true }));
+            return;
+        }
+
+        // 3. Collect final text parts of the completed message
+        let fullText = '';
+        for (const part of parts) {
+            let partData = {};
+            try { partData = JSON.parse(part.data || '{}'); } catch(e) {}
+            if (partData.type === 'text' && partData.text && partData.text.trim()) {
+                fullText += (fullText ? '\n' : '') + partData.text.trim();
             }
+        }
+
+        if (fullText.trim()) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                id: latestMsg.id,
+                text: fullText.trim(),
+                time: msgData.time?.completed || latestMsg.time_updated || latestMsg.time_created,
+                isQuestion: false,
+                isComplete: true
+            }));
+            return;
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
