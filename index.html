@@ -1257,71 +1257,47 @@ function showCopiedOverlay(text) {
     } catch(e) {}
 }
 
-// Helper to check if any popup/modal or prompt library is currently open
-function isAnyModalOpen() {
+// Helper to check if Prompt Library (modal or quick bubbles) is active
+function isPromptLibraryActive(target) {
     try {
-        var activeModal = document.querySelector('#prompts-modal.active, #settings-modal.active, #shortcuts-modal.active, #firefox-modal.active, #mic-modal.active, #upload-choice-modal.active, #font-size-modal.active, .modal.active');
-        if (activeModal) return true;
         var pModal = document.getElementById('prompts-modal');
         if (pModal && pModal.classList.contains('active')) return true;
-        var sModal = document.getElementById('settings-modal');
-        if (sModal && sModal.classList.contains('active')) return true;
-        var scModal = document.getElementById('shortcuts-modal');
-        if (scModal && scModal.classList.contains('active')) return true;
-    } catch(e) {}
-    return false;
-}
-
-// Helper to check if target element is inside a modal or editable input
-function isEventInsideModalOrInput(target) {
-    if (!target) return false;
-    try {
-        if (target.closest && target.closest('#prompts-modal, #settings-modal, #shortcuts-modal, #firefox-modal, #mic-modal, #upload-choice-modal, #font-size-modal, #quick-prompts-popover, .modal-card, .modal')) {
+        var qp = document.getElementById('quick-prompts-popover');
+        if (qp && qp.classList.contains('active')) return true;
+        if (target && target.closest && target.closest('#prompts-modal, #quick-prompts-popover, .prompt-card, .prompts-container, .quick-prompts-bar')) {
             return true;
         }
-        var tag = (target.tagName || '').toUpperCase();
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) {
+        var activeEl = document.activeElement;
+        if (activeEl && activeEl.closest && activeEl.closest('#prompts-modal, #quick-prompts-popover, .prompt-card, .prompts-container, .quick-prompts-bar')) {
             return true;
         }
     } catch(e) {}
     return false;
 }
 
-// Anti-loop auto-refresh guard: triggers a clean page reload when text is copied from the OpenCode terminal,
-// but strictly prevents reload when inside library/modals, during startup grace period, session cooldown and text deduplication.
-var MIN_REFRESH_INTERVAL_MS = 6000;
+// Anti-loop auto-refresh guard: triggers a clean page reload when text is copied,
+// but strictly prevents reload ONLY when inside the Prompt Library, during startup grace period and cooldown.
+var MIN_REFRESH_INTERVAL_MS = 2000;
 
 function triggerAutoRefresh(text) {
     try {
-        // STRICT GUARD: Never refresh when a modal is open or when copying inside library/settings
-        if (isAnyModalOpen()) {
-            console.log('[refresh-guard] Skipping auto-refresh: modal is currently open');
-            return;
-        }
-        var activeEl = document.activeElement;
-        if (isEventInsideModalOrInput(activeEl)) {
-            console.log('[refresh-guard] Skipping auto-refresh: focus/selection is inside modal or input');
+        // STRICT GUARD: Block auto-refresh ONLY when copying inside the Prompt Library!
+        if (isPromptLibraryActive(document.activeElement)) {
+            console.log('[refresh-guard] Skipping auto-refresh: inside Prompt Library');
             return;
         }
 
         var now = Date.now();
-        // 1. Startup grace period (5 seconds after page opened or reloaded)
-        if (window.__pageLoadedAt && (now - window.__pageLoadedAt < 5000)) {
-            console.log('[refresh-guard] Skipping auto-refresh: inside 5s startup grace period');
+        // 1. Startup grace period (2 seconds after page opened or reloaded)
+        if (window.__pageLoadedAt && (now - window.__pageLoadedAt < 2000)) {
+            console.log('[refresh-guard] Skipping auto-refresh: inside 2s startup grace period');
             return;
         }
 
-        // 2. Cooldown timer stored in sessionStorage (at least 6s between refreshes)
+        // 2. Cooldown timer stored in sessionStorage (at least 2s between refreshes)
         var lastRefreshTime = parseInt(sessionStorage.getItem('opencode_last_clip_refresh_time') || '0', 10);
         if (now - lastRefreshTime < MIN_REFRESH_INTERVAL_MS) {
             console.log('[refresh-guard] Skipping auto-refresh: cooldown active (' + (now - lastRefreshTime) + 'ms)');
-            return;
-        }
-
-        // 3. Text deduplication: do not refresh again if identical text already triggered the last refresh
-        var lastRefreshedText = sessionStorage.getItem('opencode_last_refreshed_text') || '';
-        if (text && text === lastRefreshedText) {
-            console.log('[refresh-guard] Skipping auto-refresh: identical text already refreshed');
             return;
         }
 
@@ -1331,10 +1307,10 @@ function triggerAutoRefresh(text) {
             sessionStorage.setItem('opencode_last_refreshed_text', String(text));
         }
 
-        console.log('[refresh-guard] Triggering smooth page refresh in 400ms...');
+        console.log('[refresh-guard] Triggering page refresh in 350ms...');
         setTimeout(function() {
             window.location.reload();
-        }, 400);
+        }, 350);
     } catch(e) {
         console.warn('[refresh-guard] Error in triggerAutoRefresh:', e);
     }
@@ -1343,24 +1319,23 @@ function triggerAutoRefresh(text) {
 // Global variable to hold explicitly requested copy payload during synthetic copy commands
 var _currentPendingCopyText = '';
 
-// Global native copy event handler: ONLY intercepts trusted user keyboard/menu events (Ctrl+C / Cmd+C) on OpenCode terminal
+// Global native copy event handler: intercepts user copy events (Ctrl+C / Cmd+C / Right click copy)
 document.addEventListener('copy', function(e) {
-    if (isAnyModalOpen() || isEventInsideModalOrInput(e.target)) {
-        // Allow native clipboard copy without any terminal intervention or page reload
+    if (isPromptLibraryActive(e.target) || isPromptLibraryActive(document.activeElement)) {
+        // Allow native copy in prompt library without page reload
         return;
     }
     if (e.isTrusted) {
         var text = '';
-        var isTermSelection = false;
         if (window.term && typeof window.term.getSelection === 'function' && window.term.hasSelection()) {
             text = window.term.getSelection();
-            isTermSelection = true;
         } else if (window.__ttyd_xterm && window.__ttyd_xterm.terminal && window.__ttyd_xterm.terminal.hasSelection()) {
             text = window.__ttyd_xterm.terminal.getSelection();
-            isTermSelection = true;
+        } else if (window.getSelection && window.getSelection().toString()) {
+            text = window.getSelection().toString();
         }
 
-        if (text && text.length > 0 && isTermSelection) {
+        if (text && text.length > 0) {
             if (e.clipboardData) {
                 e.clipboardData.setData('text/plain', text);
                 e.preventDefault();
@@ -1372,15 +1347,13 @@ document.addEventListener('copy', function(e) {
 }, true);
 
 // Variable to hold pending clipboard text if asynchronous write is delayed
-// Helper: Restore focus to xterm terminal immediately without stealing focus (bypassed on mobile & when modals are open)
-function restoreTerminalFocus(forceOnMobile, forceEvenIfModalOpen) {
+// Helper: Restore focus to xterm terminal immediately without stealing focus (bypassed on mobile & when in prompt library)
+function restoreTerminalFocus(forceOnMobile, forceEvenIfInLibrary) {
     if (window.isTouchMobileDevice && window.isTouchMobileDevice() && !forceOnMobile) {
         return;
     }
-    if (!forceEvenIfModalOpen) {
-        if (isAnyModalOpen()) return;
-        var activeEl = document.activeElement;
-        if (isEventInsideModalOrInput(activeEl)) return;
+    if (!forceEvenIfInLibrary) {
+        if (isPromptLibraryActive(document.activeElement)) return;
     }
     try {
         if (window.term && typeof window.term.focus === 'function') {
@@ -1418,7 +1391,7 @@ function execCommandDirect(str) {
     } catch(err) {
         console.warn('[copy] execCommandDirect error:', err);
     } finally {
-        if (!isAnyModalOpen() && !isEventInsideModalOrInput(document.activeElement)) {
+        if (!isPromptLibraryActive(document.activeElement)) {
             restoreTerminalFocus();
         }
     }
@@ -1447,10 +1420,10 @@ function copyToClipboard(text, options) {
 
     function handleAfterCopySuccess() {
         showCopiedOverlay(str);
-        if (!isAnyModalOpen() && !isEventInsideModalOrInput(document.activeElement)) {
+        if (!isPromptLibraryActive(document.activeElement)) {
             restoreTerminalFocus();
         }
-        if (!opts.noRefresh && opts.isTerminalSelection && !isAnyModalOpen() && !isEventInsideModalOrInput(document.activeElement)) {
+        if (!opts.noRefresh && !isPromptLibraryActive(document.activeElement)) {
             triggerAutoRefresh(str);
         }
     }
@@ -5152,22 +5125,21 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
             // Ctrl + C / Cmd + C -> Copy selected text to clipboard
             if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
-                if (isAnyModalOpen() || isEventInsideModalOrInput(e.target)) {
-                    // Let native browser copy work cleanly inside modals/inputs without interception or reloading!
+                if (isInsidePromptLibrary(e.target) || isInsidePromptLibrary(document.activeElement)) {
+                    // Let native browser copy work inside prompt library without reload
                     return;
                 }
                 var selectedText = '';
-                var isTermSelection = false;
                 if (window.term && typeof window.term.getSelection === 'function' && window.term.hasSelection()) {
                     selectedText = window.term.getSelection();
-                    isTermSelection = true;
                 } else if (window.__ttyd_xterm && window.__ttyd_xterm.terminal && window.__ttyd_xterm.terminal.hasSelection()) {
                     selectedText = window.__ttyd_xterm.terminal.getSelection();
-                    isTermSelection = true;
+                } else if (window.getSelection && window.getSelection().toString()) {
+                    selectedText = window.getSelection().toString();
                 }
 
-                if (selectedText && selectedText.length > 0 && isTermSelection) {
-                    copyToClipboard(selectedText, { isTerminalSelection: true });
+                if (selectedText && selectedText.length > 0) {
+                    copyToClipboard(selectedText);
                     showPreview('Copied', (selectedText.length > 50 ? selectedText.substring(0, 50) + '...' : selectedText), false, false);
                     hidePreview(1500);
                 }
@@ -5175,7 +5147,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
             // Ctrl + V / Ctrl + Shift + V -> Paste from clipboard into terminal
             if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
-                if (!isInputFocused && !isAnyModalOpen()) {
+                if (!isInputFocused && !isInsidePromptLibrary(document.activeElement)) {
                     e.preventDefault();
                     e.stopPropagation();
                     if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
@@ -5283,13 +5255,13 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         return false;
                     }
                     if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'c' || ev.key === 'C') && ev.type === 'keydown') {
-                        if (isAnyModalOpen() || isEventInsideModalOrInput(document.activeElement)) {
+                        if (isInsidePromptLibrary(document.activeElement)) {
                             return true;
                         }
                         if (termInstance.hasSelection && termInstance.hasSelection()) {
                             var text = termInstance.getSelection();
                             if (text && text.length > 0) {
-                                copyToClipboard(text, { isTerminalSelection: true });
+                                copyToClipboard(text);
                                 return false; // Prevent sending SIGINT \x03 to terminal when copying selection
                             }
                         }
@@ -5302,14 +5274,14 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             if (!window.__globalMouseupCopyHooked) {
                 window.__globalMouseupCopyHooked = true;
                 var handleMouseUpCopy = function(e) {
-                    if (isAnyModalOpen() || isEventInsideModalOrInput(e ? e.target : null) || isEventInsideModalOrInput(document.activeElement)) {
+                    if (isInsidePromptLibrary(e ? e.target : null) || isInsidePromptLibrary(document.activeElement)) {
                         return;
                     }
                     var inst = window.term || (window.__ttyd_xterm && window.__ttyd_xterm.terminal);
                     if (inst && typeof inst.getSelection === 'function' && inst.hasSelection()) {
                         var selText = inst.getSelection();
                         if (selText && selText.length > 0) {
-                            copyToClipboard(selText, { isTerminalSelection: true });
+                            copyToClipboard(selText);
                         }
                     }
                 };
