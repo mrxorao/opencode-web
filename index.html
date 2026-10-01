@@ -3634,10 +3634,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         if (resp.ok && text) {
                             // In conversation mode: always auto-enter and trigger AI response wait
                             if (isConversationMode) {
-                                var isPt = (configuredLang === 'PT' || configuredLang === 'BR');
-                                var voiceDirective = isPt
-                                    ? " [Modo Conversa por Voz: Responde de forma concisa e natural em português para fala/áudio (1 a 3 frases curtas), evita listas longas ou markdown excessivo]"
-                                    : " [Voice Conversation Mode: Reply concisely and naturally for spoken audio (1 to 3 short sentences), avoid long lists or complex markdown]";
+                                var voiceDirective = " [Voice Conversation Mode: Provide a natural, clear, and well-balanced conversational answer in the user's spoken language. Keep it engaging, direct, and pleasant for audio listening—avoiding overly long monologues, endless bullet lists, or heavy markdown unless explicitly requested.]";
                                 window.sendTextToTerminal(text + voiceDirective, true);
                                 showPreview(text, 'Sent to AI (Conversation Mode)...', false, false);
                             } else {
