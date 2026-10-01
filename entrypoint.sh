@@ -5,6 +5,11 @@ export TERM=xterm-256color
 export UV_THREADPOOL_SIZE=8
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=2048 --no-warnings}"
 
+# Add custom extra hosts if configured via environment (e.g. for Tailscale or custom DNS over VPN)
+if [ -n "$EXTRA_HOSTS" ]; then
+    echo "$EXTRA_HOSTS" | tr ';' '\n' >> /etc/hosts 2>/dev/null || true
+fi
+
 # Check and update OpenCode AI to the latest version on container startup
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
 if [ "$AUTO_UPDATE" = "true" ] || [ "$AUTO_UPDATE" = "1" ]; then
