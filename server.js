@@ -931,11 +931,13 @@ async function handleImportPrompts(req, res) {
 
         const now = Date.now();
 
-        const insertTx = db.transaction((promptsList, importMode) => {
-            if (importMode === 'replace') {
+        try {
+            db.exec('BEGIN TRANSACTION');
+
+            if (mode === 'replace') {
                 db.prepare('DELETE FROM prompts').run();
                 const insertStmt = db.prepare('INSERT INTO prompts (id, title, content, is_quick, auto_enter, sort_order, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-                promptsList.forEach((p, index) => {
+                validPrompts.forEach((p, index) => {
                     const pId = p.id || ('p_' + now + '_' + index + '_' + Math.random().toString(36).substring(2, 6));
                     insertStmt.run(pId, p.title, p.content, p.is_quick, p.auto_enter, index + 1, now, now);
                 });
@@ -948,7 +950,7 @@ async function handleImportPrompts(req, res) {
                 const updateStmt = db.prepare('UPDATE prompts SET title = ?, content = ?, is_quick = ?, auto_enter = ?, time_updated = ? WHERE id = ?');
                 const insertStmt = db.prepare('INSERT INTO prompts (id, title, content, is_quick, auto_enter, sort_order, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 
-                promptsList.forEach((p, index) => {
+                validPrompts.forEach((p, index) => {
                     let existing = p.id ? checkStmt.get(p.id) : null;
                     if (existing) {
                         updateStmt.run(p.title, p.content, p.is_quick, p.auto_enter, now, p.id);
@@ -958,9 +960,12 @@ async function handleImportPrompts(req, res) {
                     }
                 });
             }
-        });
 
-        insertTx(validPrompts, mode);
+            db.exec('COMMIT');
+        } catch(txErr) {
+            try { db.exec('ROLLBACK'); } catch(rbErr) {}
+            throw txErr;
+        }
 
         const totalCount = db.prepare('SELECT COUNT(*) as count FROM prompts').get().count;
 
