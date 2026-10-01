@@ -420,7 +420,8 @@ body.theme-light #font-size-display{
     color:#0f172a!important;
 }
 
-body.theme-light #font-reset-btn{
+body.theme-light #font-reset-btn,
+body.theme-light #conversation-prompt-reset-btn{
     color:#0284c7!important;
 }
 
@@ -2197,7 +2198,32 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         </div>
                     </div>
 
-                    <!-- 4. Debugger Mode / Notifications -->
+                    <!-- 4. Conversation Mode Prompt Directive -->
+                    <div class="settings-block">
+                        <div class="settings-block-title">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            <span>Conversation Mode Prompt</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                            <button id="conv-prompt-on-btn" class="settings-option-btn active" title="Send conversation directive prompt with speech">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                                <span>Enabled (Default)</span>
+                            </button>
+                            <button id="conv-prompt-off-btn" class="settings-option-btn" title="Do not attach any extra prompt to speech">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                                <span>Disabled</span>
+                            </button>
+                        </div>
+                        <div id="conv-prompt-editor-wrap" style="margin-top:10px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <label for="conversation-prompt-textarea" style="font-size:11px;color:#94a3b8;font-weight:500;">Prompt Directive:</label>
+                                <button id="conversation-prompt-reset-btn" style="background:none;border:none;color:#58a6ff;font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">Reset default</button>
+                            </div>
+                            <textarea id="conversation-prompt-textarea" class="prompt-form-textarea" rows="3" style="min-height:70px;font-size:11.5px;padding:8px 10px;" placeholder="Custom prompt directive to attach in Conversation Mode..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 5. Debugger Mode / Notifications -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
@@ -2215,7 +2241,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         </div>
                     </div>
 
-                    <!-- 5. Keyboard Shortcuts -->
+                    <!-- 6. Keyboard Shortcuts -->
                     <div class="settings-block">
                         <div class="settings-block-title">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6.01" y2="8"></line><line x1="10" y1="8" x2="10.01" y2="8"></line><line x1="14" y1="8" x2="14.01" y2="8"></line><line x1="18" y1="8" x2="18.01" y2="8"></line><line x1="8" y1="12" x2="8.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="16" y1="12" x2="16.01" y2="12"></line><line x1="6" y1="16" x2="18" y2="16"></line></svg>
@@ -3634,8 +3660,14 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         if (resp.ok && text) {
                             // In conversation mode: always auto-enter and trigger AI response wait
                             if (isConversationMode) {
-                                var voiceDirective = " [Voice Conversation Mode: Provide a natural, clear, and well-balanced conversational answer in the user's spoken language. Keep it engaging, direct, and pleasant for audio listening—avoiding overly long monologues, endless bullet lists, or heavy markdown unless explicitly requested.]";
-                                window.sendTextToTerminal(text + voiceDirective, true);
+                                var directive = '';
+                                if (isConversationPromptEnabled()) {
+                                    var customPrompt = getConversationPrompt();
+                                    if (customPrompt && customPrompt.trim()) {
+                                        directive = ' ' + customPrompt.trim();
+                                    }
+                                }
+                                window.sendTextToTerminal(text + directive, true);
                                 showPreview(text, 'Sent to AI (Conversation Mode)...', false, false);
                             } else {
                                 window.sendTextToTerminal(text, false);
@@ -4254,11 +4286,115 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             });
         }
 
+        // Conversation Mode Prompt Directive Management
+        var DEFAULT_CONVERSATION_PROMPT = "[Voice Conversation Mode: Provide a natural, clear, and well-balanced conversational answer in the user's spoken language. Keep it engaging, direct, and pleasant for audio listening—avoiding overly long monologues, endless bullet lists, or heavy markdown unless explicitly requested.]";
+
+        function isConversationPromptEnabled() {
+            try {
+                return localStorage.getItem('opencode_conversation_prompt_enabled') !== 'false';
+            } catch(e) {
+                return true;
+            }
+        }
+
+        function getConversationPrompt() {
+            try {
+                var saved = localStorage.getItem('opencode_conversation_prompt_text');
+                if (saved !== null && saved !== undefined) {
+                    return saved;
+                }
+            } catch(e) {}
+            return DEFAULT_CONVERSATION_PROMPT;
+        }
+
+        function updateConversationPromptModalUI(enabled) {
+            var isEnabled = (typeof enabled === 'boolean') ? enabled : isConversationPromptEnabled();
+            var convPromptOnBtn = document.getElementById('conv-prompt-on-btn');
+            var convPromptOffBtn = document.getElementById('conv-prompt-off-btn');
+            var wrap = document.getElementById('conv-prompt-editor-wrap');
+            var textarea = document.getElementById('conversation-prompt-textarea');
+
+            if (convPromptOnBtn) {
+                if (isEnabled) convPromptOnBtn.classList.add('active'); else convPromptOnBtn.classList.remove('active');
+            }
+            if (convPromptOffBtn) {
+                if (!isEnabled) convPromptOffBtn.classList.add('active'); else convPromptOffBtn.classList.remove('active');
+            }
+            if (wrap) {
+                wrap.style.opacity = isEnabled ? '1' : '0.45';
+                wrap.style.pointerEvents = isEnabled ? 'auto' : 'none';
+            }
+            if (textarea) {
+                textarea.value = getConversationPrompt();
+            }
+        }
+
+        function setConversationPromptEnabled(enabled, showToast) {
+            var isEnabled = Boolean(enabled);
+            try {
+                localStorage.setItem('opencode_conversation_prompt_enabled', isEnabled ? 'true' : 'false');
+            } catch(e) {}
+            updateConversationPromptModalUI(isEnabled);
+            if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                try {
+                    window.__ttyd_xterm.overlayAddon.showOverlay(isEnabled ? 'Voice Prompt: Enabled' : 'Voice Prompt: Disabled', 350);
+                } catch(e) {}
+            }
+        }
+
+        function setConversationPromptText(text) {
+            try {
+                localStorage.setItem('opencode_conversation_prompt_text', String(text));
+            } catch(e) {}
+        }
+
+        function resetConversationPromptText(showToast) {
+            try {
+                localStorage.removeItem('opencode_conversation_prompt_text');
+            } catch(e) {}
+            var textarea = document.getElementById('conversation-prompt-textarea');
+            if (textarea) {
+                textarea.value = DEFAULT_CONVERSATION_PROMPT;
+            }
+            if (showToast && window.__ttyd_xterm && window.__ttyd_xterm.overlayAddon) {
+                try {
+                    window.__ttyd_xterm.overlayAddon.showOverlay('Prompt Reset to Default', 350);
+                } catch(e) {}
+            }
+        }
+
+        var convPromptOnBtn = document.getElementById('conv-prompt-on-btn');
+        var convPromptOffBtn = document.getElementById('conv-prompt-off-btn');
+        var convPromptResetBtn = document.getElementById('conversation-prompt-reset-btn');
+        var convPromptTextarea = document.getElementById('conversation-prompt-textarea');
+
+        if (convPromptOnBtn) {
+            convPromptOnBtn.addEventListener('click', function() {
+                setConversationPromptEnabled(true, true);
+            });
+        }
+        if (convPromptOffBtn) {
+            convPromptOffBtn.addEventListener('click', function() {
+                setConversationPromptEnabled(false, true);
+            });
+        }
+        if (convPromptResetBtn) {
+            convPromptResetBtn.addEventListener('click', function() {
+                resetConversationPromptText(true);
+            });
+        }
+        if (convPromptTextarea) {
+            convPromptTextarea.addEventListener('input', function() {
+                setConversationPromptText(convPromptTextarea.value);
+            });
+        }
+
         if (settingsBtn) {
             settingsBtn.addEventListener('click', function() {
                 updateFontSizeModalUI(getCurrentTerminalFontSize());
                 updateThemeModalUI(localStorage.getItem('opencode_toolbar_theme') || 'light');
                 updateTtsProviderUI(localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser');
+                updateConversationPromptModalUI();
                 updateDebugModalUI(isDebugModeActive());
                 if (settingsModal) settingsModal.classList.add('active');
             });
@@ -4311,6 +4447,9 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             } catch(e) {}
             try {
                 updateTtsProviderUI(localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser');
+            } catch(e) {}
+            try {
+                updateConversationPromptModalUI();
             } catch(e) {}
             try {
                 updateDebugModalUI(isDebugModeActive());
