@@ -60,14 +60,23 @@ set -s exit-empty off
 EOF
 
 # Create persistent tmux session wrapper for OpenCode
-AUTO_START_OPENCODE="${AUTO_START_OPENCODE:-true}"
-if [ "$AUTO_START_OPENCODE" = "false" ] || [ "$AUTO_START_OPENCODE" = "0" ]; then
-    TMUX_INNER_CMD="/bin/bash"
-else
-    TMUX_INNER_CMD="/bin/bash -c 'while true; do clear; echo \"🚀 ===============================================\"; echo \"   OpenCode AI Web Terminal\"; echo \"   Working Directory: /workspace\"; echo \"===============================================\"; echo \"\"; opencode || true; echo \"\"; echo \"🔄 OpenCode session ended. Restarting in 2 seconds...\"; sleep 2; done'"
-fi
+cat << 'EOF' > /run-opencode-loop.sh
+#!/bin/bash
+while true; do
+    clear
+    echo "🚀 ==============================================="
+    echo "   OpenCode AI Web Terminal"
+    echo "   Working Directory: /workspace"
+    echo "==============================================="
+    echo ""
+    opencode || true
+    echo ""
+    echo "🔄 OpenCode session ended. Restarting in 2 seconds..."
+    sleep 2
+done
+EOF
 
-cat << EOF > /start-opencode.sh
+cat << 'EOF' > /start-opencode.sh
 #!/bin/bash
 export TERM=xterm-256color
 export LANG=C.UTF-8
@@ -81,11 +90,14 @@ unset GROQ_API_KEY
 unset VOICE_GROQ_API_KEY
 unset VOICE_GROQ_MODEL
 
-# Attach to existing opencode tmux session, or create it if not running
-exec tmux -u new-session -A -s opencode "$TMUX_INNER_CMD"
+if [ "$AUTO_START_OPENCODE" = "false" ] || [ "$AUTO_START_OPENCODE" = "0" ]; then
+    exec tmux -u new-session -A -s opencode /bin/bash
+else
+    exec tmux -u new-session -A -s opencode /run-opencode-loop.sh
+fi
 EOF
 
-chmod +x /start-opencode.sh
+chmod +x /start-opencode.sh /run-opencode-loop.sh
 
 TTYD_CMD=(ttyd -W -a -I /usr/local/share/ttyd/index.html -i 127.0.0.1 -p 7680 -P 5 -t fontSize=14 -t disableLeaveAlert=true -t reconnect=2)
 
