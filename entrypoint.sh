@@ -3,7 +3,7 @@ set -e
 
 export TERM=xterm-256color
 export UV_THREADPOOL_SIZE=8
-export NODE_OPTIONS="--max-old-space-size=2048 --no-warnings"
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=2048 --no-warnings}"
 
 # Check and update OpenCode AI to the latest version on container startup
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
@@ -60,13 +60,20 @@ set -s exit-empty off
 EOF
 
 # Create persistent tmux session wrapper for OpenCode
-cat << 'EOF' > /start-opencode.sh
+AUTO_START_OPENCODE="${AUTO_START_OPENCODE:-true}"
+if [ "$AUTO_START_OPENCODE" = "false" ] || [ "$AUTO_START_OPENCODE" = "0" ]; then
+    TMUX_INNER_CMD="/bin/bash"
+else
+    TMUX_INNER_CMD="/bin/bash -c 'while true; do clear; echo \"🚀 ===============================================\"; echo \"   OpenCode AI Web Terminal\"; echo \"   Working Directory: /workspace\"; echo \"===============================================\"; echo \"\"; opencode || true; echo \"\"; echo \"🔄 OpenCode session ended. Restarting in 2 seconds...\"; sleep 2; done'"
+fi
+
+cat << EOF > /start-opencode.sh
 #!/bin/bash
 export TERM=xterm-256color
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 export UV_THREADPOOL_SIZE=8
-export NODE_OPTIONS="--max-old-space-size=2048 --no-warnings"
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=2048 --no-warnings}"
 cd /workspace
 
 # Unset Groq API key inside OpenCode session so it is only used by the voice transcription proxy
@@ -75,7 +82,7 @@ unset VOICE_GROQ_API_KEY
 unset VOICE_GROQ_MODEL
 
 # Attach to existing opencode tmux session, or create it if not running
-exec tmux -u new-session -A -s opencode "/bin/bash -c 'while true; do clear; echo \"🚀 ===============================================\"; echo \"   OpenCode AI Web Terminal\"; echo \"   Working Directory: /workspace\"; echo \"===============================================\"; echo \"\"; opencode || true; echo \"\"; echo \"🔄 OpenCode session ended. Restarting in 2 seconds...\"; sleep 2; done'"
+exec tmux -u new-session -A -s opencode "$TMUX_INNER_CMD"
 EOF
 
 chmod +x /start-opencode.sh
