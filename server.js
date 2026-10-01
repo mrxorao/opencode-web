@@ -16,6 +16,8 @@ const PROXY_PORT = 7681;
 const TTYD_AUTH = (process.env.TTYD_AUTH || '').trim();
 const VOICE_GROQ_API_KEY = (process.env.VOICE_GROQ_API_KEY || process.env.GROQ_API_KEY || '').trim();
 const VOICE_GROQ_MODEL = (process.env.VOICE_GROQ_MODEL || 'whisper-large-v3').trim();
+const RAW_GROQ_BASE_URL = (process.env.VOICE_GROQ_BASE_URL || process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').trim().replace(/\/+$/, '');
+const VOICE_GROQ_BASE_URL = RAW_GROQ_BASE_URL.endsWith('/openai/v1') ? RAW_GROQ_BASE_URL : (RAW_GROQ_BASE_URL.endsWith('/v1') ? RAW_GROQ_BASE_URL : `${RAW_GROQ_BASE_URL}/openai/v1`);
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
 const RAW_TTS_PROVIDER = (process.env.VOICE_TTS_PROVIDER || process.env.TTS_PROVIDER || 'browser').toLowerCase().trim();
 const DEFAULT_TTS_PROVIDER = (RAW_TTS_PROVIDER === 'microsoft' || RAW_TTS_PROVIDER === 'edge' || RAW_TTS_PROVIDER === 'edge-tts') ? 'microsoft' : 'browser';
@@ -233,7 +235,7 @@ async function checkGroqStatus(forceRecheck = false) {
     }
 
     try {
-        const modelResp = await fetch(`https://api.groq.com/openai/v1/models/${encodeURIComponent(VOICE_GROQ_MODEL)}`, {
+        const modelResp = await fetch(`${VOICE_GROQ_BASE_URL}/models/${encodeURIComponent(VOICE_GROQ_MODEL)}`, {
             headers: {
                 'Authorization': `Bearer ${VOICE_GROQ_API_KEY}`
             },
@@ -307,7 +309,7 @@ async function handleTranscribe(req, res) {
             formData.append('language', language);
             formData.append('response_format', 'json');
 
-            const groqResp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+            const groqResp = await fetch(`${VOICE_GROQ_BASE_URL}/audio/transcriptions`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${VOICE_GROQ_API_KEY}`
