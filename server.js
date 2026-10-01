@@ -843,6 +843,141 @@ async function handleDeletePrompt(req, res, parsedUrl) {
     }
 }
 
+function handleExportPrompts(req, res) {
+    try {
+        const db = getPromptsDb();
+        if (!db) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'DB_UNAVAILABLE', message: 'Could not connect to SQLite database.' }));
+            return;
+        }
+
+        const prompts = db.prepare('SELECT id, title, content, is_quick, auto_enter, sort_order, time_created, time_updated FROM prompts ORDER BY sort_order ASC, time_created ASC').all();
+        const exportData = {
+            version: 1,
+            exported_at: new Date().toISOString(),
+            count: prompts.length,
+            prompts: prompts
+        };
+
+        const jsonStr = JSON.stringify(exportData, null, 2);
+        res.writeHead(200, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Content-Disposition': 'attachment; filename="opencode-prompts.json"'
+        });
+        res.end(jsonStr);
+    } catch (err) {
+        console.error('Error exporting prompts:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+    }
+}
+
+async function handleImportPrompts(req, res) {
+    try {
+        const db = getPromptsDb();
+        if (!db) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'DB_UNAVAILABLE', message: 'Could not connect to SQLite database.' }));
+            return;
+        }
+
+        const body = await parseJsonBody(req);
+        let promptsToImport = [];
+        let mode = body.mode || 'merge'; // 'merge' or 'replace'
+
+        if (Array.isArray(body)) {
+            promptsToImport = body;
+        } else if (Array.isArray(body.prompts)) {
+            promptsToImport = body.prompts;
+        } else {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'INVALID_FORMAT', message: 'Payload must contain a prompts array.' }));
+            return;
+        }
+
+        if (promptsToImport.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'EMPTY_PROMPTS', message: 'No prompts found to import.' }));
+            return;
+        }
+
+        // Validate and sanitize prompts
+        const validPrompts = [];
+        for (const item of promptsToImport) {
+            if (!item || typeof item !== 'object') continue;
+            const title = String(item.title || item.name || '').trim();
+            const content = String(item.content || item.prompt || item.text || '').trim();
+            if (!title || !content) continue;
+
+            const is_quick = (item.is_quick || item.isQuick) ? 1 : 0;
+            const auto_enter = (item.auto_enter || item.autoEnter) ? 1 : 0;
+            const id = (item.id && typeof item.id === 'string' && item.id.trim()) ? item.id.trim() : null;
+
+            validPrompts.push({
+                id,
+                title,
+                content,
+                is_quick,
+                auto_enter
+            });
+        }
+
+        if (validPrompts.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'NO_VALID_PROMPTS', message: 'No valid prompts with title and content found.' }));
+            return;
+        }
+
+        const now = Date.now();
+
+        const insertTx = db.transaction((promptsList, importMode) => {
+            if (importMode === 'replace') {
+                db.prepare('DELETE FROM prompts').run();
+                const insertStmt = db.prepare('INSERT INTO prompts (id, title, content, is_quick, auto_enter, sort_order, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+                promptsList.forEach((p, index) => {
+                    const pId = p.id || ('p_' + now + '_' + index + '_' + Math.random().toString(36).substring(2, 6));
+                    insertStmt.run(pId, p.title, p.content, p.is_quick, p.auto_enter, index + 1, now, now);
+                });
+            } else {
+                // merge mode
+                const maxRow = db.prepare('SELECT MAX(sort_order) as maxOrder FROM prompts').get();
+                let nextOrder = ((maxRow && maxRow.maxOrder !== null) ? maxRow.maxOrder : 0) + 1;
+
+                const checkStmt = db.prepare('SELECT id, sort_order, time_created FROM prompts WHERE id = ?');
+                const updateStmt = db.prepare('UPDATE prompts SET title = ?, content = ?, is_quick = ?, auto_enter = ?, time_updated = ? WHERE id = ?');
+                const insertStmt = db.prepare('INSERT INTO prompts (id, title, content, is_quick, auto_enter, sort_order, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+
+                promptsList.forEach((p, index) => {
+                    let existing = p.id ? checkStmt.get(p.id) : null;
+                    if (existing) {
+                        updateStmt.run(p.title, p.content, p.is_quick, p.auto_enter, now, p.id);
+                    } else {
+                        const pId = p.id || ('p_' + now + '_' + index + '_' + Math.random().toString(36).substring(2, 6));
+                        insertStmt.run(pId, p.title, p.content, p.is_quick, p.auto_enter, nextOrder++, now, now);
+                    }
+                });
+            }
+        });
+
+        insertTx(validPrompts, mode);
+
+        const totalCount = db.prepare('SELECT COUNT(*) as count FROM prompts').get().count;
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: true,
+            mode: mode,
+            imported: validPrompts.length,
+            total: totalCount
+        }));
+    } catch(err) {
+        console.error('Error importing prompts to SQLite:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+    }
+}
+
 // Clipboard synchronization state & SSE management
 let currentClipboard = { id: '0', text: '', timestamp: 0 };
 let clipboardClients = [];
@@ -1034,6 +1169,16 @@ async function requestListener(req, res) {
     // Handle SQLite Prompts API
     if (pathname === '/api/prompts/quick' && req.method === 'GET') {
         handleGetQuickPrompts(req, res);
+        return;
+    }
+
+    if (pathname === '/api/prompts/export' && req.method === 'GET') {
+        handleExportPrompts(req, res);
+        return;
+    }
+
+    if (pathname === '/api/prompts/import' && req.method === 'POST') {
+        handleImportPrompts(req, res);
         return;
     }
 

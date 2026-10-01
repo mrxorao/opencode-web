@@ -518,6 +518,18 @@ body.theme-light .prompt-card-btn.delete-btn:hover{
     border-color:rgba(239,68,68,0.25);
 }
 
+body.theme-light .prompt-action-header-btn{
+    background:#ffffff;
+    border:1px solid rgba(0,0,0,0.1);
+    color:#334155;
+}
+
+body.theme-light .prompt-action-header-btn:hover{
+    background:#f1f5f9;
+    color:#0f172a;
+    border-color:rgba(0,0,0,0.18);
+}
+
 body.theme-light .prompts-pagination{
     border-top:1px solid rgba(0,0,0,0.08);
     color:#64748b;
@@ -641,6 +653,8 @@ body.theme-light .file-drop-desc{
 /* Prompts Library Modal Styles */
 #prompts-modal .modal-card{max-width:580px;display:flex;flex-direction:column;max-height:88vh}
 #prompts-modal #prompts-list-view{overflow:visible;max-height:none;padding-right:0;display:flex;flex-direction:column;flex:1}
+.prompt-action-header-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#cbd5e1;padding:4px 9px;border-radius:6px;font-size:11.5px;font-weight:500;cursor:pointer;transition:all .15s ease;outline:none}
+.prompt-action-header-btn:hover{background:rgba(255,255,255,0.1);color:#f8fafc;border-color:rgba(255,255,255,0.16)}
 .prompt-search-wrapper{position:relative;flex:1;display:flex;align-items:center}
 .prompt-search-icon{position:absolute;left:11px;color:#64748b;pointer-events:none;display:flex}
 .prompt-search-box{width:100%;box-sizing:border-box;background:#090b10;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px 8px 34px;color:#f8fafc;font-size:13px;outline:none;transition:all .15s ease}
@@ -2378,9 +2392,20 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         </svg>
                         Prompt Library
                     </div>
-                    <button id="prompts-close-btn" class="modal-close" title="Close">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+                    <div style="display:flex;align-items:center;gap:6px">
+                        <button id="import-prompts-btn" class="prompt-action-header-btn" title="Import prompts from JSON file">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span>Import</span>
+                        </button>
+                        <button id="export-prompts-btn" class="prompt-action-header-btn" title="Export prompts to JSON file">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            <span>Export</span>
+                        </button>
+                        <input type="file" id="prompt-import-file-input" accept=".json,application/json" style="display:none">
+                        <button id="prompts-close-btn" class="modal-close" title="Close">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-body" id="prompts-list-view">
                     <div class="prompt-tabs">
@@ -2414,6 +2439,35 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </button>
                         </div>
+                    </div>
+                </div>
+                <div class="modal-body" id="prompts-import-view" style="display:none">
+                    <div style="font-size:13px;font-weight:600;color:#f8fafc;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span id="prompt-import-summary">Importing prompts...</span>
+                    </div>
+                    <div id="prompt-import-preview-box" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px;max-height:160px;overflow-y:auto;margin-bottom:12px;font-size:12px;color:#94a3b8;line-height:1.5;">
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px;margin-bottom:12px;">
+                        <div style="font-size:12px;font-weight:600;color:#f1f5f9;margin-bottom:8px;">Select Import Mode:</div>
+                        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:#f8fafc;margin-bottom:8px;">
+                            <input type="radio" name="prompt-import-mode" value="merge" checked style="cursor:pointer;accent-color:#38bdf8;margin-top:2px;">
+                            <div>
+                                <strong>Merge with current library</strong>
+                                <div style="font-size:11px;color:#94a3b8;">Updates matching prompts and adds new ones. Your existing prompts are preserved.</div>
+                            </div>
+                        </label>
+                        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:#f8fafc;">
+                            <input type="radio" name="prompt-import-mode" value="replace" style="cursor:pointer;accent-color:#ef4444;margin-top:2px;">
+                            <div>
+                                <strong style="color:#f87171;">Replace entire library</strong>
+                                <div style="font-size:11px;color:#94a3b8;">Removes all existing prompts and replaces them with the imported file.</div>
+                            </div>
+                        </label>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+                        <button id="cancel-prompt-import-btn" class="modal-btn modal-btn-sec">Cancel</button>
+                        <button id="confirm-prompt-import-btn" class="modal-btn">Confirm Import</button>
                     </div>
                 </div>
                 <div class="modal-body" id="prompts-edit-view" style="display:none">
@@ -4547,8 +4601,16 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         var promptsBtn = document.getElementById('prompts-btn');
         var promptsModal = document.getElementById('prompts-modal');
         var promptsCloseBtn = document.getElementById('prompts-close-btn');
+        var exportPromptsBtn = document.getElementById('export-prompts-btn');
+        var importPromptsBtn = document.getElementById('import-prompts-btn');
+        var promptImportFileInput = document.getElementById('prompt-import-file-input');
         var promptsListView = document.getElementById('prompts-list-view');
+        var promptsImportView = document.getElementById('prompts-import-view');
         var promptsEditView = document.getElementById('prompts-edit-view');
+        var promptImportSummary = document.getElementById('prompt-import-summary');
+        var promptImportPreviewBox = document.getElementById('prompt-import-preview-box');
+        var cancelPromptImportBtn = document.getElementById('cancel-prompt-import-btn');
+        var confirmPromptImportBtn = document.getElementById('confirm-prompt-import-btn');
         var promptsCardsContainer = document.getElementById('prompts-cards-container');
         var promptSearchInput = document.getElementById('prompt-search-input');
         var newPromptBtn = document.getElementById('new-prompt-btn');
@@ -4566,6 +4628,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         var promptTabBtns = document.querySelectorAll('.prompt-tab-btn');
 
         var editingPromptId = null;
+        var stagedImportPrompts = null;
         var promptCurrentPage = 1;
         var promptTotalPages = 1;
         var promptSearchQuery = '';
@@ -4934,6 +4997,156 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             }
         }
 
+        async function exportPromptsToJson() {
+            try {
+                if (exportPromptsBtn) {
+                    exportPromptsBtn.disabled = true;
+                    exportPromptsBtn.style.opacity = '0.6';
+                }
+                var resp = await fetch('/api/prompts/export');
+                if (!resp.ok) {
+                    throw new Error('Failed to fetch prompts for export.');
+                }
+                var data = await resp.json();
+                var jsonStr = JSON.stringify(data, null, 2);
+                var blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+                var url = URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                var dateStr = new Date().toISOString().slice(0, 10);
+                link.href = url;
+                link.download = 'opencode-prompts-' + dateStr + '.json';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showPreview('📥 Export Successful', 'Exported ' + (data.prompts ? data.prompts.length : 0) + ' prompt(s) to JSON file.', false, false);
+                hidePreview(3000);
+            } catch(err) {
+                console.error('Export error:', err);
+                alert('Could not export prompts: ' + (err.message || 'Unknown error'));
+            } finally {
+                if (exportPromptsBtn) {
+                    exportPromptsBtn.disabled = false;
+                    exportPromptsBtn.style.opacity = '1';
+                }
+            }
+        }
+
+        function cancelPromptImport() {
+            stagedImportPrompts = null;
+            if (promptImportFileInput) promptImportFileInput.value = '';
+            if (promptsImportView) promptsImportView.style.display = 'none';
+            if (promptsEditView) promptsEditView.style.display = 'none';
+            if (promptsListView) promptsListView.style.display = 'block';
+        }
+
+        function handlePromptFileSelect(e) {
+            var file = e.target.files && e.target.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    var parsed = JSON.parse(evt.target.result);
+                    var list = [];
+                    if (Array.isArray(parsed)) {
+                        list = parsed;
+                    } else if (parsed && Array.isArray(parsed.prompts)) {
+                        list = parsed.prompts;
+                    } else if (parsed && typeof parsed === 'object' && (parsed.title || parsed.name) && (parsed.content || parsed.prompt || parsed.text)) {
+                        list = [parsed];
+                    }
+
+                    var valid = list.filter(function(p) {
+                        return p && typeof p === 'object' && (p.title || p.name) && (p.content || p.prompt || p.text);
+                    });
+
+                    if (valid.length === 0) {
+                        alert('No valid prompts found in this file. Make sure the JSON file contains prompts with "title" and "content".');
+                        if (promptImportFileInput) promptImportFileInput.value = '';
+                        return;
+                    }
+
+                    stagedImportPrompts = valid;
+                    if (promptImportSummary) {
+                        promptImportSummary.textContent = 'Found ' + valid.length + ' prompt(s) in ' + file.name;
+                    }
+                    if (promptImportPreviewBox) {
+                        promptImportPreviewBox.innerHTML = valid.map(function(p, i) {
+                            var title = p.title || p.name || 'Untitled';
+                            var isQ = (p.is_quick || p.isQuick) ? ' <span style="color:#38bdf8;font-size:10.5px">⚡ Quick</span>' : '';
+                            var safeTitle = String(title).replace(/[&<>'"]/g, function(t) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t; });
+                            return '<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;">' +
+                                '<span>' + (i + 1) + '. <strong>' + safeTitle + '</strong>' + isQ + '</span>' +
+                                '</div>';
+                        }).join('');
+                    }
+
+                    if (promptsListView) promptsListView.style.display = 'none';
+                    if (promptsEditView) promptsEditView.style.display = 'none';
+                    if (promptsImportView) promptsImportView.style.display = 'block';
+
+                } catch(parseErr) {
+                    console.error('JSON Parse error:', parseErr);
+                    alert('Invalid JSON file format: ' + parseErr.message);
+                    if (promptImportFileInput) promptImportFileInput.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function confirmPromptImport() {
+            if (!stagedImportPrompts || stagedImportPrompts.length === 0) {
+                alert('No prompts staged for import.');
+                cancelPromptImport();
+                return;
+            }
+
+            var modeRadio = document.querySelector('input[name="prompt-import-mode"]:checked');
+            var mode = modeRadio ? modeRadio.value : 'merge';
+
+            if (mode === 'replace') {
+                if (!confirm('⚠️ Are you sure you want to REPLACE ALL current prompts with these ' + stagedImportPrompts.length + ' prompt(s)? This will overwrite your existing library.')) {
+                    return;
+                }
+            }
+
+            if (confirmPromptImportBtn) {
+                confirmPromptImportBtn.disabled = true;
+                confirmPromptImportBtn.textContent = 'Importing...';
+            }
+
+            try {
+                var resp = await fetch('/api/prompts/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: mode,
+                        prompts: stagedImportPrompts
+                    })
+                });
+
+                var data = await resp.json();
+                if (resp.ok && data.success) {
+                    cancelPromptImport();
+                    fetchPromptsFromServer(1, '', promptCurrentTab);
+                    fetchQuickPrompts();
+                    showPreview('📥 Import Completed', 'Successfully imported ' + data.imported + ' prompt(s) (' + mode + ' mode). Total: ' + data.total, false, false);
+                    hidePreview(3500);
+                } else {
+                    alert('Error importing prompts: ' + (data.message || data.error || 'Server error.'));
+                }
+            } catch(err) {
+                console.error('Import error:', err);
+                alert('Connection error while importing prompts.');
+            } finally {
+                if (confirmPromptImportBtn) {
+                    confirmPromptImportBtn.disabled = false;
+                    confirmPromptImportBtn.textContent = 'Confirm Import';
+                }
+            }
+        }
+
         // Quick Prompts Popover Trigger
         if (promptsBtn) {
             promptsBtn.addEventListener('click', function(e) {
@@ -4969,6 +5182,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 if (promptsModal) {
                     promptsModal.classList.add('active');
                     cancelPromptEdit();
+                    cancelPromptImport();
                     if (promptSearchInput) promptSearchInput.value = '';
                     fetchPromptsFromServer(1, '', promptCurrentTab);
                 }
@@ -5007,9 +5221,22 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         if (promptsCloseBtn) {
             promptsCloseBtn.addEventListener('click', function() {
                 if (promptsModal) promptsModal.classList.remove('active');
+                cancelPromptImport();
                 window.focusTerminal();
             });
         }
+        if (exportPromptsBtn) exportPromptsBtn.addEventListener('click', exportPromptsToJson);
+        if (importPromptsBtn) {
+            importPromptsBtn.addEventListener('click', function() {
+                if (promptImportFileInput) {
+                    promptImportFileInput.value = '';
+                    promptImportFileInput.click();
+                }
+            });
+        }
+        if (promptImportFileInput) promptImportFileInput.addEventListener('change', handlePromptFileSelect);
+        if (cancelPromptImportBtn) cancelPromptImportBtn.addEventListener('click', cancelPromptImport);
+        if (confirmPromptImportBtn) confirmPromptImportBtn.addEventListener('click', confirmPromptImport);
         if (newPromptBtn) newPromptBtn.addEventListener('click', function() { openNewPrompt(false); });
         if (cancelPromptBtn) cancelPromptBtn.addEventListener('click', cancelPromptEdit);
         if (savePromptBtn) savePromptBtn.addEventListener('click', savePromptForm);
