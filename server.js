@@ -1337,26 +1337,4 @@ server.listen(PROXY_PORT, '0.0.0.0', async () => {
     console.log(`📁 Workspace:         ${WORKSPACE_DIR}`);
     console.log('===================================================================');
     console.log('');
-
-    // Setup loopback forwarders so 127.0.0.1 / localhost can reach host services (LiteLLM, WAHA)
-    setupLoopbackForwarder(4000, '172.17.0.1', 4000);
-    setupLoopbackForwarder(2999, '172.17.0.1', 2999);
 });
-
-function setupLoopbackForwarder(port, targetHost, targetPort) {
-    const net = require('net');
-    const fwd = net.createServer(src => {
-        const dst = net.connect(targetPort, targetHost);
-        src.pipe(dst).pipe(src);
-        src.on('error', () => dst.destroy());
-        dst.on('error', () => src.destroy());
-    });
-    fwd.listen(port, '127.0.0.1', () => {
-        console.log(`[forwarder] Loopback 127.0.0.1:${port} -> ${targetHost}:${targetPort}`);
-    });
-    fwd.on('error', err => {
-        if (err.code !== 'EADDRINUSE') {
-            console.warn(`[forwarder] Port ${port} forward warning:`, err.message);
-        }
-    });
-}
