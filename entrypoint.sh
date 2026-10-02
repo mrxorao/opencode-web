@@ -10,6 +10,12 @@ if [ -n "$EXTRA_HOSTS" ]; then
     echo "$EXTRA_HOSTS" | tr ';' '\n' >> /etc/hosts 2>/dev/null || true
 fi
 
+# Ensure adb and tailscale binaries are available in PATH
+if [ -f /root/.config/opencode/android-sdk/platform-tools/adb ]; then
+    ln -sf /root/.config/opencode/android-sdk/platform-tools/adb /usr/local/bin/adb 2>/dev/null || true
+fi
+export PATH="/root/.config/opencode/android-sdk/platform-tools:/root/.config/opencode/bin:$PATH"
+
 # Check and update OpenCode AI to the latest version on container startup
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
 if [ "$AUTO_UPDATE" = "true" ] || [ "$AUTO_UPDATE" = "1" ]; then
