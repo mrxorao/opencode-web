@@ -1,5 +1,8 @@
 FROM node:22-bookworm-slim
 
+# UTF-8 locale for accents/cedilla (pt-BR/pt-PT) in terminal, tmux and opencode
+ENV LANG=C.utf8 LC_ALL=C.utf8 LANGUAGE=C
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \

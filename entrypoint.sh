@@ -2,6 +2,9 @@
 set -e
 
 export TERM=xterm-256color
+export LANG=C.utf8
+export LC_ALL=C.utf8
+export LANGUAGE=C
 export UV_THREADPOOL_SIZE=8
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=2048 --no-warnings}"
 
@@ -89,8 +92,9 @@ EOF
 cat << 'EOF' > /start-opencode.sh
 #!/bin/bash
 export TERM=xterm-256color
-export LANG=C.UTF-8
-export LC_ALL=C.UTF-8
+export LANG=C.utf8
+export LC_ALL=C.utf8
+export LANGUAGE=C
 export UV_THREADPOOL_SIZE=8
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=2048 --no-warnings}"
 cd /workspace

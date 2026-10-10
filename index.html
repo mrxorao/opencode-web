@@ -1099,6 +1099,9 @@ window.focusTerminal = function(forceOnMobile) {
         try {
             if (typeof term.attachCustomKeyEventHandler === 'function') {
                 term.attachCustomKeyEventHandler(function(e) {
+                    // Never interfere with IME / dead-key composition (accents: ´ ^ ~ `)
+                    // e.isComposing true or keyCode 229 means the user is composing ã, õ, á, é, ç, etc.
+                    if (e.isComposing || e.keyCode === 229) return true;
                     if ((e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter') && !e.ctrlKey && !e.altKey && !e.metaKey && e.shiftKey) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1119,6 +1122,8 @@ window.focusTerminal = function(forceOnMobile) {
     }
     // Capture phase fallback on the helper textarea (works even before xterm API is ready)
     document.addEventListener('keydown', function(e) {
+        // Skip IME composition so dead keys for accents keep working
+        if (e.isComposing || e.keyCode === 229) return;
         if ((e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter') && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
             var t = e.target;
             var inTerm = t && t.closest && (t.closest('#terminal-container, .xterm, .xterm-screen, #terminal, .terminal') || t.classList.contains('xterm-helper-textarea'));
