@@ -1072,6 +1072,75 @@ window.focusTerminal = function(forceOnMobile) {
     } catch(e) {}
 };
 
+// Shift+Enter / Ctrl+Enter multiline support for OpenCode (CSI-u passthrough)
+// Browsers send plain Enter for Shift+Enter by default, so opencode can't
+// distinguish submit (Enter) from newline (Shift+Enter). We intercept here
+// and send the Kitty CSI-u sequences opencode expects:
+// Shift+Enter -> ESC[13;2u, Ctrl+Enter -> ESC[13;5u (input_newline default).
+(function setupShiftEnterMultiline() {
+    function getTtyd() {
+        return window.__ttyd_xterm || null;
+    }
+    function getTerm() {
+        return window.term || (window.__ttyd_xterm && window.__ttyd_xterm.terminal) || null;
+    }
+    function sendCsiU(seq) {
+        var ttyd = getTtyd();
+        try {
+            if (ttyd && typeof ttyd.sendData === 'function') {
+                ttyd.sendData(seq);
+                return true;
+            }
+        } catch(e) {}
+        return false;
+    }
+    function attachToTerm(term) {
+        if (!term || term.__shiftEnterRegistered) return;
+        try {
+            if (typeof term.attachCustomKeyEventHandler === 'function') {
+                term.attachCustomKeyEventHandler(function(e) {
+                    if ((e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter') && !e.ctrlKey && !e.altKey && !e.metaKey && e.shiftKey) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        sendCsiU('\x1b[13;2u');
+                        return false;
+                    }
+                    if ((e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter') && e.ctrlKey && !e.altKey && !e.metaKey) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        sendCsiU('\x1b[13;5u');
+                        return false;
+                    }
+                    return true;
+                });
+                term.__shiftEnterRegistered = true;
+            }
+        } catch(e) {}
+    }
+    // Capture phase fallback on the helper textarea (works even before xterm API is ready)
+    document.addEventListener('keydown', function(e) {
+        if ((e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter') && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            var t = e.target;
+            var inTerm = t && t.closest && (t.closest('#terminal-container, .xterm, .xterm-screen, #terminal, .terminal') || t.classList.contains('xterm-helper-textarea'));
+            if (inTerm) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!sendCsiU('\x1b[13;2u')) {
+                    var term = getTerm();
+                    if (term) attachToTerm(term);
+                }
+            }
+        }
+    }, true);
+    var tries = 0;
+    var timer = setInterval(function() {
+        tries++;
+        var term = getTerm();
+        if (term) attachToTerm(term);
+        if ((term && term.__shiftEnterRegistered) || tries > 60) clearInterval(timer);
+    }, 1000);
+})();
+
 // 2. High-Precision Touch-to-Scroll & Inertial Physics Engine for Mobile / Touch Screens
 (function setupMobileTouchScroll() {
     var touchStartX = 0;

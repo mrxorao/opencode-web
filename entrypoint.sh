@@ -59,6 +59,11 @@ set -g allow-passthrough on
 set -s set-clipboard on
 set -as terminal-features ',xterm-256color:clipboard'
 set -as terminal-overrides ',xterm*:Ms=\\E]52;%p1%s;%p2%s\\7'
+# Shift+Enter / Ctrl+Enter multiline support (Kitty CSI-u passthrough to opencode)
+set -s extended-keys on
+set -as terminal-features 'xterm*:extkeys'
+bind-key -n S-Enter send-keys Escape "[13;2u"
+bind-key -n C-Enter send-keys Escape "[13;5u"
 set -g exit-unattached off
 set -g destroy-unattached off
 set -s exit-empty off
