@@ -2692,6 +2692,8 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             });
             keysPopover.appendChild(panel);
         })();
+        // Expose to setupVoiceHandlers scope (separate closure) via window
+        window.__keysPopover = keysPopover;
 
         function sendKeyToTerminal(seq) {
             try {
@@ -2702,12 +2704,6 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             try { window.focusTerminal(); } catch(e) {}
         }
         window.sendKeyToTerminal = sendKeyToTerminal;
-
-        function updateKeysPopoverPosition() {
-            if (!keysPopover) return;
-            keysPopover.classList.remove('popover-top-center', 'popover-bottom-center', 'popover-middle-left', 'popover-middle-right');
-            keysPopover.classList.add('popover-' + getCurrentToolbarCorner());
-        }
 
         var promptsModal = document.createElement('div');
         promptsModal.id = 'prompts-modal';
@@ -5489,7 +5485,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 if (isOpen) {
                     quickPromptsPopover.classList.remove('active');
                 } else {
-                    if (keysPopover) keysPopover.classList.remove('active');
+                    if (window.__keysPopover) window.__keysPopover.classList.remove('active');
                     updateQuickPopoverPosition();
                     quickPromptsPopover.classList.add('active');
                     fetchQuickPrompts();
@@ -5537,14 +5533,22 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     quickPromptsPopover.classList.remove('active');
                 }
             }
-            if (keysPopover && keysPopover.classList.contains('active')) {
-                if (!keysPopover.contains(e.target) && !e.target.closest('#keys-btn')) {
-                    keysPopover.classList.remove('active');
+            var kpop = window.__keysPopover;
+            if (kpop && kpop.classList.contains('active')) {
+                if (!kpop.contains(e.target) && !e.target.closest('#keys-btn')) {
+                    kpop.classList.remove('active');
                 }
             }
         });
 
         // Terminal Keys Popover Trigger (mobile keyboard shortcuts)
+        // Note: keysPopover lives in mountVoiceUI scope -> accessed via window.__keysPopover
+        function updateKeysPopoverPosition() {
+            var pop = window.__keysPopover;
+            if (!pop) return;
+            pop.classList.remove('popover-top-center', 'popover-bottom-center', 'popover-middle-left', 'popover-middle-right');
+            pop.classList.add('popover-' + getCurrentToolbarCorner());
+        }
         var keysBtn = document.getElementById('keys-btn');
         if (keysBtn) {
             keysBtn.addEventListener('click', function(e) {
@@ -5552,14 +5556,15 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     e.preventDefault();
                     e.stopPropagation();
                 }
-                if (!keysPopover) return;
-                var isOpen = keysPopover.classList.contains('active');
+                var pop = window.__keysPopover;
+                if (!pop) return;
+                var isOpen = pop.classList.contains('active');
                 if (isOpen) {
-                    keysPopover.classList.remove('active');
+                    pop.classList.remove('active');
                 } else {
                     if (quickPromptsPopover) quickPromptsPopover.classList.remove('active');
                     updateKeysPopoverPosition();
-                    keysPopover.classList.add('active');
+                    pop.classList.add('active');
                 }
             });
         }
