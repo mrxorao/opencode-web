@@ -1317,27 +1317,110 @@ window.focusTerminal = function(forceOnMobile) {
         obs.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['autocomplete', 'autocorrect', 'autocapitalize', 'spellcheck'] });
     } catch(e) {}
     setInterval(hardenAll, 2000);
+})();
 
-    // Second layer: some mobile keyboards (Gboard/Samsung) keep showing the
-    // suggestion strip even with autocomplete=off. Tapping a suggestion fires
-    // beforeinput 'insertReplacementText', which old xterm diffing misreads
-    // and re-sends everything typed before (duplicated text). Swallow that
-    // event ONLY on the hidden xterm helper textarea: the tap is ignored
-    // instead of duplicating. Normal typing (insertText) and IME composition
-    // for accents (insertCompositionText / isComposing) are left untouched,
-    // as are all other inputs (prompt search, modals keep suggestions).
+// Third layer (gmux-style replacement handling): Gboard autocorrect/suggestion
+// taps arrive as deleteContentBackward (non-collapsed selection) + insertText
+// (collapsed), or a single insertText/insertReplacementText with a
+// non-collapsed selection. Old xterm diffs this incorrectly and re-sends the
+// whole textarea (duplicated text). We detect the replacement, erase the old
+// word ourselves (DELs) and send the new word, blocking xterm's handler so the
+// suggestion APPLIES cleanly instead of duplicating. Normal typing (collapsed
+// selection) and all non-terminal inputs are left untouched. Never calls
+// preventDefault (unreliable cross-browser for beforeinput).
+(function setupMobileReplacementFix() {
+    function isHelperTextarea(el) {
+        return !!el && el.tagName === 'TEXTAREA' && el.classList && el.classList.contains('xterm-helper-textarea');
+    }
+    function sendToPty(data) {
+        try {
+            if (window.__ttyd_xterm && typeof window.__ttyd_xterm.sendData === 'function') {
+                window.__ttyd_xterm.sendData(data);
+                return true;
+            }
+        } catch(e) {}
+        return false;
+    }
+    function selPos(t, which) {
+        try {
+            var v = (which === 'start') ? t.selectionStart : t.selectionEnd;
+            return (v === null || v === undefined) ? 0 : v;
+        } catch(e) { return 0; }
+    }
+    var pendingReplacement = null;  // { newText, suffix, resetValue }
+    var trackedDeletion = null;     // { preDeleteValue, deleteStart, deleteEnd }
+
+    // Phase 1 (capture, document level runs before xterm's textarea handler):
+    // detect the replacement and send DELs to erase the old word span.
     document.addEventListener('beforeinput', function(e) {
         try {
-            if (!e || e.isComposing) return;
             var t = e.target;
-            if (!t || t.tagName !== 'TEXTAREA') return;
-            if (!t.classList.contains('xterm-helper-textarea')) return;
-            if (e.inputType === 'insertReplacementText') {
-                e.preventDefault();
-                e.stopPropagation();
-                if (typeof e.stopImmediatePropagation === 'function') {
-                    try { e.stopImmediatePropagation(); } catch(_e) {}
-                }
+            if (!isHelperTextarea(t)) {
+                trackedDeletion = null;
+                return;
+            }
+            var type = e.inputType || '';
+            // Android autocorrect phase 1: deletion of the word being replaced.
+            if (type === 'deleteContentBackward') {
+                var ds = selPos(t, 'start');
+                var de = selPos(t, 'end');
+                trackedDeletion = (ds < de)
+                    ? { preDeleteValue: t.value, deleteStart: ds, deleteEnd: de }
+                    : null;
+                return;
+            }
+            if (type !== 'insertText' && type !== 'insertReplacementText') {
+                trackedDeletion = null;
+                return;
+            }
+            var start = selPos(t, 'start');
+            var end = selPos(t, 'end');
+            // Android autocorrect phase 2: insert right after tracked deletion.
+            if (trackedDeletion && start === end) {
+                var nd = (e.data !== null && e.data !== undefined) ? e.data : '';
+                if (!nd) { trackedDeletion = null; return; }
+                var pre = trackedDeletion.preDeleteValue;
+                var suffix = pre.substring(trackedDeletion.deleteEnd);
+                var erase = pre.length - trackedDeletion.deleteStart;
+                trackedDeletion = null;
+                if (erase > 0) sendToPty('\x7f'.repeat(erase));
+                pendingReplacement = { newText: nd, suffix: suffix, resetValue: pre };
+                return;
+            }
+            trackedDeletion = null;
+            // Collapsed selection = normal typing, let xterm handle it.
+            if (start === end) return;
+            // Single-event replacement (iOS style / some Android keyboards).
+            var nt = (e.data !== null && e.data !== undefined) ? e.data : '';
+            if (!nt) return;
+            var suf = t.value.substring(end);
+            var er = t.value.length - start;
+            var baseline = t.value;
+            if (er > 0) sendToPty('\x7f'.repeat(er));
+            pendingReplacement = { newText: nt, suffix: suf, resetValue: baseline };
+        } catch(err) {}
+    }, true);
+
+    // Phase 2: the browser's mutation fires `input`. Block xterm's handler so
+    // it doesn't ALSO process the change, send the replacement ourselves, and
+    // restore the textarea so xterm's deferred keydown-229 diff sees no change.
+    document.addEventListener('input', function(e) {
+        try {
+            if (!pendingReplacement) return;
+            var t = e.target;
+            if (!isHelperTextarea(t)) return;
+            var pr = pendingReplacement;
+            pendingReplacement = null;
+            try {
+                if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+            } catch(_e) {}
+            try { e.stopPropagation(); } catch(_e2) {}
+            sendToPty(pr.newText + pr.suffix);
+            if (pr.resetValue !== undefined) {
+                try {
+                    t.value = pr.resetValue;
+                    t.selectionStart = t.selectionEnd = pr.resetValue.length;
+                } catch(_e3) {}
             }
         } catch(err) {}
     }, true);
