@@ -1146,6 +1146,63 @@ window.focusTerminal = function(forceOnMobile) {
     }, 1000);
 })();
 
+// Mobile keyboard autocomplete fix: tapping a suggestion (Gboard/Samsung/iOS)
+// makes the IME replace the whole word, which old xterm diffing misreads and
+// re-sends everything typed before (duplicated text). Disabling autocorrect /
+// autocomplete on the hidden helper textarea removes the suggestion bar that
+// triggers the bug. Applied always (harmless on desktop) via observer +
+// interval because xterm recreates the textarea on focus/reset.
+(function setupMobileKeyboardFix() {
+    function hardenTextarea(el) {
+        if (!el || el.__kbFixApplied) return;
+        try {
+            el.setAttribute('autocomplete', 'off');
+            el.setAttribute('autocorrect', 'off');
+            el.setAttribute('autocapitalize', 'off');
+            el.setAttribute('spellcheck', 'false');
+            // Extra hints for Chrome/Android + Grammarly-like extensions
+            el.setAttribute('data-gramm', 'false');
+            el.setAttribute('data-enable-grammarly', 'false');
+            el.__kbFixApplied = true;
+        } catch(e) {}
+    }
+    function hardenAll() {
+        try {
+            var list = document.querySelectorAll('.xterm-helper-textarea, .xterm textarea, #terminal textarea, .terminal textarea');
+            for (var i = 0; i < list.length; i++) hardenTextarea(list[i]);
+        } catch(e) {}
+    }
+    hardenAll();
+    try {
+        var obs = new MutationObserver(function(muts) {
+            for (var i = 0; i < muts.length; i++) {
+                var m = muts[i];
+                if (m.type === 'childList') {
+                    for (var j = 0; j < m.addedNodes.length; j++) {
+                        var n = m.addedNodes[j];
+                        if (!n) continue;
+                        if (n.nodeType === 1 && n.tagName === 'TEXTAREA') hardenTextarea(n);
+                        else if (n.querySelectorAll) {
+                            var inner = n.querySelectorAll('.xterm-helper-textarea, textarea');
+                            for (var k = 0; k < inner.length; k++) hardenTextarea(inner[k]);
+                        }
+                    }
+                } else if (m.type === 'attributes' && m.target && m.target.tagName === 'TEXTAREA') {
+                    // Re-apply if xterm or keyboard resets the attributes
+                    if (m.target.getAttribute('autocomplete') !== 'off' ||
+                        m.target.getAttribute('autocorrect') !== 'off' ||
+                        m.target.getAttribute('autocapitalize') !== 'off') {
+                        m.target.__kbFixApplied = false;
+                        hardenTextarea(m.target);
+                    }
+                }
+            }
+        });
+        obs.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['autocomplete', 'autocorrect', 'autocapitalize', 'spellcheck'] });
+    } catch(e) {}
+    setInterval(hardenAll, 2000);
+})();
+
 // 2. High-Precision Touch-to-Scroll & Inertial Physics Engine for Mobile / Touch Screens
 (function setupMobileTouchScroll() {
     var touchStartX = 0;
