@@ -813,6 +813,122 @@ body.theme-light .prompts-container::-webkit-scrollbar-thumb:hover{background:rg
     align-items: center;
 }
 
+/* Terminal Keys Popover (mobile keyboard shortcuts: Tab, Esc, arrows, Ctrl+C...) */
+#keys-popover {
+    position: fixed;
+    z-index: 99998;
+    display: none;
+    pointer-events: none;
+    padding: 0;
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+#keys-popover.active {
+    display: flex;
+}
+#keys-popover.popover-middle-right {
+    top: 50%;
+    right: calc(env(safe-area-inset-right, 6px) + 54px);
+    transform: translateY(-50%);
+}
+#keys-popover.popover-middle-left {
+    top: 50%;
+    left: calc(env(safe-area-inset-left, 6px) + 54px);
+    transform: translateY(-50%);
+}
+#keys-popover.popover-top-center {
+    top: calc(env(safe-area-inset-top, 6px) + 54px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+#keys-popover.popover-bottom-center {
+    bottom: calc(env(safe-area-inset-bottom, 6px) + 54px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+.keys-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    background: rgba(15, 23, 42, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    pointer-events: auto;
+    max-width: min(320px, calc(100vw - 80px));
+}
+.keys-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+.key-chip {
+    flex: 1 1 0;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom-width: 2px;
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    white-space: nowrap;
+}
+.key-chip:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+.key-chip:active {
+    transform: scale(0.93);
+    background: #0284c7;
+    border-color: #38bdf8;
+    color: #fff;
+}
+.key-chip.key-danger {
+    color: #fca5a5;
+    border-color: rgba(248, 113, 113, 0.35);
+}
+.key-chip.key-danger:active {
+    background: #dc2626;
+    border-color: #f87171;
+    color: #fff;
+}
+body.theme-light .keys-panel {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+body.theme-light .key-chip {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #334155;
+}
+body.theme-light .key-chip:hover {
+    background: #e2e8f0;
+}
+body.theme-light .key-chip:active {
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #fff;
+}
+body.theme-light .key-chip.key-danger {
+    color: #b91c1c;
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
 .prompt-card-btn.order-btn {
     padding: 4px 6px;
     color: #94a3b8;
@@ -2154,6 +2270,16 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                         <line x1="9" y1="11" x2="13" y2="11"></line>
                     </svg>
                 </button>
+                <button id="keys-btn" class="voice-btn" title="Terminal Keys (Tab, Esc, Arrows, Ctrl+C...)" aria-label="Terminal Keys">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                        <line x1="6" y1="10" x2="6.01" y2="10"></line>
+                        <line x1="10" y1="10" x2="10.01" y2="10"></line>
+                        <line x1="14" y1="10" x2="14.01" y2="10"></line>
+                        <line x1="18" y1="10" x2="18.01" y2="10"></line>
+                        <line x1="7" y1="14" x2="17" y2="14"></line>
+                    </svg>
+                </button>
                 <button id="refresh-btn" class="voice-btn" title="Reload Terminal / Page" aria-label="Refresh">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 4 23 10 17 10"></polyline>
@@ -2511,6 +2637,78 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             </button>
         `;
 
+        // Terminal Keys popover (mobile keyboard shortcuts panel)
+        // Rows: common keys, arrows, interrupt/job control, line editing.
+        // Sequences sent raw via ttyd sendData (same channel as typed keys).
+        var TERMINAL_KEYS = [
+            [
+                { label: 'Esc', seq: '\x1b', title: 'Escape (cancel / close)' },
+                { label: 'Tab', seq: '\t', title: 'Tab (autocomplete)' },
+                { label: 'Enter', seq: '\r', title: 'Enter' }
+            ],
+            [
+                { label: '↑', seq: '\x1b[A', title: 'Arrow Up (history)' },
+                { label: '↓', seq: '\x1b[B', title: 'Arrow Down' },
+                { label: '←', seq: '\x1b[D', title: 'Arrow Left' },
+                { label: '→', seq: '\x1b[C', title: 'Arrow Right' }
+            ],
+            [
+                { label: 'Ctrl+C', seq: '\x03', title: 'Interrupt (stop current command)', danger: true },
+                { label: 'Ctrl+D', seq: '\x04', title: 'EOF / exit session' },
+                { label: 'Ctrl+Z', seq: '\x1a', title: 'Suspend to background' }
+            ],
+            [
+                { label: 'Ctrl+L', seq: '\x0c', title: 'Clear screen' },
+                { label: 'Ctrl+U', seq: '\x15', title: 'Delete line before cursor' },
+                { label: 'Ctrl+K', seq: '\x0b', title: 'Delete to end of line' },
+                { label: 'Ctrl+R', seq: '\x12', title: 'Reverse history search' }
+            ]
+        ];
+
+        var keysPopover = document.createElement('div');
+        keysPopover.id = 'keys-popover';
+        (function buildKeysPanel() {
+            var panel = document.createElement('div');
+            panel.className = 'keys-panel';
+            TERMINAL_KEYS.forEach(function(row) {
+                var rowEl = document.createElement('div');
+                rowEl.className = 'keys-row';
+                row.forEach(function(k) {
+                    var chip = document.createElement('button');
+                    chip.className = 'key-chip' + (k.danger ? ' key-danger' : '');
+                    chip.textContent = k.label;
+                    chip.title = k.title || k.label;
+                    chip.setAttribute('aria-label', k.title || k.label);
+                    chip.addEventListener('click', function(e) {
+                        if (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                        sendKeyToTerminal(k.seq);
+                    });
+                    rowEl.appendChild(chip);
+                });
+                panel.appendChild(rowEl);
+            });
+            keysPopover.appendChild(panel);
+        })();
+
+        function sendKeyToTerminal(seq) {
+            try {
+                if (window.__ttyd_xterm && typeof window.__ttyd_xterm.sendData === 'function') {
+                    window.__ttyd_xterm.sendData(seq);
+                }
+            } catch(e) {}
+            try { window.focusTerminal(); } catch(e) {}
+        }
+        window.sendKeyToTerminal = sendKeyToTerminal;
+
+        function updateKeysPopoverPosition() {
+            if (!keysPopover) return;
+            keysPopover.classList.remove('popover-top-center', 'popover-bottom-center', 'popover-middle-left', 'popover-middle-right');
+            keysPopover.classList.add('popover-' + getCurrentToolbarCorner());
+        }
+
         var promptsModal = document.createElement('div');
         promptsModal.id = 'prompts-modal';
         promptsModal.innerHTML = `
@@ -2649,6 +2847,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         document.body.appendChild(toolbar);
         document.body.appendChild(preview);
         document.body.appendChild(quickPromptsPopover);
+        document.body.appendChild(keysPopover);
         document.body.appendChild(ffModal);
         document.body.appendChild(micModal);
         document.body.appendChild(uploadChoiceModal);
@@ -5290,6 +5489,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 if (isOpen) {
                     quickPromptsPopover.classList.remove('active');
                 } else {
+                    if (keysPopover) keysPopover.classList.remove('active');
                     updateQuickPopoverPosition();
                     quickPromptsPopover.classList.add('active');
                     fetchQuickPrompts();
@@ -5337,7 +5537,32 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                     quickPromptsPopover.classList.remove('active');
                 }
             }
+            if (keysPopover && keysPopover.classList.contains('active')) {
+                if (!keysPopover.contains(e.target) && !e.target.closest('#keys-btn')) {
+                    keysPopover.classList.remove('active');
+                }
+            }
         });
+
+        // Terminal Keys Popover Trigger (mobile keyboard shortcuts)
+        var keysBtn = document.getElementById('keys-btn');
+        if (keysBtn) {
+            keysBtn.addEventListener('click', function(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                if (!keysPopover) return;
+                var isOpen = keysPopover.classList.contains('active');
+                if (isOpen) {
+                    keysPopover.classList.remove('active');
+                } else {
+                    if (quickPromptsPopover) quickPromptsPopover.classList.remove('active');
+                    updateKeysPopoverPosition();
+                    keysPopover.classList.add('active');
+                }
+            });
+        }
 
         // Tab filters inside Prompts Modal
         promptTabBtns.forEach(function(btn) {
