@@ -1317,6 +1317,30 @@ window.focusTerminal = function(forceOnMobile) {
         obs.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['autocomplete', 'autocorrect', 'autocapitalize', 'spellcheck'] });
     } catch(e) {}
     setInterval(hardenAll, 2000);
+
+    // Second layer: some mobile keyboards (Gboard/Samsung) keep showing the
+    // suggestion strip even with autocomplete=off. Tapping a suggestion fires
+    // beforeinput 'insertReplacementText', which old xterm diffing misreads
+    // and re-sends everything typed before (duplicated text). Swallow that
+    // event ONLY on the hidden xterm helper textarea: the tap is ignored
+    // instead of duplicating. Normal typing (insertText) and IME composition
+    // for accents (insertCompositionText / isComposing) are left untouched,
+    // as are all other inputs (prompt search, modals keep suggestions).
+    document.addEventListener('beforeinput', function(e) {
+        try {
+            if (!e || e.isComposing) return;
+            var t = e.target;
+            if (!t || t.tagName !== 'TEXTAREA') return;
+            if (!t.classList.contains('xterm-helper-textarea')) return;
+            if (e.inputType === 'insertReplacementText') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof e.stopImmediatePropagation === 'function') {
+                    try { e.stopImmediatePropagation(); } catch(_e) {}
+                }
+            }
+        } catch(err) {}
+    }, true);
 })();
 
 // 2. High-Precision Touch-to-Scroll & Inertial Physics Engine for Mobile / Touch Screens
