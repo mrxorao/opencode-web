@@ -9,6 +9,14 @@
 .desktop-only{display:flex}
 @media (max-width: 768px), (pointer: coarse){.desktop-only{display:none!important}}
 
+/* Terminal keys button: mobile only (hidden on desktop).
+   The :not(.collapsed) keeps the collapsed-toolbar behavior consistent
+   with the other buttons (hidden when the bar is minimized). */
+#keys-btn{display:none}
+@media (max-width: 768px), (pointer: coarse){
+    #voice-toolbar:not(.collapsed) #keys-btn{display:flex}
+}
+
 .toolbar-actions{display:flex;align-items:center;gap:7px}
 #voice-toolbar.collapsed .toolbar-actions{display:flex;align-items:center;gap:4px}
 #voice-toolbar.collapsed .toolbar-actions .voice-btn{display:none}
