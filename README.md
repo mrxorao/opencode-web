@@ -1,6 +1,8 @@
-# OpenCode AI - Web Terminal (Docker)
+# OpenCode AI v2 - Web Terminal (Docker)
 
-Access the **OpenCode AI CLI** directly from your browser on desktop or mobile through a modern web terminal (`ttyd`), with a fully self-contained environment and persistent local storage.
+Access the **OpenCode AI CLI v2** (`@opencode/cli`) directly from your browser on desktop or mobile through a modern web terminal (`ttyd`), with a fully self-contained environment and persistent local storage.
+
+> **v2 note:** this image now installs `npm install -g @opencode/cli@latest` (OpenCode 2.x). The legacy v1 package `opencode-ai` is uninstalled automatically on build and on container startup (`AUTO_UPDATE`). Existing `opencode.json(c)` config and `~/.config/opencode` / `~/.local/share/opencode` volumes are reused — V1 config stays compatible per the [V1→V2 migration guide](https://opencode.ai/v2/docs/migrate-v1/). Voice conversation mode reads both V1 (`message`/`part`) and V2 (`session_message`) history tables.
 
 [![Docker Hub](https://img.shields.io/docker/pulls/xorao/opencode-web?logo=docker&label=Docker%20Hub)](https://hub.docker.com/r/xorao/opencode-web)
 

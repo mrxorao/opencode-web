@@ -20,8 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -fsSL https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 -o /usr/local/bin/ttyd \
     && chmod +x /usr/local/bin/ttyd
 
-# Install OpenCode AI CLI globally
-RUN npm install -g opencode-ai@latest
+# Install OpenCode AI CLI v2 globally (npm package renamed: opencode-ai v1 -> @opencode/cli v2)
+# Uninstall legacy v1 package first (both use the same `opencode` binary, no side-by-side)
+RUN npm uninstall -g opencode-ai || true \
+    && npm install -g @opencode/cli@latest
 
 # Install Edge TTS and Node.js dependencies
 WORKDIR /

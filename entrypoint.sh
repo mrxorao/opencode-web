@@ -13,11 +13,13 @@ if [ -n "$EXTRA_HOSTS" ]; then
     echo "$EXTRA_HOSTS" | tr ';' '\n' >> /etc/hosts 2>/dev/null || true
 fi
 
-# Check and update OpenCode AI to the latest version on container startup
+# Check and update OpenCode AI to the latest v2 on container startup
+# NOTE: v2 npm package is @opencode/cli (v1 was opencode-ai). Both provide the `opencode` binary.
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
 if [ "$AUTO_UPDATE" = "true" ] || [ "$AUTO_UPDATE" = "1" ]; then
-    echo "📦 Checking and updating OpenCode AI to the latest version..."
-    npm install -g opencode-ai@latest || echo "⚠️ Could not update OpenCode AI (offline/network error), continuing with installed version."
+    echo "📦 Checking and updating OpenCode AI (v2) to the latest version..."
+    npm uninstall -g opencode-ai 2>/dev/null || true
+    npm install -g @opencode/cli@latest || echo "⚠️ Could not update OpenCode AI (offline/network error), continuing with installed version."
 fi
 
 CURRENT_VERSION=$(opencode --version 2>/dev/null || echo "installed")
