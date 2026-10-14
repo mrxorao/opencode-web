@@ -51,23 +51,146 @@ const DB_PATHS = [
 ];
 
 let openCodeDbInstance = null;
+let openCodeDbPath = null;
 let latestMsgStmt = null;
 let partsForMsgStmt = null;
+let latestV2MsgStmt = null;
+let cachedTables = null;
 
 function getOpenCodeDb() {
-    if (openCodeDbInstance) return openCodeDbInstance;
     for (const p of DB_PATHS) {
         if (fs.existsSync(p)) {
+            if (openCodeDbInstance && openCodeDbPath === p) return openCodeDbInstance;
+            // DB path changed (or first open) — reset cached statements
+            try { openCodeDbInstance?.close?.(); } catch(e) {}
+            openCodeDbInstance = null;
+            latestMsgStmt = null;
+            partsForMsgStmt = null;
+            latestV2MsgStmt = null;
+            cachedTables = null;
             try {
                 const { DatabaseSync } = require('node:sqlite');
                 openCodeDbInstance = new DatabaseSync(p, { readOnly: true });
+                openCodeDbPath = p;
                 return openCodeDbInstance;
             } catch (e) {
                 console.error('Failed to open SQLite DB at', p, e.message);
             }
         }
     }
-    return null;
+    return openCodeDbInstance;
+}
+
+function getOpenCodeTables(db) {
+    if (cachedTables) return cachedTables;
+    try {
+        const rows = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+        cachedTables = new Set(rows.map(r => r.name));
+    } catch(e) {
+        cachedTables = new Set();
+    }
+    return cachedTables;
+}
+
+function formatQuestionText(questions) {
+    let questionText = '';
+    const isPt = (DEFAULT_VOICE_LANGUAGE === 'PT' || DEFAULT_VOICE_LANGUAGE === 'BR');
+    const optPrefix = isPt ? 'Opção' : 'Option';
+    (questions || []).forEach((q) => {
+        if (q.question) {
+            questionText += (q.header ? `${q.header}: ` : '') + `${q.question}\n`;
+        }
+        if (Array.isArray(q.options) && q.options.length > 0) {
+            q.options.forEach((opt, optIdx) => {
+                const label = typeof opt === 'string' ? opt : (opt.label || opt.title || '');
+                const desc = (typeof opt === 'object' && opt.description) ? ` - ${opt.description}` : '';
+                questionText += `${optPrefix} ${optIdx + 1}: ${label}${desc}\n`;
+            });
+        }
+    });
+    return questionText.trim();
+}
+
+// OpenCode v2: session_message table — data JSON is { type:'assistant', content:[{type:'text',text}...], time:{completed}, finish }
+// Returns { handled:true, payload } when v2 has data, or { handled:false } to fall back to v1.
+function tryLatestAiMessageV2(db) {
+    const tables = getOpenCodeTables(db);
+    if (!tables.has('session_message')) return { handled: false };
+    try {
+        if (!latestV2MsgStmt) {
+            latestV2MsgStmt = db.prepare(`
+                SELECT id, session_id, data, time_created, time_updated
+                FROM session_message
+                WHERE type = 'assistant'
+                ORDER BY time_created DESC
+                LIMIT 3
+            `);
+        }
+    } catch (stmtErr) {
+        latestV2MsgStmt = null;
+        return { handled: false };
+    }
+    let messages = [];
+    try {
+        messages = latestV2MsgStmt.all();
+    } catch(e) {
+        latestV2MsgStmt = null;
+        cachedTables = null;
+        return { handled: false };
+    }
+    if (!messages || messages.length === 0) return { handled: false };
+
+    const latestMsg = messages[0];
+    let msgData = {};
+    try {
+        msgData = JSON.parse(latestMsg.data || '{}');
+    } catch(e) {}
+
+    const content = Array.isArray(msgData.content) ? msgData.content : [];
+
+    // 1. Interactive question tool (v2: content[] type='tool', name='question')
+    for (const item of content) {
+        if (item && item.type === 'tool' && (item.name === 'question' || item.tool === 'question')) {
+            const questions = item.state?.input?.questions || item.input?.questions || [];
+            const questionText = formatQuestionText(questions);
+            if (questionText) {
+                return { handled: true, payload: {
+                    id: latestMsg.id + (item.state?.status || ''),
+                    text: questionText,
+                    time: latestMsg.time_updated || latestMsg.time_created,
+                    isQuestion: true,
+                    isComplete: true
+                }};
+            }
+        }
+    }
+
+    // 2. Still processing? (streaming or tools running)
+    const isFinished = (msgData.finish != null || msgData.time?.completed != null || msgData.time?.streamed != null && content.some(c => c?.type === 'text' && c?.text?.trim()));
+    // Stricter: completed timestamp is the source of truth; streamed without completed = still running tools
+    const hasCompleted = (msgData.time?.completed != null || msgData.finish === 'stop' || msgData.finish === 'length');
+    if (!hasCompleted) {
+        return { handled: true, payload: { text: null, id: null, isProcessing: true } };
+    }
+    void isFinished;
+
+    // 3. Collect final text parts
+    let fullText = '';
+    for (const item of content) {
+        if (item && item.type === 'text' && item.text && item.text.trim()) {
+            fullText += (fullText ? '\n' : '') + item.text.trim();
+        }
+    }
+    if (fullText.trim()) {
+        return { handled: true, payload: {
+            id: latestMsg.id,
+            text: fullText.trim(),
+            time: msgData.time?.completed || latestMsg.time_updated || latestMsg.time_created,
+            isQuestion: false,
+            isComplete: true
+        }};
+    }
+    return { handled: true, payload: { text: null, id: null } };
 }
 
 function handleLatestAiMessage(req, res) {
@@ -77,6 +200,18 @@ function handleLatestAiMessage(req, res) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ text: null, id: null }));
             return;
+        }
+
+        // Prefer v2 schema (session_message) when it has data; fall back to v1 (message/part)
+        try {
+            const v2 = tryLatestAiMessageV2(db);
+            if (v2.handled) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(v2.payload));
+                return;
+            }
+        } catch (v2Err) {
+            console.error('V2 latest-message lookup failed, falling back to V1:', v2Err.message);
         }
 
         if (!latestMsgStmt || !partsForMsgStmt) {
@@ -117,29 +252,15 @@ function handleLatestAiMessage(req, res) {
 
         const parts = partsForMsgStmt.all(latestMsg.id);
 
-        // 1. Check for interactive question tool prompt waiting for user response
+        // 1. Check for interactive question tool prompt waiting for user response (V1: part type='tool', tool='question')
         for (const part of parts) {
             let partData = {};
             try { partData = JSON.parse(part.data || '{}'); } catch(e) {}
 
             if (partData.type === 'tool' && partData.tool === 'question') {
                 const questions = partData.state?.input?.questions || [];
-                let questionText = '';
-                const isPt = (DEFAULT_VOICE_LANGUAGE === 'PT' || DEFAULT_VOICE_LANGUAGE === 'BR');
-                const optPrefix = isPt ? 'Opção' : 'Option';
-                questions.forEach((q) => {
-                    if (q.question) {
-                        questionText += (q.header ? `${q.header}: ` : '') + `${q.question}\n`;
-                    }
-                    if (Array.isArray(q.options) && q.options.length > 0) {
-                        q.options.forEach((opt, optIdx) => {
-                            const label = typeof opt === 'string' ? opt : (opt.label || opt.title || '');
-                            const desc = (typeof opt === 'object' && opt.description) ? ` - ${opt.description}` : '';
-                            questionText += `${optPrefix} ${optIdx + 1}: ${label}${desc}\n`;
-                        });
-                    }
-                });
-                if (questionText.trim()) {
+                const questionText = formatQuestionText(questions);
+                if (questionText) {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         id: part.id + (partData.state?.status || ''),
@@ -561,9 +682,9 @@ function getPromptsDb() {
         try { db.exec('ALTER TABLE prompts ADD COLUMN auto_enter INTEGER DEFAULT 0;'); } catch(e) {}
         try { db.exec('ALTER TABLE prompts ADD COLUMN sort_order INTEGER DEFAULT 0;'); } catch(e) {}
 
-        // Clean up legacy quick prompts (git status, git diff)
+        // Clean up legacy/removed quick prompts (git status, git diff, /clear)
         try {
-            db.prepare("DELETE FROM prompts WHERE id IN ('qp5', 'qp6') OR (title IN ('git status', 'git diff') AND is_quick = 1)").run();
+            db.prepare("DELETE FROM prompts WHERE id IN ('qp4', 'qp5', 'qp6') OR (title IN ('git status', 'git diff', '/clear') AND is_quick = 1)").run();
         } catch(e) {}
 
         const countRow = db.prepare('SELECT COUNT(*) as count FROM prompts').get();
@@ -578,12 +699,11 @@ function getPromptsDb() {
                 { id: 'qp1', title: '/new', content: '/new', is_quick: 1, auto_enter: 1, sort_order: 1 },
                 { id: 'qp2', title: '/models', content: '/models', is_quick: 1, auto_enter: 1, sort_order: 2 },
                 { id: 'qp3', title: '/compact', content: '/compact', is_quick: 1, auto_enter: 1, sort_order: 3 },
-                { id: 'qp4', title: '/clear', content: '/clear', is_quick: 1, auto_enter: 1, sort_order: 4 },
                 // Full Library Prompts
-                { id: 'p1', title: '⚡ Refactor Code', content: 'Please refactor the following code to make it cleaner, more modular, efficient and readable:\n\n', is_quick: 0, auto_enter: 0, sort_order: 5 },
-                { id: 'p2', title: '🧪 Generate Unit Tests', content: 'Create comprehensive unit tests covering standard and edge cases for the following implementation:\n\n', is_quick: 0, auto_enter: 0, sort_order: 6 },
-                { id: 'p3', title: '🐛 Explain & Fix Bug', content: 'Analyze the following error/unexpected behavior and explain the root cause with a detailed fix:\n\n', is_quick: 0, auto_enter: 0, sort_order: 7 },
-                { id: 'p4', title: '🛡️ Security Audit', content: 'Review this code identifying potential security vulnerabilities, injections, missing validations and best practices:\n\n', is_quick: 0, auto_enter: 0, sort_order: 8 }
+                { id: 'p1', title: '⚡ Refactor Code', content: 'Please refactor the following code to make it cleaner, more modular, efficient and readable:\n\n', is_quick: 0, auto_enter: 0, sort_order: 4 },
+                { id: 'p2', title: '🧪 Generate Unit Tests', content: 'Create comprehensive unit tests covering standard and edge cases for the following implementation:\n\n', is_quick: 0, auto_enter: 0, sort_order: 5 },
+                { id: 'p3', title: '🐛 Explain & Fix Bug', content: 'Analyze the following error/unexpected behavior and explain the root cause with a detailed fix:\n\n', is_quick: 0, auto_enter: 0, sort_order: 6 },
+                { id: 'p4', title: '🛡️ Security Audit', content: 'Review this code identifying potential security vulnerabilities, injections, missing validations and best practices:\n\n', is_quick: 0, auto_enter: 0, sort_order: 7 }
             ];
             for (const item of seed) {
                 insertStmt.run(item.id, item.title, item.content, item.is_quick, item.auto_enter, item.sort_order, now, now);
