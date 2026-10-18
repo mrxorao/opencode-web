@@ -119,11 +119,10 @@ function tryLatestAiMessageV2(db) {
     try {
         if (!latestV2MsgStmt) {
             latestV2MsgStmt = db.prepare(`
-                SELECT id, session_id, data, time_created, time_updated
+                SELECT id, session_id, type, data, time_created, time_updated
                 FROM session_message
-                WHERE type = 'assistant'
                 ORDER BY time_created DESC
-                LIMIT 3
+                LIMIT 25
             `);
         }
     } catch (stmtErr) {
@@ -140,57 +139,85 @@ function tryLatestAiMessageV2(db) {
     }
     if (!messages || messages.length === 0) return { handled: false };
 
-    const latestMsg = messages[0];
-    let msgData = {};
-    try {
-        msgData = JSON.parse(latestMsg.data || '{}');
-    } catch(e) {}
+    // 1. Find the newest user prompt in the active session
+    const latestUserMsg = messages.find(m => m.type === 'user');
+    if (!latestUserMsg) {
+        return { handled: true, payload: { text: null, id: null, isProcessing: false } };
+    }
 
-    const content = Array.isArray(msgData.content) ? msgData.content : [];
+    // If the newest message overall is the user prompt, the AI has just received it and is processing
+    if (messages[0].id === latestUserMsg.id) {
+        return { handled: true, payload: { text: null, id: null, isProcessing: true } };
+    }
 
-    // 1. Interactive question tool (v2: content[] type='tool', name='question')
-    for (const item of content) {
-        if (item && item.type === 'tool' && (item.name === 'question' || item.tool === 'question')) {
-            const questions = item.state?.input?.questions || item.input?.questions || [];
-            const questionText = formatQuestionText(questions);
-            if (questionText) {
-                return { handled: true, payload: {
-                    id: latestMsg.id + (item.state?.status || ''),
-                    text: questionText,
-                    time: latestMsg.time_updated || latestMsg.time_created,
-                    isQuestion: true,
-                    isComplete: true
-                }};
+    // 2. Check for interactive question tool prompt waiting for user response
+    // If the AI asked a question to the user, it paused waiting for an answer before reaching 'idle'
+    const asstMsgsAfterUser = messages.filter(m => m.type === 'assistant' && m.time_created >= latestUserMsg.time_created);
+    for (const asstMsg of asstMsgsAfterUser) {
+        let msgData = {};
+        try { msgData = JSON.parse(asstMsg.data || '{}'); } catch(e) {}
+        const content = Array.isArray(msgData.content) ? msgData.content : [];
+        for (const item of content) {
+            if (item && item.type === 'tool' && (item.name === 'question' || item.tool === 'question')) {
+                const questions = item.state?.input?.questions || item.input?.questions || [];
+                const questionText = formatQuestionText(questions);
+                if (questionText) {
+                    return { handled: true, payload: {
+                        id: asstMsg.id + (item.state?.status || ''),
+                        text: questionText,
+                        time: asstMsg.time_updated || asstMsg.time_created,
+                        isQuestion: true,
+                        isComplete: true
+                    }};
+                }
             }
         }
     }
 
-    // 2. Still processing? (streaming or tools running)
-    const isFinished = (msgData.finish != null || msgData.time?.completed != null || msgData.time?.streamed != null && content.some(c => c?.type === 'text' && c?.text?.trim()));
-    // Stricter: completed timestamp is the source of truth; streamed without completed = still running tools
-    const hasCompleted = (msgData.time?.completed != null || msgData.finish === 'stop' || msgData.finish === 'length');
-    if (!hasCompleted) {
+    // 3. In OpenCode v2, EVERY completed turn strictly emits a message with type: 'idle'
+    // If there is no 'idle' message created after the user's prompt, the AI is STILL WORKING
+    // (calling tools, reading files, searching web, or generating).
+    // Intermediate statements like "Vou procurar..." MUST NOT trigger TTS or open the microphone!
+    const idleAfterUser = messages.find(m => m.type === 'idle' && m.time_created >= latestUserMsg.time_created);
+    if (!idleAfterUser) {
         return { handled: true, payload: { text: null, id: null, isProcessing: true } };
     }
-    void isFinished;
 
-    // 3. Collect final text parts
-    let fullText = '';
-    for (const item of content) {
-        if (item && item.type === 'text' && item.text && item.text.trim()) {
-            fullText += (fullText ? '\n' : '') + item.text.trim();
+    // 4. The turn is fully complete (idle reached). Find the final assistant message of this turn
+    // (the one created between the user prompt and the idle marker)
+    const turnAsstMsgs = messages.filter(m => 
+        m.type === 'assistant' && 
+        m.time_created >= latestUserMsg.time_created && 
+        m.time_created <= idleAfterUser.time_created
+    );
+
+    if (turnAsstMsgs.length === 0) {
+        return { handled: true, payload: { text: null, id: null, isProcessing: false } };
+    }
+
+    // Find the assistant message that has completed text parts (starting from the one closest to idle)
+    for (const asstMsg of turnAsstMsgs) {
+        let msgData = {};
+        try { msgData = JSON.parse(asstMsg.data || '{}'); } catch(e) {}
+        const content = Array.isArray(msgData.content) ? msgData.content : [];
+        let fullText = '';
+        for (const item of content) {
+            if (item && item.type === 'text' && item.text && item.text.trim()) {
+                fullText += (fullText ? '\n' : '') + item.text.trim();
+            }
+        }
+        if (fullText.trim()) {
+            return { handled: true, payload: {
+                id: asstMsg.id,
+                text: fullText.trim(),
+                time: msgData.time?.completed || asstMsg.time_updated || asstMsg.time_created,
+                isQuestion: false,
+                isComplete: true
+            }};
         }
     }
-    if (fullText.trim()) {
-        return { handled: true, payload: {
-            id: latestMsg.id,
-            text: fullText.trim(),
-            time: msgData.time?.completed || latestMsg.time_updated || latestMsg.time_created,
-            isQuestion: false,
-            isComplete: true
-        }};
-    }
-    return { handled: true, payload: { text: null, id: null } };
+
+    return { handled: true, payload: { text: null, id: null, isProcessing: false } };
 }
 
 function handleLatestAiMessage(req, res) {
@@ -274,12 +301,26 @@ function handleLatestAiMessage(req, res) {
             }
         }
 
-        // 2. Check if the assistant turn is still active/processing (tools running, search, etc.)
-        const isFinished = (msgData.finish === 'stop' || msgData.time?.completed != null);
+        // 2. Check if the assistant turn is calling tools or still active/processing
+        const isToolCallsFinish = (msgData.finish === 'tool-calls' || msgData.finish === 'tool_calls');
+        let hasActiveTools = false;
+        for (const part of parts) {
+            let partData = {};
+            try { partData = JSON.parse(part.data || '{}'); } catch(e) {}
+            if (partData.type === 'tool' && partData.tool !== 'question') {
+                hasActiveTools = true;
+                break;
+            }
+        }
 
-        if (!isFinished) {
-            // Message is still streaming or running background tools (web search, reading files, etc.)
-            // Do NOT trigger speech or open the microphone yet!
+        if (isToolCallsFinish || hasActiveTools) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ text: null, id: null, isProcessing: true }));
+            return;
+        }
+
+        const hasCompletedNormally = (msgData.finish === 'stop' || msgData.finish === 'length') && msgData.time?.completed != null;
+        if (!hasCompletedNormally) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ text: null, id: null, isProcessing: true }));
             return;
@@ -308,7 +349,7 @@ function handleLatestAiMessage(req, res) {
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ text: null, id: null }));
+        res.end(JSON.stringify({ text: null, id: null, isProcessing: true }));
     } catch (err) {
         console.error('Error in handleLatestAiMessage:', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });

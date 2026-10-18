@@ -64,6 +64,43 @@ set -g allow-passthrough on
 set -s set-clipboard on
 set -as terminal-features ',xterm-256color:clipboard'
 set -as terminal-overrides ',xterm*:Ms=\\E]52;%p1%s;%p2%s\\7'
+# Non-blocking clipboard bridge (xclip -> /api/clipboard -> SSE -> browser + overlay)
+set -g copy-command '/usr/local/bin/xclip -selection clipboard -i'
+set -g mode-keys vi
+
+# Completely disable tmux popup display-menu on right click (prevents freezing web terminal on right-click)
+unbind-key -T root MouseDown3Pane
+unbind-key -T root M-MouseDown3Pane
+unbind-key -T root MouseDown3Status
+unbind-key -T root MouseDown3StatusLeft
+
+# Double-click, triple-click and mouse drag in root table pass through to OpenCode (send-keys -M) without triggering copy or reload
+bind-key -T root DoubleClick1Pane send-keys -M
+bind-key -T root TripleClick1Pane send-keys -M
+bind-key -T root MouseDrag1Pane send-keys -M
+
+# Mouse wheel up enters copy-mode to scroll
+bind-key -T root WheelUpPane copy-mode -e
+
+# Releasing mouse drag in copy-mode immediately copies selection via copy-command and exits copy mode
+bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel
+bind-key -T copy-mode MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel
+
+# Enter or 'y' copies in copy-mode
+bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel
+bind-key -T copy-mode Enter send-keys -X copy-pipe-and-cancel
+bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel
+
+# Space / 'v' begins selection in copy-mode
+bind-key -T copy-mode-vi Space send-keys -X begin-selection
+bind-key -T copy-mode-vi v send-keys -X begin-selection
+
+# Right click in copy-mode also copies and cancels
+bind-key -T copy-mode-vi MouseDown3Pane send-keys -X copy-pipe-and-cancel
+bind-key -T copy-mode MouseDown3Pane send-keys -X copy-pipe-and-cancel
+bind-key -T copy-mode-vi MouseUp3Pane send-keys -X copy-pipe-and-cancel
+bind-key -T copy-mode MouseUp3Pane send-keys -X copy-pipe-and-cancel
+
 # Shift+Enter / Ctrl+Enter multiline support (Kitty CSI-u passthrough to opencode)
 set -s extended-keys on
 set -as terminal-features 'xterm*:extkeys'

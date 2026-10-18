@@ -1,7 +1,7 @@
 services:
   opencode-web:
     image: xorao/opencode-web:latest
-    # build: . # Opcional: descomente apenas se quiser compilar a imagem localmente a partir do Dockerfile
+    build: .
     container_name: opencode-web
     restart: unless-stopped
     ports:
@@ -25,6 +25,11 @@ services:
       - ./data/config:/root/.config/opencode
       - ./data/share:/root/.local/share/opencode
       - ./workspace:/workspace
+      - ./server.js:/server.js
+      - ./index.html:/usr/local/share/ttyd/index.html
+      - ./entrypoint.sh:/entrypoint.sh
+      - ./clipboard-helper.sh:/usr/local/bin/clipboard-helper
+      - ./public:/public
     working_dir: /workspace
     extra_hosts:
       - "host.docker.internal:host-gateway"
