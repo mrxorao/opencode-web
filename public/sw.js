@@ -1,4 +1,4 @@
-const CACHE_NAME = 'opencode-pwa-v12';
+const CACHE_NAME = 'opencode-pwa-v2';
 const STATIC_ASSETS = [
     '/manifest.json',
     '/icon-192.png',
@@ -38,11 +38,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Bypass caching for navigation, root index.html, WebSocket, auth/tokens, and API requests
+    // Bypass caching for WebSocket, auth/tokens, and API requests
     if (
-        event.request.mode === 'navigate' ||
-        url.pathname === '/' ||
-        url.pathname === '/index.html' ||
         url.pathname.startsWith('/api/') ||
         url.pathname.startsWith('/ws') ||
         url.pathname.startsWith('/token') ||
