@@ -32,6 +32,7 @@ RUN npm install --omit=dev
 
 # Copy voice transcription and Edge TTS server
 COPY server.js /server.js
+COPY edge-drm.py /edge-drm.py
 
 # Copy mobile-optimized web terminal template and PWA assets
 COPY index.html /usr/local/share/ttyd/index.html

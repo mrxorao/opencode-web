@@ -2985,7 +2985,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
         var pollTimer = null;
         var previewTimer = null;
         var configuredLang = 'PT'; // Loaded dynamically from server
-        var configuredTtsProvider = 'browser'; // Loaded dynamically from server or localStorage
+        var configuredTtsProvider = 'microsoft'; // Loaded dynamically from server or localStorage
         var DEFAULT_CONVERSATION_PROMPT = "[Voice Conversation Mode: Provide a natural, clear, and well-balanced conversational answer in the user's spoken language. Keep it engaging, direct, and pleasant for audio listening—avoiding overly long monologues, endless bullet lists, or heavy markdown unless explicitly requested.]";
 
         var mediaStream = null;
@@ -3308,7 +3308,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                             updateConversationPromptModalUI();
                         }
                     }
-                    var savedTts = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser';
+                    var savedTts = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'microsoft';
                     if (typeof updateTtsProviderUI === 'function') {
                         updateTtsProviderUI(savedTts);
                     }
@@ -3836,7 +3836,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
 
             stopSpeaking();
 
-            var currentProvider = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser';
+            var currentProvider = localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'microsoft';
 
             showPreview('Speaking (' + (configuredLang || 'EN') + ')', (text.length > 70 ? text.substring(0, 70) + '...' : text), false, false);
             hidePreview(4000);
@@ -4919,7 +4919,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
             settingsBtn.addEventListener('click', function() {
                 updateFontSizeModalUI(getCurrentTerminalFontSize());
                 updateThemeModalUI(localStorage.getItem('opencode_toolbar_theme') || 'light');
-                updateTtsProviderUI(localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser');
+                updateTtsProviderUI(localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'microsoft');
                 updateConversationPromptModalUI();
                 updateDebugModalUI(isDebugModeActive());
                 if (settingsModal) settingsModal.classList.add('active');
@@ -4972,7 +4972,7 @@ window.sendTextToTerminal = async function(text, autoEnter, enterDelayMs) {
                 setToolbarTheme(savedTheme, false);
             } catch(e) {}
             try {
-                updateTtsProviderUI(localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'browser');
+                updateTtsProviderUI(localStorage.getItem('opencode_tts_provider') || configuredTtsProvider || 'microsoft');
             } catch(e) {}
             try {
                 updateConversationPromptModalUI();

@@ -19,17 +19,159 @@ const VOICE_GROQ_MODEL = (process.env.VOICE_GROQ_MODEL || 'whisper-large-v3').tr
 const RAW_GROQ_BASE_URL = (process.env.VOICE_GROQ_BASE_URL || process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').trim().replace(/\/+$/, '');
 const VOICE_GROQ_BASE_URL = RAW_GROQ_BASE_URL.endsWith('/openai/v1') ? RAW_GROQ_BASE_URL : (RAW_GROQ_BASE_URL.endsWith('/v1') ? RAW_GROQ_BASE_URL : `${RAW_GROQ_BASE_URL}/openai/v1`);
 const DEFAULT_VOICE_LANGUAGE = (process.env.VOICE_LANGUAGE || 'EN').toUpperCase().trim();
-const RAW_TTS_PROVIDER = (process.env.VOICE_TTS_PROVIDER || process.env.TTS_PROVIDER || 'browser').toLowerCase().trim();
-const DEFAULT_TTS_PROVIDER = (RAW_TTS_PROVIDER === 'microsoft' || RAW_TTS_PROVIDER === 'edge' || RAW_TTS_PROVIDER === 'edge-tts') ? 'microsoft' : 'browser';
+const RAW_TTS_PROVIDER = (process.env.VOICE_TTS_PROVIDER || process.env.TTS_PROVIDER || 'microsoft').toLowerCase().trim();
+const DEFAULT_TTS_PROVIDER = (RAW_TTS_PROVIDER === 'browser') ? 'browser' : 'microsoft';
 const VOICE_CONVERSATION_PROMPT = (process.env.VOICE_CONVERSATION_PROMPT || '').trim();
 
-let MsEdgeTTS, OUTPUT_FORMAT;
+const crypto = require('crypto');
+const { execSync } = require('child_process');
+const { PassThrough } = require('stream');
+
+let WebSocket;
 try {
-    const msedgeModule = require('msedge-tts');
-    MsEdgeTTS = msedgeModule.MsEdgeTTS;
-    OUTPUT_FORMAT = msedgeModule.OUTPUT_FORMAT;
+    WebSocket = require('ws');
 } catch (e) {
-    console.warn('[proxy] msedge-tts module could not be loaded:', e.message);
+    console.warn('[proxy] ws module could not be loaded:', e.message);
+}
+
+// Microsoft Edge Read Aloud TTS DRM v2 Configuration
+const EDGE_TRUSTED_CLIENT_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+const EDGE_CHROMIUM_FULL_VERSION = '143.0.3650.75';
+const EDGE_CHROMIUM_MAJOR_VERSION = '143';
+const EDGE_SEC_MS_GEC_VERSION = `2-${EDGE_CHROMIUM_FULL_VERSION}`;
+
+let cachedDrmToken = null;
+let cachedDrmTokenExpiry = 0;
+let serverClockSkewSeconds = 0.0;
+
+function getSecMsGecToken() {
+    const now = Date.now();
+    if (cachedDrmToken && now < cachedDrmTokenExpiry) {
+        return cachedDrmToken;
+    }
+
+    const scriptCandidates = [
+        path.join(__dirname, 'edge-drm.py'),
+        '/edge-drm.py',
+        path.join(process.cwd(), 'edge-drm.py')
+    ];
+    const scriptPath = scriptCandidates.find(p => fs.existsSync(p));
+
+    if (scriptPath) {
+        try {
+            const out = execSync(`python3 "${scriptPath}" ${serverClockSkewSeconds.toFixed(3)}`, { timeout: 3000 }).toString().trim();
+            if (out && out.includes('-')) {
+                cachedDrmToken = out;
+                cachedDrmTokenExpiry = now + 4 * 60 * 1000;
+                return out;
+            }
+        } catch (err) {
+            console.error('[tts] Failed to generate DRM token via edge-drm.py:', err.message);
+        }
+    }
+
+    return cachedDrmToken || '';
+}
+
+function synthesizeSpeechV2(text, voice) {
+    if (!WebSocket) {
+        throw new Error('WebSocket (ws) module is not installed.');
+    }
+
+    const token = getSecMsGecToken();
+    const connectId = crypto.randomUUID().replace(/-/g, '');
+    const muid = crypto.randomBytes(16).toString('hex').toUpperCase();
+
+    const url = `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=${EDGE_TRUSTED_CLIENT_TOKEN}&ConnectionId=${connectId}&Sec-MS-GEC=${token}&Sec-MS-GEC-Version=${EDGE_SEC_MS_GEC_VERSION}`;
+
+    const stream = new PassThrough();
+
+    const ws = new WebSocket(url, {
+        headers: {
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache',
+            'Origin': 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
+            'User-Agent': `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${EDGE_CHROMIUM_MAJOR_VERSION}.0.0.0 Safari/537.36 Edg/${EDGE_CHROMIUM_MAJOR_VERSION}.0.0.0`,
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cookie': `muid=${muid};`
+        }
+    });
+
+    let hasReceivedAudio = false;
+
+    ws.on('open', () => {
+        const timestamp = new Date().toISOString();
+        const configMsg = `X-Timestamp:${timestamp}\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n` +
+            `{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":false,"wordBoundaryEnabled":false},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}`;
+        ws.send(configMsg);
+
+        const requestId = crypto.randomUUID().replace(/-/g, '');
+        const escapedText = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+
+        const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="en-US">
+            <voice name="${voice}">
+                <prosody pitch="+0Hz" rate="+0%" volume="+0%">
+                    ${escapedText}
+                </prosody>
+            </voice>
+        </speak>`;
+        const ssmlMsg = `X-RequestId:${requestId}\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:${timestamp}\r\nPath:ssml\r\n\r\n${ssml}`;
+        ws.send(ssmlMsg);
+    });
+
+    ws.on('unexpected-response', (request, response) => {
+        if (response.headers && response.headers.date) {
+            try {
+                const serverTime = new Date(response.headers.date).getTime() / 1000;
+                const clientTime = Date.now() / 1000;
+                serverClockSkewSeconds = serverTime - clientTime;
+                cachedDrmTokenExpiry = 0;
+            } catch(e) {}
+        }
+        stream.emit('error', new Error(`Edge TTS WebSocket error: Unexpected server response: ${response.statusCode}`));
+        try { request.destroy(); } catch(e) {}
+        try { response.destroy(); } catch(e) {}
+    });
+
+    ws.on('message', (data, isBinary) => {
+        if (isBinary) {
+            const headerLen = data.readUInt16BE(0);
+            const header = data.slice(2, 2 + headerLen).toString();
+            const audio = data.slice(2 + headerLen);
+            if (header.includes('Path:audio') && audio.length > 0) {
+                hasReceivedAudio = true;
+                stream.write(audio);
+            }
+        } else {
+            const str = data.toString();
+            if (str.includes('Path:turn.end')) {
+                stream.end();
+                try { ws.close(); } catch(e) {}
+            }
+        }
+    });
+
+    ws.on('error', (err) => {
+        stream.emit('error', err);
+        try { ws.close(); } catch(e) {}
+    });
+
+    ws.on('close', () => {
+        if (!hasReceivedAudio) {
+            stream.emit('error', new Error('No audio received from Edge TTS service'));
+        }
+        if (!stream.writableEnded) {
+            stream.end();
+        }
+    });
+
+    return { stream, ws };
 }
 
 const EDGE_VOICE_MAP = {
@@ -595,14 +737,8 @@ async function handleUpload(req, res) {
     }
 }
 
-// Edge TTS (Microsoft Neural Voice) Audio Synthesis Handler
+// Edge TTS (Microsoft Neural Voice DRM v2) Audio Synthesis Handler
 async function handleTTS(req, res, parsedUrl) {
-    if (!MsEdgeTTS || !OUTPUT_FORMAT) {
-        res.writeHead(503, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'TTS_UNAVAILABLE', message: 'msedge-tts module is not available.' }));
-        return;
-    }
-
     if (req.method === 'GET') {
         const text = parsedUrl.searchParams.get('text') || '';
         const lang = parsedUrl.searchParams.get('lang') || DEFAULT_VOICE_LANGUAGE;
@@ -648,9 +784,7 @@ async function processTTS(rawText, langCode, requestedVoice, res) {
     const selectedVoice = requestedVoice || process.env.VOICE_TTS_NAME || EDGE_VOICE_MAP[normLang] || EDGE_VOICE_MAP['PT'] || 'pt-PT-RaquelNeural';
 
     try {
-        const tts = new MsEdgeTTS();
-        await tts.setMetadata(selectedVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-        const { audioStream } = tts.toStream(text);
+        const { stream: audioStream, ws } = synthesizeSpeechV2(text, selectedVoice);
 
         res.writeHead(200, {
             'Content-Type': 'audio/mpeg',
@@ -668,6 +802,10 @@ async function processTTS(rawText, langCode, requestedVoice, res) {
             } else {
                 res.end();
             }
+        });
+
+        res.on('close', () => {
+            try { ws.close(); } catch(e) {}
         });
     } catch (err) {
         console.error('[tts] Edge TTS generation error:', err);
@@ -1299,7 +1437,7 @@ async function requestListener(req, res) {
             groqErrorMessage: groqStatus.errorMessage,
             groqModel: VOICE_GROQ_MODEL,
             defaultLanguage: DEFAULT_VOICE_LANGUAGE || 'EN',
-            hasEdgeTTS: Boolean(MsEdgeTTS),
+            hasEdgeTTS: Boolean(WebSocket),
             ttsProvider: DEFAULT_TTS_PROVIDER,
             conversationPrompt: VOICE_CONVERSATION_PROMPT,
             isHttps: isHttps,
